@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Apply for a Visa | Global Online Visa Applications</title>
+
+    <link rel="stylesheet" href="styles.css">
+
+    <script src="config.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script defer src="app.js"></script>
+</head>
+
+<body>
+
+<header>
+    <h2>Global Online Visa Applications</h2>
+
+    <nav>
+        <a href="index.html">Home</a>
+        <a href="services.html">Services</a>
+        <a href="apply.html">Apply</a>
+        <a href="contact.html">Contact</a>
+    </nav>
+</header>
+
+<section class="application-section">
+
+    <h1>Online Visa Application</h1>
+
+    <p>
+        Complete the form below to request visa application assistance.
+    </p>
+
+    <form id="application-form">
+
+        <h2>Personal Information</h2>
+
+        <label>Full Name</label>
+        <input
+            type="text"
+            name="full_name"
+            placeholder="Enter your full name"
+            required
+        >
+
+        <label>Email Address</label>
+        <input
+            type="email"
+            name="email"
+            placeholder="Enter your email"
+            required
+        >
+
+        <label>Phone Number / WhatsApp</label>
+        <input
+            type="tel"
+            name="phone"
+            placeholder="Enter your phone number"
+        >
+
+        <label>Country of Residence</label>
+        <input
+            type="text"
+            name="residence_country"
+            placeholder="Your current country"
+            required
+        >
+
+        <h2>Travel Information</h2>
+
+        <label>Destination Country</label>
+        <input
+            type="text"
+            name="destination_country"
+            placeholder="Which country do you want to visit?"
+            required
+        >
+
+        <label>Visa Type</label>
+
+        <select name="visa_type" required>
+            <option value="">Select visa type</option>
+            <option value="Tourist">Tourist Visa</option>
+            <option value="Business">Business Visa</option>
+            <option value="Student">Student Visa</option>
+            <option value="Work">Work Visa</option>
+            <option value="Family Visit">Family Visit Visa</option>
+            <option value="Other">Other</option>
+        </select>
+
+        <label>Expected Travel Date</label>
+        <input
+            type="date"
+            name="travel_date"
+        >
+
+        <h2>Additional Information</h2>
+
+        <label>Tell us about your application</label>
+
+        <textarea
+            name="message"
+            rows="6"
+            placeholder="Describe the assistance you need..."
+        ></textarea>
+
+        <label class="consent">
+            <input
+                type="checkbox"
+                name="consent"
+                required
+            >
+            I agree that my information may be used
+            to respond to my enquiry.
+        </label>
+
+        <p>
+            Please do not submit passport scans,
+            passwords or payment card details through this form.
+        </p>
+
+        <button type="submit" class="btn">
+            Submit Application Enquiry
+        </button>
+
+        <p id="form-status"></p>
+
+    </form>
+
+</section>
+
+<footer>
+    <p>
+        © 2026 Global Online Visa Applications.
+        All rights reserved.
+    </p>
+
+    <a href="privacy.html">Privacy Policy</a>
+</footer>
+
+</body>
+</html>
