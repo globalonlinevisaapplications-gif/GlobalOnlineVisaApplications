@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Admin Dashboard | Global Online Visa Applications</title>
+
+    <link rel="stylesheet" href="styles.css">
+
+    <script src="config.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script defer src="admin.js"></script>
+</head>
+
+<body>
+
+<header>
+    <h2>Global Online Visa Applications</h2>
+    <nav>
+        <a href="index.html">Website</a>
+        <a href="services.html">Services</a>
+        <a href="contact.html">Contact</a>
+    </nav>
+</header>
+
+<main class="application-section">
+
+    <h1>Administrator Dashboard</h1>
+
+    <p>Sign in to manage customer enquiries.</p>
+
+    <form id="login-form">
+
+        <label>Email Address</label>
+        <input
+            type="email"
+            name="email"
+            placeholder="Administrator email"
+            required
+        >
+
+        <label>Password</label>
+        <input
+            type="password"
+            name="password"
+            placeholder="Enter password"
+            required
+        >
+
+        <button type="submit" class="btn">
+            Admin Login
+        </button>
+
+    </form>
+
+    <button id="logout" class="btn" hidden>
+        Sign Out
+    </button>
+
+    <p id="admin-status" role="status"></p>
+
+    <section id="admin-data" hidden>
+
+        <h2>Visa Applications</h2>
+        <div id="applications"></div>
+
+        <h2>Customer Messages</h2>
+        <div id="messages"></div>
+
+    </section>
+
+</main>
+
+<footer>
+    <p>© 2026 Global Online Visa Applications</p>
+</footer>
+
+</body>
+</html>
