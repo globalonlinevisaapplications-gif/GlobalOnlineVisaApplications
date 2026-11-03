@@ -1,0 +1,100 @@
+
+# GlobalOnlineVisaApplications
+
+A website for a private visa assistance agency helping customers
+understand and prepare for visa application processes worldwide.
+
+## Website Features
+
+- Homepage introducing the agency
+- Visa assistance services
+- Online visa enquiry form
+- Contact form
+- Administrator login page
+- Administrator dashboard for viewing applications
+- Privacy policy
+- Customer submission confirmation page
+- Supabase database integration
+
+## Project Files
+
+| File | Purpose |
+|---|---|
+| index.html | Homepage |
+| services.html | Visa services |
+| apply.html | Visa enquiry form |
+| contact.html | Contact page |
+| admin.html | Administrator login |
+| admin.js | Administrator dashboard |
+| app.js | Website form functionality |
+| config.js | Supabase configuration |
+| styles.css | Website design |
+| privacy.html | Privacy policy |
+| thank-you.html | Submission confirmation |
+| supabase-schema.sql | Database setup |
+| netlify.toml | Netlify deployment settings |
+
+## Setup Instructions
+
+### 1. Create a Supabase Project
+
+1. Visit https://supabase.com/
+2. Create an account and a new project.
+3. Open Project Settings and find your API details.
+4. Copy your Project URL and public publishable or anon key.
+5. Add them to `config.js`.
+
+Never put a Supabase service role or secret key in
+a browser-visible file.
+
+### 2. Create the Database
+
+1. Open your Supabase project.
+2. Open SQL Editor.
+3. Open `supabase-schema.sql` from this repository.
+4. Copy its contents into the SQL Editor.
+5. Run the SQL.
+
+### 3. Create an Administrator
+
+1. Create an administrator account in Supabase Authentication.
+2. Copy the account's user UUID.
+3. Insert that UUID into `public.profiles` with the role `admin`.
+4. Use the administrator email and password to sign in at `admin.html`.
+
+Do not allow visitors to assign themselves administrator access.
+
+### 4. Deploy the Website
+
+You can connect this GitHub repository to Netlify.
+
+1. Visit https://www.netlify.com/
+2. Sign in or create an account.
+3. Choose Add new project.
+4. Import your GitHub repository.
+5. Set the publish directory to `.`.
+6. Deploy the website.
+
+## Important Security Notes
+
+- Use only public Supabase keys in browser code.
+- Keep administrator credentials private.
+- Do not collect passport scans, passwords or payment card details
+  through the basic website forms.
+- Add server-side validation, spam protection and appropriate
+  privacy safeguards before accepting real customer data.
+- Test administrator permissions before launch.
+
+## Business Disclaimer
+
+GlobalOnlineVisaApplications is intended to operate as a private
+visa assistance agency. It is not a government department,
+embassy or immigration authority.
+
+Visa decisions are made by the relevant government authorities.
+Visa approval cannot be guaranteed.
+
+## Project Status
+
+Website starter project — setup, database configuration,
+security testing and deployment are still required.
