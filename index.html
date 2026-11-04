@@ -1,21 +1,458 @@
-<!doctype html>
+
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="Independent visa consultancy providing application guidance and document-preparation support.">
-  <title>Global Online Visa Applications | Visa Guidance</title>
-  <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Global Online Visa Applications - Apply for visas, submit applications and track your visa progress online.">
+  <title>Global Online Visa Applications</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      color: #172033;
+      background: #f5f7fb;
+      line-height: 1.6;
+    }
+
+    header {
+      background: #082b50;
+      color: white;
+      padding: 17px 6%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+
+    .logo {
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 17px;
+      align-items: center;
+    }
+
+    nav a {
+      color: white;
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    nav a:hover {
+      color: #f4c542;
+    }
+
+    .hero {
+      background: linear-gradient(120deg, #082b50, #12639a);
+      color: white;
+      text-align: center;
+      padding: 85px 20px;
+    }
+
+    .hero h1 {
+      font-size: clamp(30px, 5vw, 48px);
+      margin-bottom: 18px;
+    }
+
+    .hero p {
+      max-width: 700px;
+      margin: auto;
+      font-size: 17px;
+      color: #e3edf7;
+    }
+
+    .btn {
+      display: inline-block;
+      background: #e8b72f;
+      color: #10263e;
+      padding: 13px 25px;
+      border: none;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 22px;
+    }
+
+    .btn:hover {
+      background: #ffd45d;
+    }
+
+    .section {
+      padding: 55px 7%;
+      text-align: center;
+    }
+
+    .section h2 {
+      color: #082b50;
+      font-size: 29px;
+      margin-bottom: 15px;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 22px;
+      margin-top: 30px;
+    }
+
+    .card {
+      background: white;
+      padding: 27px 20px;
+      border-radius: 10px;
+      box-shadow: 0 3px 14px rgba(0,0,0,0.07);
+    }
+
+    .card h3 {
+      color: #12639a;
+      margin-bottom: 12px;
+    }
+
+    .auth-section {
+      background: #eaf0f7;
+    }
+
+    .auth-box {
+      background: white;
+      max-width: 470px;
+      margin: 25px auto;
+      padding: 28px;
+      border-radius: 10px;
+      box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+    }
+
+    .auth-box input {
+      width: 100%;
+      padding: 13px;
+      margin: 9px 0;
+      border: 1px solid #ccd4df;
+      border-radius: 5px;
+      font-size: 15px;
+    }
+
+    .auth-box button {
+      width: 100%;
+      margin-top: 12px;
+      padding: 13px;
+      border: none;
+      background: #12639a;
+      color: white;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .auth-box button:hover {
+      background: #082b50;
+    }
+
+    .switch {
+      margin-top: 17px;
+      font-size: 14px;
+    }
+
+    .switch a {
+      color: #12639a;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    #message {
+      margin-top: 15px;
+      font-size: 14px;
+      overflow-wrap: anywhere;
+    }
+
+    footer {
+      background: #082b50;
+      color: white;
+      padding: 30px 15px;
+      text-align: center;
+    }
+
+    footer a {
+      color: #f4c542;
+      text-decoration: none;
+      margin: 0 8px;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    @media(max-width: 600px) {
+      header {
+        justify-content: center;
+        text-align: center;
+      }
+
+      nav {
+        justify-content: center;
+      }
+
+      .hero {
+        padding: 60px 18px;
+      }
+    }
+  </style>
 </head>
+
 <body>
-<header class="site-header"><a class="brand" href="index.html"><span class="brand-mark">G</span><span>GLOBAL ONLINE<br><small>VISA APPLICATIONS</small></span></a>
-<nav><a href="index.html">Home</a><a href="services.html">Visa services</a><a href="apply.html">Apply / Enquire</a><a href="contact.html">Contact</a><a class="nav-admin" href="admin.html">Admin</a></nav></header>
-<main>
-<section class="hero"><div class="hero-copy"><p class="eyebrow">INDEPENDENT VISA CONSULTANCY</p><h1>Your journey starts with <em>clear guidance.</em></h1><p class="lead">Practical application guidance and document-preparation support for people planning to travel, study, work or visit abroad.</p><div class="actions"><a class="btn btn-primary" href="apply.html">Start an enquiry</a><a class="btn btn-outline" href="services.html">Explore services</a></div><p class="fineprint">We are a private consultancy, not a government agency, embassy or immigration authority. We do not issue visas or guarantee outcomes.</p></div>
-<div class="hero-panel"><div class="globe">◎</div><p class="eyebrow">DESTINATIONS WE SUPPORT</p><h2>Plan with confidence.</h2><div class="destination-grid"><span>🇺🇸 United States</span><span>🇬🇧 United Kingdom</span><span>🇨🇦 Canada</span><span>🇦🇺 Australia</span><span>🇪🇺 Europe / Schengen</span></div><a href="apply.html" class="text-link">Tell us about your plans →</a></div></section>
-<section class="section"><div class="section-heading"><p class="eyebrow">HOW WE HELP</p><h2>Guidance at every step.</h2><p>Understand the process, prepare carefully and know what to expect before submitting an application to the relevant authority.</p></div>
-<div class="cards"><article class="card"><span class="card-icon">01</span><h3>Initial consultation</h3><p>Discuss your destination, travel purpose and general circumstances.</p></article><article class="card"><span class="card-icon">02</span><h3>Document guidance</h3><p>Receive a tailored checklist and practical document-preparation guidance.</p></article><article class="card"><span class="card-icon">03</span><h3>Application support</h3><p>Get help understanding forms and official application steps. You remain responsible for accurate information and final submission.</p></article></div></section>
-<section class="cta"><div><p class="eyebrow">READY TO GET STARTED?</p><h2>Tell us where you want to go.</h2><p>Send a short enquiry and our team can discuss the next steps.</p></div><a class="btn btn-light" href="apply.html">Make an enquiry</a></section>
-</main>
-<footer><div><a class="brand brand-footer" href="index.html"><span class="brand-mark">G</span><span>GLOBAL ONLINE<br><small>VISA APPLICATIONS</small></span></a><p>Independent visa consultancy and application guidance.</p></div><div class="footer-links"><a href="services.html">Services</a><a href="apply.html">Apply / Enquire</a><a href="contact.html">Contact</a><a href="privacy.html">Privacy</a></div><p class="fineprint">We are not affiliated with any government, embassy or immigration authority. Visa decisions are made solely by the relevant authorities. No visa outcome is guaranteed.</p><p class="copyright">© <span id="year"></span> Global Online Visa Applications</p></footer>
-<script>document.getElementById('year').textContent=new Date().getFullYear()</script>
-</body></html>
+
+<header>
+  <div class="logo">Global Online Visa Applications</div>
+
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="services.html">Services</a>
+    <a href="apply.html">Apply</a>
+    <a href="contact.html">Contact</a>
+    <a href="#account">Sign In</a>
+  </nav>
+</header>
+
+<section class="hero">
+  <h1>Your Journey Starts Here</h1>
+
+  <p>
+    Access online visa application assistance, submit your
+    application information, and follow your application progress
+    through one convenient platform.
+  </p>
+
+  <a href="#account" class="btn">Get Started</a>
+</section>
+
+<section class="section">
+  <h2>Our Services</h2>
+
+  <p>Explore the services available through our platform.</p>
+
+  <div class="cards">
+
+    <div class="card">
+      <h3>Visa Applications</h3>
+      <p>Submit your visa application information online.</p>
+      <a href="apply.html" class="btn">Apply Now</a>
+    </div>
+
+    <div class="card">
+      <h3>Visa Guidance</h3>
+      <p>Get information about visa requirements and application processes.</p>
+      <a href="services.html" class="btn">Learn More</a>
+    </div>
+
+    <div class="card">
+      <h3>Application Tracking</h3>
+      <p>Access your account to follow your application progress.</p>
+      <a href="#account" class="btn">Track Application</a>
+    </div>
+
+    <div class="card">
+      <h3>Online Assistance</h3>
+      <p>Contact our team for assistance with your application.</p>
+      <a href="contact.html" class="btn">Contact Us</a>
+    </div>
+
+  </div>
+</section>
+
+<section class="section auth-section" id="account">
+
+  <h2>Applicant Account</h2>
+
+  <p>Create an account or sign in to continue.</p>
+
+  <div class="auth-box">
+
+    <div id="registerForm">
+      <h3>Create Your Account</h3>
+
+      <input type="text" id="firstName" placeholder="First Name" required>
+      <input type="text" id="lastName" placeholder="Last Name" required>
+      <input type="email" id="registerEmail" placeholder="Email Address" required>
+      <input type="password" id="registerPassword" placeholder="Create Password (minimum 8 characters)" required>
+
+      <button onclick="registerUser()">Create Account</button>
+
+      <p class="switch">
+        Already registered?
+        <a onclick="showLogin()">Sign In</a>
+      </p>
+    </div>
+
+    <div id="loginForm" class="hidden">
+      <h3>Applicant Sign In</h3>
+
+      <input type="email" id="loginEmail" placeholder="Email Address" required>
+      <input type="password" id="loginPassword" placeholder="Password" required>
+
+      <button onclick="loginUser()">Sign In</button>
+
+      <p class="switch">
+        New applicant?
+        <a onclick="showRegister()">Create Account</a>
+      </p>
+    </div>
+
+    <div id="message" role="status" aria-live="polite"></div>
+
+  </div>
+</section>
+
+<footer>
+  <p>Global Online Visa Applications</p>
+  <p>Visa application assistance and online services.</p>
+  <p>
+    <a href="privacy.html">Privacy Policy</a>
+    <a href="contact.html">Contact</a>
+  </p>
+  <p>&copy; 2026 Global Online Visa Applications. All rights reserved.</p>
+</footer>
+
+<script>
+  let supabaseClient;
+
+  try {
+    if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) {
+      throw new Error("Supabase configuration is missing.");
+    }
+
+    supabaseClient = window.supabase.createClient(
+      window.SUPABASE_URL,
+      window.SUPABASE_ANON_KEY
+    );
+  } catch (error) {
+    document.getElementById("message").textContent =
+      "Connection configuration error. Please contact the administrator.";
+    console.error(error);
+  }
+
+  function showLogin() {
+    document.getElementById("registerForm").classList.add("hidden");
+    document.getElementById("loginForm").classList.remove("hidden");
+    document.getElementById("message").textContent = "";
+  }
+
+  function showRegister() {
+    document.getElementById("loginForm").classList.add("hidden");
+    document.getElementById("registerForm").classList.remove("hidden");
+    document.getElementById("message").textContent = "";
+  }
+
+  async function registerUser() {
+    if (!supabaseClient) return;
+
+    const firstName = document.getElementById("firstName").value.trim();
+    const lastName = document.getElementById("lastName").value.trim();
+    const email = document.getElementById("registerEmail").value.trim();
+    const password = document.getElementById("registerPassword").value;
+
+    const message = document.getElementById("message");
+
+    if (!firstName || !lastName || !email || !password) {
+      message.textContent = "Please complete all fields.";
+      return;
+    }
+
+    if (password.length < 8) {
+      message.textContent = "Your password must have at least 8 characters.";
+      return;
+    }
+
+    message.textContent = "Creating your account...";
+
+    const { data, error } = await supabaseClient.auth.signUp({
+      email: email,
+      password: password,
+      options: {
+        data: {
+          first_name: firstName,
+          last_name: lastName
+        }
+      }
+    });
+
+    if (error) {
+      message.textContent = error.message;
+      return;
+    }
+
+    if (data.session) {
+      message.textContent = "Account created successfully. Opening your application page...";
+      window.location.href = "apply.html";
+    } else {
+      message.textContent =
+        "Registration received. Please check your email and confirm your account before signing in.";
+    }
+  }
+
+  async function loginUser() {
+    if (!supabaseClient) return;
+
+    const email = document.getElementById("loginEmail").value.trim();
+    const password = document.getElementById("loginPassword").value;
+
+    const message = document.getElementById("message");
+
+    if (!email || !password) {
+      message.textContent = "Enter your email and password.";
+      return;
+    }
+
+    message.textContent = "Signing in...";
+
+    const { data, error } =
+      await supabaseClient.auth.signInWithPassword({
+        email: email,
+        password: password
+      });
+
+    if (error) {
+      message.textContent = error.message;
+      return;
+    }
+
+    if (data.session) {
+      message.textContent = "Login successful. Opening your account...";
+      window.location.href = "apply.html";
+    }
+  }
+
+  async function checkSession() {
+    if (!supabaseClient) return;
+
+    const { data } = await supabaseClient.auth.getSession();
+
+    if (data.session) {
+      document.getElementById("message").textContent =
+        "You are already signed in. You can continue to your application.";
+
+      const link = document.createElement("a");
+      link.href = "apply.html";
+      link.className = "btn";
+      link.textContent = "Continue to Application";
+      document.getElementById("message").appendChild(link);
+    }
+  }
+
+  checkSession();
+</script>
+
+</body>
+</html>
