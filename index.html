@@ -157,8 +157,9 @@
       cursor: pointer;
     }
 
-    .auth-box button:hover {
-      background: #082b50;
+    .auth-box button:disabled {
+      opacity: .6;
+      cursor: not-allowed;
     }
 
     .switch {
@@ -192,7 +193,7 @@
     }
 
     .hidden {
-      display: none;
+      display: none !important;
     }
 
     @media(max-width: 600px) {
@@ -222,7 +223,7 @@
     <a href="services.html">Services</a>
     <a href="apply.html">Apply</a>
     <a href="contact.html">Contact</a>
-    <a href="#account">Sign In</a>
+    <a href="#account">My Account</a>
   </nav>
 </header>
 
@@ -240,11 +241,9 @@
 
 <section class="section">
   <h2>Our Services</h2>
-
   <p>Explore the services available through our platform.</p>
 
   <div class="cards">
-
     <div class="card">
       <h3>Visa Applications</h3>
       <p>Submit your visa application information online.</p>
@@ -268,14 +267,11 @@
       <p>Contact our team for assistance with your application.</p>
       <a href="contact.html" class="btn">Contact Us</a>
     </div>
-
   </div>
 </section>
 
 <section class="section auth-section" id="account">
-
   <h2>Applicant Account</h2>
-
   <p>Create an account or sign in to continue.</p>
 
   <div class="auth-box">
@@ -288,7 +284,9 @@
       <input type="email" id="registerEmail" placeholder="Email Address" required>
       <input type="password" id="registerPassword" placeholder="Create Password (minimum 8 characters)" required>
 
-      <button onclick="registerUser()">Create Account</button>
+      <button id="registerButton" type="button" onclick="registerUser()">
+        Create Account
+      </button>
 
       <p class="switch">
         Already registered?
@@ -302,7 +300,9 @@
       <input type="email" id="loginEmail" placeholder="Email Address" required>
       <input type="password" id="loginPassword" placeholder="Password" required>
 
-      <button onclick="loginUser()">Sign In</button>
+      <button id="loginButton" type="button" onclick="loginUser()">
+        Sign In
+      </button>
 
       <p class="switch">
         New applicant?
@@ -310,8 +310,16 @@
       </p>
     </div>
 
-    <div id="message" role="status" aria-live="polite"></div>
+    <div id="signedInPanel" class="hidden">
+      <h3>You are signed in</h3>
+      <p id="signedInEmail"></p>
 
+      <a href="apply.html" class="btn">Continue to Application</a>
+
+      <button id="logoutButton" type="button">Sign Out</button>
+    </div>
+
+    <div id="message" role="status" aria-live="polite"></div>
   </div>
 </section>
 
@@ -326,7 +334,9 @@
 </footer>
 
 <script>
-  let supabaseClient;
+  let supabaseClient = null;
+
+  const message = document.getElementById("message");
 
   try {
     if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) {
@@ -337,8 +347,9 @@
       window.SUPABASE_URL,
       window.SUPABASE_ANON_KEY
     );
+
   } catch (error) {
-    document.getElementById("message").textContent =
+    message.textContent =
       "Connection configuration error. Please contact the administrator.";
     console.error(error);
   }
@@ -346,24 +357,33 @@
   function showLogin() {
     document.getElementById("registerForm").classList.add("hidden");
     document.getElementById("loginForm").classList.remove("hidden");
-    document.getElementById("message").textContent = "";
+    message.textContent = "";
   }
 
   function showRegister() {
     document.getElementById("loginForm").classList.add("hidden");
     document.getElementById("registerForm").classList.remove("hidden");
-    document.getElementById("message").textContent = "";
+    message.textContent = "";
+  }
+
+  function showSignedIn(user) {
+    document.getElementById("registerForm").classList.add("hidden");
+    document.getElementById("loginForm").classList.add("hidden");
+    document.getElementById("signedInPanel").classList.remove("hidden");
+
+    document.getElementById("signedInEmail").textContent =
+      user.email || "";
   }
 
   async function registerUser() {
     if (!supabaseClient) return;
 
+    const button = document.getElementById("registerButton");
+
     const firstName = document.getElementById("firstName").value.trim();
     const lastName = document.getElementById("lastName").value.trim();
     const email = document.getElementById("registerEmail").value.trim();
     const password = document.getElementById("registerPassword").value;
-
-    const message = document.getElementById("message");
 
     if (!firstName || !lastName || !email || !password) {
       message.textContent = "Please complete all fields.";
@@ -371,83 +391,102 @@
     }
 
     if (password.length < 8) {
-      message.textContent = "Your password must have at least 8 characters.";
+      message.textContent =
+        "Your password must have at least 8 characters.";
       return;
     }
 
+    button.disabled = true;
     message.textContent = "Creating your account...";
 
-    const { data, error } = await supabaseClient.auth.signUp({
-      email: email,
-      password: password,
-      options: {
-        data: {
-          first_name: firstName,
-          last_name: lastName
+    try {
+      const { data, error } = await supabaseClient.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            first_name: firstName,
+            last_name: lastName
+          }
         }
+      });
+
+      if (error) throw error;
+
+      if (data.session) {
+        message.textContent = "Account created successfully.";
+        window.location.href = "apply.html";
+      } else {
+        message.textContent =
+          "Registration received. Please check your email and confirm your account before signing in.";
       }
-    });
 
-    if (error) {
+    } catch (error) {
       message.textContent = error.message;
-      return;
-    }
-
-    if (data.session) {
-      message.textContent = "Account created successfully. Opening your application page...";
-      window.location.href = "apply.html";
-    } else {
-      message.textContent =
-        "Registration received. Please check your email and confirm your account before signing in.";
+    } finally {
+      button.disabled = false;
     }
   }
 
   async function loginUser() {
     if (!supabaseClient) return;
 
+    const button = document.getElementById("loginButton");
+
     const email = document.getElementById("loginEmail").value.trim();
     const password = document.getElementById("loginPassword").value;
-
-    const message = document.getElementById("message");
 
     if (!email || !password) {
       message.textContent = "Enter your email and password.";
       return;
     }
 
+    button.disabled = true;
     message.textContent = "Signing in...";
 
-    const { data, error } =
-      await supabaseClient.auth.signInWithPassword({
-        email: email,
-        password: password
-      });
+    try {
+      const { data, error } =
+        await supabaseClient.auth.signInWithPassword({
+          email,
+          password
+        });
 
-    if (error) {
+      if (error) throw error;
+
+      if (data.session) {
+        window.location.href = "apply.html";
+      }
+
+    } catch (error) {
       message.textContent = error.message;
-      return;
-    }
-
-    if (data.session) {
-      message.textContent = "Login successful. Opening your account...";
-      window.location.href = "apply.html";
+    } finally {
+      button.disabled = false;
     }
   }
+
+  document.getElementById("logoutButton")
+    .addEventListener("click", async function() {
+      if (!supabaseClient) return;
+
+      const { error } = await supabaseClient.auth.signOut();
+
+      if (error) {
+        message.textContent = error.message;
+        return;
+      }
+
+      document.getElementById("signedInPanel").classList.add("hidden");
+      document.getElementById("registerForm").classList.remove("hidden");
+      message.textContent = "You have signed out.";
+    });
 
   async function checkSession() {
     if (!supabaseClient) return;
 
-    const { data } = await supabaseClient.auth.getSession();
+    const { data, error } = await supabaseClient.auth.getUser();
 
-    if (data.session) {
-      document.getElementById("message").textContent =
-        "You are already signed in. You can continue to your application.";
-
-      const link = document.createElement("a");
-      link.href = "apply.html";
-      link.className = "btn";
-      link.textContent = "Continue to Application";
-      document.getElementById("message").appendChild(link);
+    if (!error && data.user) {
+      showSignedIn(data.user);
     }
   }
 
