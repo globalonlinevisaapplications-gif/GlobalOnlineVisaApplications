@@ -3,119 +3,103 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Visa Application | Global Online Visa Applications</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visa Application</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
   <style>
-    * { box-sizing: border-box; }
     body {
-      margin: 0;
       font-family: Arial, sans-serif;
-      background: #f3f6fa;
-      color: #172033;
-    }
-    header {
-      background: #082b50;
-      color: white;
+      background: #f4f6f9;
+      margin: 0;
       padding: 20px;
-      text-align: center;
     }
-    header a { color: white; }
     main {
-      max-width: 750px;
+      max-width: 650px;
       margin: 30px auto;
-      padding: 20px;
     }
-    .panel {
+    .container {
       background: white;
       padding: 25px;
-      border-radius: 10px;
-      box-shadow: 0 3px 15px #00000010;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px #0001;
     }
-    h2 { color: #082b50; }
     label {
       display: block;
       margin-top: 16px;
       font-weight: bold;
     }
-    input, select {
+    input, select, button {
+      box-sizing: border-box;
       width: 100%;
-      padding: 13px;
+      padding: 12px;
       margin-top: 7px;
-      border: 1px solid #ccd4df;
-      border-radius: 5px;
-      font-size: 15px;
-      background: white;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 16px;
     }
     button {
-      background: #12639a;
+      background: #0756a5;
       color: white;
       border: 0;
-      border-radius: 5px;
-      padding: 14px 20px;
-      width: 100%;
-      margin-top: 22px;
-      font-size: 16px;
+      margin-top: 24px;
       cursor: pointer;
     }
-    button:disabled { opacity: .6; cursor: wait; }
+    button:disabled {
+      opacity: 0.6;
+    }
     #message {
       margin-top: 18px;
       overflow-wrap: anywhere;
     }
-    .note { color: #596579; font-size: 14px; }
-    .hidden { display: none; }
+    .hidden {
+      display: none;
+    }
   </style>
 </head>
-
 <body>
-<header>
-  <h1>Global Online Visa Applications</h1>
-  <a href="index.html">Return to Home</a>
-</header>
-
 <main>
-  <div class="panel">
-    <h2>Visa Application Form</h2>
-    <p class="note">Complete your details carefully before submitting.</p>
-
-    <div id="loginNotice" class="hidden">
-      <p>You must sign in before submitting a visa application.</p>
-      <a href="index.html#account">Go to Applicant Sign In</a>
-    </div>
+  <div class="container">
+    <h2>Global Online Visa Application</h2>
+    <p id="loginNotice" class="hidden">
+      Please sign in before applying.
+      <a href="index.html">Go to sign in</a>
+    </p>
 
     <form id="applicationForm" class="hidden">
-
       <h3>Personal Information</h3>
 
       <label for="firstName">First Name</label>
-      <input id="firstName" required maxlength="100" autocomplete="given-name">
+      <input id="firstName" required maxlength="100">
 
       <label for="lastName">Last Name</label>
-      <input id="lastName" required maxlength="100" autocomplete="family-name">
+      <input id="lastName" required maxlength="100">
+
+      <label for="email">Email Address</label>
+      <input id="email" type="email" required>
 
       <label for="phone">Phone Number</label>
-      <input id="phone" type="tel" required maxlength="30" autocomplete="tel">
+      <input id="phone" type="tel" required maxlength="30">
 
       <label for="nationality">Nationality</label>
       <input id="nationality" required maxlength="100">
 
       <label for="passport">Passport Number</label>
-      <input id="passport" required maxlength="50" autocomplete="off">
+      <input id="passport" required maxlength="50">
 
       <label for="dob">Date of Birth</label>
       <input id="dob" type="date" required>
 
       <h3 style="margin-top:28px">Visa Information</h3>
 
-      <label for="destination">Preferred Destination Country</label>
-      <input id="destination" required maxlength="100"
-             placeholder="Enter your preferred destination">
+      <label for="destination">Destination Country</label>
+      <select id="destination" required>
+        <option value="">Loading countries...</option>
+      </select>
 
       <label for="visaType">Visa Type</label>
-      <select id="visaType" required>
-        <option value="">Loading visa types...</option>
+      <select id="visaType" required disabled>
+        <option value="">Choose a destination first</option>
       </select>
 
       <button id="submitButton" type="submit">
@@ -132,13 +116,49 @@
   const form = document.getElementById("applicationForm");
   const loginNotice = document.getElementById("loginNotice");
   const submitButton = document.getElementById("submitButton");
+  const countrySelect = document.getElementById("destination");
+  const visaSelect = document.getElementById("visaType");
 
-  let db = null;
-  let currentUser = null;
+  let db;
+  let currentUser;
+  let countries = [];
+
+  async function backendRequest(payload) {
+    const { data: sessionData, error: sessionError } =
+      await db.auth.getSession();
+
+    if (sessionError) throw sessionError;
+
+    const token = sessionData.session?.access_token;
+
+    if (!token) {
+      throw new Error("Please sign in again.");
+    }
+
+    const response = await fetch(window.SUPABASE_FUNCTION_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + token,
+        "apikey": window.SUPABASE_ANON_KEY
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || result.error) {
+      throw new Error(result.error || "The request could not be completed.");
+    }
+
+    return result;
+  }
 
   async function startApplication() {
     try {
-      if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) {
+      if (!window.SUPABASE_URL ||
+          !window.SUPABASE_ANON_KEY ||
+          !window.SUPABASE_FUNCTION_URL) {
         throw new Error("Supabase configuration is missing.");
       }
 
@@ -158,57 +178,110 @@
       currentUser = data.user;
       form.classList.remove("hidden");
 
+      document.getElementById("email").value =
+        currentUser.email || "";
+
       const profile = currentUser.user_metadata || {};
       document.getElementById("firstName").value =
         profile.first_name || "";
       document.getElementById("lastName").value =
         profile.last_name || "";
 
-      await loadVisaTypes();
+      await loadCountries();
 
     } catch (error) {
       message.textContent = error.message;
     }
   }
 
-  async function loadVisaTypes() {
-    const select = document.getElementById("visaType");
+  async function loadCountries() {
+    countrySelect.innerHTML =
+      '<option value="">Loading countries...</option>';
 
-    const { data, error } = await db
-      .from("visa_types")
-      .select("id, visa_name, visa_fee, processing_days")
-      .order("visa_name");
+    const result = await backendRequest({
+      action: "countries"
+    });
 
-    if (error) {
-      select.innerHTML = '<option value="">Could not load visa types</option>';
-      message.textContent =
-        "Unable to load visa types: " + error.message;
-      return;
-    }
+    countries = result.countries || [];
 
-    select.innerHTML = '<option value="">Choose a visa type</option>';
+    countrySelect.innerHTML =
+      '<option value="">Choose a destination country</option>';
 
-    for (const visa of data || []) {
+    countries.forEach(country => {
       const option = document.createElement("option");
-      option.value = visa.id;
+      option.value = country.id;
+      option.textContent = country.country_name;
+      countrySelect.appendChild(option);
+    });
 
-      let label = visa.visa_name;
-      if (visa.visa_fee !== null) {
-        label += " - Fee: " + visa.visa_fee;
-      }
-      if (visa.processing_days !== null) {
-        label += " - " + visa.processing_days + " processing days";
-      }
-
-      option.textContent = label;
-      select.appendChild(option);
-    }
-
-    if (!data || data.length === 0) {
+    if (countries.length === 0) {
       message.textContent =
-        "No visa types are available yet. Please contact the administrator.";
+        "No destination countries are available yet.";
     }
   }
+
+  async function loadVisaTypes(countryId) {
+    visaSelect.disabled = true;
+    visaSelect.innerHTML =
+      '<option value="">Loading visa types...</option>';
+
+    try {
+      const result = await backendRequest({
+        action: "visa_types",
+        country_id: countryId
+      });
+
+      const visaTypes = result.visa_types || [];
+
+      visaSelect.innerHTML =
+        '<option value="">Choose a visa type</option>';
+
+      visaTypes.forEach(visa => {
+        const option = document.createElement("option");
+        option.value = visa.id;
+
+        let label = visa.visa_name;
+
+        if (visa.visa_fee !== null) {
+          label += " - Fee: " + visa.visa_fee;
+        }
+
+        if (visa.processing_days !== null) {
+          label += " - " + visa.processing_days + " days";
+        }
+
+        option.textContent = label;
+        visaSelect.appendChild(option);
+      });
+
+      visaSelect.disabled = false;
+
+      if (visaTypes.length === 0) {
+        message.textContent =
+          "No visa types are available for this country yet.";
+      } else {
+        message.textContent = "";
+      }
+
+    } catch (error) {
+      visaSelect.innerHTML =
+        '<option value="">Could not load visa types</option>';
+      message.textContent = error.message;
+    }
+  }
+
+  countrySelect.addEventListener("change", async function() {
+    const countryId = countrySelect.value;
+
+    visaSelect.innerHTML =
+      '<option value="">Choose a destination first</option>';
+
+    visaSelect.disabled = true;
+
+    if (countryId) {
+      await loadVisaTypes(countryId);
+    }
+  });
 
   form.addEventListener("submit", async function(event) {
     event.preventDefault();
@@ -219,17 +292,21 @@
     }
 
     const payload = {
+      action: "submit",
       first_name: document.getElementById("firstName").value.trim(),
       last_name: document.getElementById("lastName").value.trim(),
+      email: document.getElementById("email").value.trim(),
       phone: document.getElementById("phone").value.trim(),
       nationality: document.getElementById("nationality").value.trim(),
       passport_number: document.getElementById("passport").value.trim(),
       date_of_birth: document.getElementById("dob").value,
-      preferred_country: document.getElementById("destination").value.trim(),
-      visa_type_id: document.getElementById("visaType").value
+      country_id: countrySelect.value,
+      visa_type_id: visaSelect.value
     };
 
-    if (Object.values(payload).some(value => !value)) {
+    if (Object.entries(payload).some(([key, value]) =>
+      key !== "action" && !value
+    )) {
       message.textContent = "Please complete every field.";
       return;
     }
@@ -238,26 +315,21 @@
     message.textContent = "Submitting your application...";
 
     try {
-      const { data, error } = await db.functions.invoke(
-        "submit-visa-application",
-        { body: payload }
-      );
+      const result = await backendRequest(payload);
 
-      if (error) throw error;
-      if (!data || data.error) {
-        throw new Error(data?.error || "Application submission failed.");
-      }
+      const reference =
+        result.application_id || result.id || "Submitted";
 
       message.textContent =
-        "Your application was submitted successfully. Your application reference is: " +
-        (data.application_id || data.id || "Submitted");
+        "Your application was submitted successfully. Reference: " +
+        reference;
 
       form.reset();
+      visaSelect.disabled = true;
 
     } catch (error) {
       console.error(error);
-      message.textContent =
-        "Submission failed: " + (error.message || "Please try again.");
+      message.textContent = "Submission failed: " + error.message;
     } finally {
       submitButton.disabled = false;
     }
