@@ -32,7 +32,12 @@
 
     .logo { font-size: 20px; font-weight: bold; }
 
-    nav { display: flex; flex-wrap: wrap; gap: 17px; align-items: center; }
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 17px;
+      align-items: center;
+    }
 
     nav a {
       color: white;
@@ -132,7 +137,10 @@
       cursor: pointer;
     }
 
-    .auth-box button:disabled { opacity: .6; cursor: not-allowed; }
+    .auth-box button:disabled {
+      opacity: .6;
+      cursor: not-allowed;
+    }
 
     .switch { margin-top: 17px; font-size: 14px; }
 
@@ -233,10 +241,10 @@
 
     <div id="registerForm">
       <h3>Create Your Account</h3>
-      <input type="text" id="firstName" placeholder="First Name">
-      <input type="text" id="lastName" placeholder="Last Name">
-      <input type="email" id="registerEmail" placeholder="Email Address">
-      <input type="password" id="registerPassword" placeholder="Create Password (minimum 8 characters)">
+      <input type="text" id="firstName" placeholder="First Name" autocomplete="given-name">
+      <input type="text" id="lastName" placeholder="Last Name" autocomplete="family-name">
+      <input type="email" id="registerEmail" placeholder="Email Address" autocomplete="email">
+      <input type="password" id="registerPassword" placeholder="Create Password (minimum 8 characters)" autocomplete="new-password">
 
       <button id="registerButton" type="button" onclick="registerUser()">
         Create Account
@@ -250,8 +258,8 @@
 
     <div id="loginForm" class="hidden">
       <h3>Applicant Sign In</h3>
-      <input type="email" id="loginEmail" placeholder="Email Address">
-      <input type="password" id="loginPassword" placeholder="Password">
+      <input type="email" id="loginEmail" placeholder="Email Address" autocomplete="email">
+      <input type="password" id="loginPassword" placeholder="Password" autocomplete="current-password">
 
       <button id="loginButton" type="button" onclick="loginUser()">
         Sign In
@@ -271,7 +279,7 @@
       <h3>Reset Your Password</h3>
       <p>Enter your registered email address. We will send you a password reset link.</p>
 
-      <input type="email" id="forgotEmail" placeholder="Registered Email Address">
+      <input type="email" id="forgotEmail" placeholder="Registered Email Address" autocomplete="email">
 
       <button id="forgotButton" type="button" onclick="sendPasswordReset()">
         Send Reset Link
@@ -284,8 +292,10 @@
 
     <div id="newPasswordForm" class="hidden">
       <h3>Create a New Password</h3>
-      <input type="password" id="newPassword" placeholder="New Password (minimum 8 characters)">
-      <input type="password" id="confirmNewPassword" placeholder="Confirm New Password">
+      <p>Enter your new password below.</p>
+
+      <input type="password" id="newPassword" placeholder="New Password (minimum 8 characters)" autocomplete="new-password">
+      <input type="password" id="confirmNewPassword" placeholder="Confirm New Password" autocomplete="new-password">
 
       <button id="updatePasswordButton" type="button" onclick="updatePassword()">
         Save New Password
@@ -315,6 +325,7 @@
 
 <script>
   let supabaseClient = null;
+  let recoveryMode = false;
 
   const message = document.getElementById("message");
 
@@ -325,7 +336,15 @@
 
     supabaseClient = window.supabase.createClient(
       window.SUPABASE_URL,
-      window.SUPABASE_ANON_KEY
+      window.SUPABASE_ANON_KEY,
+      {
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+          detectSessionInUrl: true,
+          flowType: "implicit"
+        }
+      }
     );
   } catch (error) {
     message.textContent =
@@ -360,12 +379,15 @@
   function showForgotPassword() {
     hideAllForms();
     document.getElementById("forgotForm").classList.remove("hidden");
+
     document.getElementById("forgotEmail").value =
       document.getElementById("loginEmail").value.trim();
+
     message.textContent = "";
   }
 
   function showNewPasswordForm() {
+    recoveryMode = true;
     hideAllForms();
     document.getElementById("newPasswordForm").classList.remove("hidden");
     message.textContent = "Enter and confirm your new password.";
@@ -422,7 +444,7 @@
           "Registration received. Please check your email and confirm your account before signing in.";
       }
     } catch (error) {
-      message.textContent = error.message;
+      message.textContent = error.message || "Unable to create your account.";
     } finally {
       button.disabled = false;
     }
@@ -451,9 +473,11 @@
 
       if (data.session) {
         window.location.href = "apply.html";
+      } else {
+        message.textContent = "Sign-in did not complete. Please try again.";
       }
     } catch (error) {
-      message.textContent = error.message;
+      message.textContent = error.message || "Unable to sign in. Please try again.";
     } finally {
       button.disabled = false;
     }
@@ -486,7 +510,7 @@
       message.textContent =
         "If an account exists for that email, a password reset link will be sent. Please check your inbox.";
     } catch (error) {
-      message.textContent = error.message;
+      message.textContent = error.message || "Unable to send the reset email.";
     } finally {
       button.disabled = false;
     }
@@ -509,6 +533,11 @@
       return;
     }
 
+    if (!recoveryMode) {
+      message.textContent = "Please open a fresh password reset email before changing your password.";
+      return;
+    }
+
     button.disabled = true;
     message.textContent = "Updating your password...";
 
@@ -519,15 +548,15 @@
 
       if (error) throw error;
 
-      message.textContent =
-        "Your password has been updated successfully. You can now sign in.";
+      recoveryMode = false;
 
       await supabaseClient.auth.signOut();
+
       showLogin();
       message.textContent =
         "Your password has been updated successfully. Please sign in with your new password.";
     } catch (error) {
-      message.textContent = error.message;
+      message.textContent = error.message || "Unable to update your password.";
     } finally {
       button.disabled = false;
     }
@@ -544,6 +573,7 @@
         return;
       }
 
+      recoveryMode = false;
       showRegister();
       message.textContent = "You have signed out.";
     });
@@ -552,40 +582,74 @@
     supabaseClient.auth.onAuthStateChange((event, session) => {
       if (event === "PASSWORD_RECOVERY") {
         showNewPasswordForm();
+        return;
+      }
+
+      if (event === "SIGNED_IN" && session && !recoveryMode) {
+        showSignedIn(session.user);
       }
     });
   }
 
-  async function checkSession() {
+  async function startPage() {
     if (!supabaseClient) return;
 
-    const { data, error } = await supabaseClient.auth.getUser();
+    const hash = window.location.hash;
 
-    if (!error && data.user) {
-      showSignedIn(data.user);
+    if (hash.includes("error=")) {
+      const params = new URLSearchParams(hash.substring(1));
+      const errorCode = params.get("error_code");
+      const errorDescription = params.get("error_description");
+
+      showLogin();
+
+      if (errorCode === "otp_expired" || errorCode === "access_denied") {
+        message.textContent =
+          "This email link has expired or has already been used. Please request a fresh email link and try again.";
+      } else {
+        message.textContent = errorDescription
+          ? decodeURIComponent(errorDescription.replace(/\+/g, " "))
+          : "The email link could not be verified. Please request a new link.";
+      }
+
+      return;
+    }
+
+    const hashParams = new URLSearchParams(hash.substring(1));
+    const isRecovery = hashParams.get("type") === "recovery";
+
+    if (isRecovery) {
+      showNewPasswordForm();
+    }
+
+    try {
+      const { data, error } = await supabaseClient.auth.getSession();
+
+      if (error) {
+        message.textContent = error.message;
+        if (!isRecovery) showRegister();
+        return;
+      }
+
+      if (isRecovery) {
+        showNewPasswordForm();
+        return;
+      }
+
+      if (data.session) {
+        showSignedIn(data.session.user);
+      } else {
+        showRegister();
+      }
+    } catch (error) {
+      message.textContent =
+        "Unable to check your account session. Please refresh the page.";
+      console.error(error);
     }
   }
 
-  (async function startPage() {
-  if (!supabaseClient) return;
+  startPage();
+</script>
 
-  const { data, error } = await supabaseClient.auth.getSession();
-
-  if (error) {
-    message.textContent = error.message;
-    return;
-  }
-
-  const session = data.session;
-
-  if (session && window.location.hash.includes("type=recovery")) {
-    showNewPasswordForm();
-    return;
-  }
-
-  if (session) {
-    showSignedIn(session.user);
-  } else {
-    showRegister();
-  }
-})();
+</body>
+</html>
