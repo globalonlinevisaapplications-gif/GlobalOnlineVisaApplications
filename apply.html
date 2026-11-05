@@ -4,33 +4,43 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Visa Application</title>
+  <title>Global Online Visa Application</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
+
   <style>
+    * { box-sizing: border-box; }
+
     body {
       font-family: Arial, sans-serif;
       background: #f4f6f9;
       margin: 0;
-      padding: 20px;
+      padding: 14px;
+      color: #263445;
     }
+
     main {
-      max-width: 650px;
-      margin: 30px auto;
+      max-width: 680px;
+      margin: 20px auto;
     }
+
     .container {
       background: white;
-      padding: 25px;
+      padding: 22px;
       border-radius: 12px;
       box-shadow: 0 2px 12px #0001;
     }
+
+    h2 { color: #0756a5; }
+    h3 { margin-top: 28px; color: #0756a5; }
+
     label {
       display: block;
       margin-top: 16px;
       font-weight: bold;
     }
+
     input, select, button {
-      box-sizing: border-box;
       width: 100%;
       padding: 12px;
       margin-top: 7px;
@@ -38,36 +48,115 @@
       border-radius: 6px;
       font-size: 16px;
     }
+
+    input[type="file"] {
+      background: #fafafa;
+      font-size: 14px;
+    }
+
     button {
       background: #0756a5;
       color: white;
       border: 0;
       margin-top: 24px;
       cursor: pointer;
+      font-weight: bold;
     }
+
     button:disabled {
       opacity: 0.6;
+      cursor: not-allowed;
     }
+
+    .hidden { display: none !important; }
+
+    .section {
+      background: #f8fafc;
+      padding: 14px;
+      border-radius: 8px;
+      margin-top: 14px;
+    }
+
+    .hint {
+      font-size: 13px;
+      color: #596779;
+      line-height: 1.5;
+    }
+
+    .fee-box {
+      background: #eef5ff;
+      padding: 16px;
+      border-radius: 8px;
+      margin-top: 22px;
+    }
+
+    .fee-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 10px 0;
+    }
+
+    .fee-total {
+      border-top: 1px solid #c8d9ed;
+      padding-top: 12px;
+      font-size: 19px;
+      font-weight: bold;
+    }
+
     #message {
       margin-top: 18px;
       overflow-wrap: anywhere;
+      line-height: 1.5;
     }
-    .hidden {
-      display: none;
+
+    .success {
+      color: #176b36;
+      background: #edfaef;
+      padding: 14px;
+      border-radius: 8px;
+    }
+
+    .error { color: #b42318; }
+
+    .whatsapp {
+      display: block;
+      background: #168b4b;
+      color: white;
+      text-decoration: none;
+      text-align: center;
+      padding: 15px;
+      margin-top: 18px;
+      border-radius: 7px;
+      font-weight: bold;
+    }
+
+    .note {
+      background: #fff8e7;
+      padding: 12px;
+      border-radius: 7px;
+      font-size: 13px;
+      line-height: 1.5;
+      margin-top: 14px;
     }
   </style>
 </head>
+
 <body>
 <main>
   <div class="container">
+
     <h2>Global Online Visa Application</h2>
+    <p>Complete the application details below.</p>
+
     <p id="loginNotice" class="hidden">
       Please sign in before applying.
       <a href="index.html">Go to sign in</a>
     </p>
 
     <form id="applicationForm" class="hidden">
-      <h3>Personal Information</h3>
+
+      <h3>1. Personal Information</h3>
 
       <label for="firstName">First Name</label>
       <input id="firstName" required maxlength="100">
@@ -84,13 +173,74 @@
       <label for="nationality">Nationality</label>
       <input id="nationality" required maxlength="100">
 
-      <label for="passport">Passport Number</label>
-      <input id="passport" required maxlength="50">
-
       <label for="dob">Date of Birth</label>
       <input id="dob" type="date" required>
 
-      <h3 style="margin-top:28px">Visa Information</h3>
+      <h3>2. Passport Information</h3>
+
+      <label for="hasPassport">Do you have a passport?</label>
+      <select id="hasPassport" required>
+        <option value="yes">Yes</option>
+        <option value="no">No</option>
+      </select>
+
+      <div id="passportSection" class="section">
+        <label for="passport">Passport Number</label>
+        <input id="passport" maxlength="50">
+
+        <label for="passportPhoto">Upload Passport Photo</label>
+        <input
+          id="passportPhoto"
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+        >
+        <p class="hint">Accepted formats: JPG, PNG or WEBP. Maximum 8 MB.</p>
+      </div>
+
+      <h3>3. Refugee Information</h3>
+
+      <label for="isRefugee">Are you a refugee?</label>
+      <select id="isRefugee" required>
+        <option value="no">No</option>
+        <option value="yes">Yes</option>
+      </select>
+
+      <div id="refugeeSection" class="section hidden">
+
+        <p class="hint">
+          Enter at least one identification number. If you enter both,
+          upload both supporting documents.
+        </p>
+
+        <label for="refugeeCard">Refugee Card Number</label>
+        <input id="refugeeCard" maxlength="100">
+
+        <label for="refugeeCardFile">Upload Refugee Card</label>
+        <input
+          id="refugeeCardFile"
+          type="file"
+          accept="image/jpeg,image/png,image/webp,application/pdf"
+        >
+
+        <label for="manifestNumber">UN Manifest Number</label>
+        <input id="manifestNumber" maxlength="100">
+
+        <label for="manifestFile">Upload UN Manifest Document</label>
+        <input
+          id="manifestFile"
+          type="file"
+          accept="image/jpeg,image/png,image/webp,application/pdf"
+        >
+
+        <p class="hint">Accepted formats: JPG, PNG, WEBP or PDF. Maximum 8 MB per file.</p>
+      </div>
+
+      <div class="note">
+        Applicants without a passport and those who are not refugees
+        may still submit an application.
+      </div>
+
+      <h3>4. Visa Information</h3>
 
       <label for="destination">Destination Country</label>
       <select id="destination" required>
@@ -102,12 +252,67 @@
         <option value="">Choose a destination first</option>
       </select>
 
+      <div class="fee-box">
+        <h3 style="margin-top:0">5. Application Fees</h3>
+
+        <div class="fee-row">
+          <span>Official visa fee</span>
+          <strong id="visaFee">To be confirmed</strong>
+        </div>
+
+        <div class="fee-row">
+          <span>Our service fee</span>
+          <strong id="serviceFee">Select country</strong>
+        </div>
+
+        <div class="fee-row">
+          <span>Processing time</span>
+          <strong id="processingTime">To be confirmed</strong>
+        </div>
+
+        <div class="fee-row fee-total">
+          <span>Total</span>
+          <strong id="totalFee">To be confirmed</strong>
+        </div>
+
+        <p class="hint">
+          All amounts are in USD. Service fees are charged separately
+          from official government visa fees.
+        </p>
+      </div>
+
+      <div class="note">
+        Payment is arranged after application submission through
+        WhatsApp. Submission does not mean payment has been completed.
+      </div>
+
       <button id="submitButton" type="submit">
         Submit Visa Application
       </button>
+
     </form>
 
     <div id="message" role="status" aria-live="polite"></div>
+
+    <div id="paymentSection" class="hidden">
+      <div class="success">
+        <h3>Application Submitted Successfully</h3>
+        <p id="applicationReference"></p>
+        <p id="paymentSummary"></p>
+        <p><strong>Payment status: Pending</strong></p>
+      </div>
+
+      <a
+        id="whatsappButton"
+        class="whatsapp"
+        href="#"
+        target="_blank"
+        rel="noopener"
+      >
+        Ready for Payment? Contact Us on WhatsApp
+      </a>
+    </div>
+
   </div>
 </main>
 
@@ -116,12 +321,95 @@
   const form = document.getElementById("applicationForm");
   const loginNotice = document.getElementById("loginNotice");
   const submitButton = document.getElementById("submitButton");
+
   const countrySelect = document.getElementById("destination");
   const visaSelect = document.getElementById("visaType");
+
+  const hasPassportSelect = document.getElementById("hasPassport");
+  const isRefugeeSelect = document.getElementById("isRefugee");
+
+  const passportSection = document.getElementById("passportSection");
+  const refugeeSection = document.getElementById("refugeeSection");
 
   let db;
   let currentUser;
   let countries = [];
+  let selectedVisa = null;
+  let submittedWhatsAppMessage = "";
+
+  const MAX_FILE_SIZE = 8 * 1024 * 1024;
+  const WHATSAPP_NUMBER = "254751896015";
+
+  function serviceFee(countryName) {
+    const name = countryName.trim().toLowerCase();
+
+    const africa = [
+      "kenya", "uganda", "tanzania", "rwanda", "burundi",
+      "ethiopia", "ghana", "nigeria", "south africa", "zambia",
+      "zimbabwe", "malawi", "mozambique", "botswana", "namibia",
+      "angola", "cameroon", "senegal", "somalia", "sudan",
+      "south sudan", "egypt", "morocco", "algeria", "tunisia",
+      "libya", "mauritius", "seychelles", "madagascar"
+    ];
+
+    const asia = [
+      "afghanistan", "china", "india", "japan", "south korea",
+      "north korea", "thailand", "malaysia", "singapore",
+      "indonesia", "philippines", "vietnam", "nepal",
+      "bangladesh", "pakistan", "sri lanka", "maldives",
+      "cambodia", "laos", "myanmar", "mongolia", "taiwan"
+    ];
+
+    const middleEast = [
+      "united arab emirates", "saudi arabia", "qatar",
+      "kuwait", "bahrain", "oman", "yemen", "iraq",
+      "iran", "jordan", "lebanon", "israel", "syria",
+      "palestine", "turkey"
+    ];
+
+    const europe = [
+      "united kingdom", "france", "germany", "italy",
+      "spain", "portugal", "netherlands", "belgium",
+      "switzerland", "austria", "sweden", "norway",
+      "denmark", "finland", "ireland", "poland",
+      "greece", "romania", "bulgaria", "croatia",
+      "serbia", "ukraine", "russia", "iceland",
+      "czech republic", "slovakia", "hungary",
+      "luxembourg", "malta", "cyprus", "estonia",
+      "latvia", "lithuania", "slovenia", "albania",
+      "andorra", "monaco", "montenegro",
+      "north macedonia", "moldova", "belarus"
+    ];
+
+    const premium = [
+      "united states", "canada", "australia", "new zealand"
+    ];
+
+    if (premium.includes(name)) return 960;
+    if (middleEast.includes(name)) return 750;
+    if (asia.includes(name)) return 600;
+    if (europe.includes(name)) return 450;
+    if (africa.includes(name)) return 150;
+
+    return 0;
+  }
+
+  function updateConditionalFields() {
+    const hasPassport = hasPassportSelect.value === "yes";
+    const isRefugee = isRefugeeSelect.value === "yes";
+
+    passportSection.classList.toggle("hidden", !hasPassport);
+    refugeeSection.classList.toggle("hidden", !isRefugee);
+
+    document.getElementById("passport").required = hasPassport;
+    document.getElementById("passportPhoto").required = hasPassport;
+
+    document.getElementById("refugeeCard").required = false;
+    document.getElementById("manifestNumber").required = false;
+  }
+
+  hasPassportSelect.addEventListener("change", updateConditionalFields);
+  isRefugeeSelect.addEventListener("change", updateConditionalFields);
 
   async function backendRequest(payload) {
     const { data: sessionData, error: sessionError } =
@@ -147,11 +435,97 @@
 
     const result = await response.json();
 
-    if (!response.ok || result.error) {
+    if (!response.ok || result.error || result.success === false) {
       throw new Error(result.error || "The request could not be completed.");
     }
 
     return result;
+  }
+
+  async function fileToBase64(file) {
+    if (!file) return null;
+
+    if (file.size > MAX_FILE_SIZE) {
+      throw new Error(file.name + " is larger than 8 MB.");
+    }
+
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+
+      reader.onload = () => {
+        const result = String(reader.result);
+        resolve(result.split(",")[1]);
+      };
+
+      reader.onerror = () => {
+        reject(new Error("Could not read " + file.name));
+      };
+
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function addDocument(documents, inputId, documentType) {
+    const file = document.getElementById(inputId).files[0];
+
+    if (!file) return;
+
+    const allowed = {
+      passport_photo: ["image/jpeg", "image/png", "image/webp"],
+      refugee_card: [
+        "image/jpeg", "image/png", "image/webp", "application/pdf"
+      ],
+      un_manifest: [
+        "image/jpeg", "image/png", "image/webp", "application/pdf"
+      ]
+    };
+
+    if (!allowed[documentType].includes(file.type)) {
+      throw new Error("Unsupported file format for " + file.name);
+    }
+
+    documents.push({
+      document_type: documentType,
+      file_name: file.name,
+      content_type: file.type,
+      data: await fileToBase64(file)
+    });
+  }
+
+  function updateFees() {
+    const country = countries.find(
+      item => item.id === countrySelect.value
+    );
+
+    const fee = country ? serviceFee(country.country_name) : 0;
+
+    document.getElementById("serviceFee").textContent =
+      fee ? "USD " + fee.toFixed(2) :
+      country ? "Not configured" : "Select country";
+
+    if (selectedVisa) {
+      const officialFee = Number(selectedVisa.visa_fee || 0);
+
+      document.getElementById("visaFee").textContent =
+        officialFee > 0
+          ? "USD " + officialFee.toFixed(2)
+          : "To be confirmed";
+
+      document.getElementById("processingTime").textContent =
+        Number(selectedVisa.processing_days) > 0
+          ? selectedVisa.processing_days + " days"
+          : "To be confirmed";
+
+      document.getElementById("totalFee").textContent =
+        fee && officialFee >= 0
+          ? "USD " + (fee + officialFee).toFixed(2) +
+            (officialFee === 0 ? " + official fee to be confirmed" : "")
+          : "To be confirmed";
+    } else {
+      document.getElementById("visaFee").textContent = "To be confirmed";
+      document.getElementById("processingTime").textContent = "To be confirmed";
+      document.getElementById("totalFee").textContent = "To be confirmed";
+    }
   }
 
   async function startApplication() {
@@ -182,15 +556,18 @@
         currentUser.email || "";
 
       const profile = currentUser.user_metadata || {};
+
       document.getElementById("firstName").value =
         profile.first_name || "";
+
       document.getElementById("lastName").value =
         profile.last_name || "";
 
+      updateConditionalFields();
       await loadCountries();
 
     } catch (error) {
-      message.textContent = error.message;
+      message.textContent = error.message || "Could not start the application.";
     }
   }
 
@@ -215,15 +592,18 @@
     });
 
     if (countries.length === 0) {
-      message.textContent =
-        "No destination countries are available yet.";
+      message.textContent = "No destination countries are available yet.";
     }
   }
 
   async function loadVisaTypes(countryId) {
     visaSelect.disabled = true;
+    selectedVisa = null;
+
     visaSelect.innerHTML =
       '<option value="">Loading visa types...</option>';
+
+    updateFees();
 
     try {
       const result = await backendRequest({
@@ -240,17 +620,16 @@
         const option = document.createElement("option");
         option.value = visa.id;
 
-        let label = visa.visa_name;
+        const officialFee = Number(visa.visa_fee || 0);
+        const days = Number(visa.processing_days || 0);
 
-        if (visa.visa_fee !== null) {
-          label += " - Fee: " + visa.visa_fee;
-        }
+        option.textContent =
+          visa.visa_name +
+          (officialFee > 0
+            ? " - Official fee: USD " + officialFee
+            : " - Official fee to be confirmed") +
+          (days > 0 ? " - " + days + " days" : "");
 
-        if (visa.processing_days !== null) {
-          label += " - " + visa.processing_days + " days";
-        }
-
-        option.textContent = label;
         visaSelect.appendChild(option);
       });
 
@@ -266,6 +645,7 @@
     } catch (error) {
       visaSelect.innerHTML =
         '<option value="">Could not load visa types</option>';
+
       message.textContent = error.message;
     }
   }
@@ -277,9 +657,33 @@
       '<option value="">Choose a destination first</option>';
 
     visaSelect.disabled = true;
+    selectedVisa = null;
+
+    updateFees();
 
     if (countryId) {
       await loadVisaTypes(countryId);
+    }
+  });
+
+  visaSelect.addEventListener("change", function() {
+    selectedVisa = null;
+
+    if (visaSelect.value) {
+      backendRequest({
+        action: "visa_types",
+        country_id: countrySelect.value
+      }).then(result => {
+        selectedVisa = (result.visa_types || []).find(
+          visa => visa.id === visaSelect.value
+        ) || null;
+
+        updateFees();
+      }).catch(error => {
+        message.textContent = error.message;
+      });
+    } else {
+      updateFees();
     }
   });
 
@@ -291,45 +695,146 @@
       return;
     }
 
-    const payload = {
-      action: "submit",
-      first_name: document.getElementById("firstName").value.trim(),
-      last_name: document.getElementById("lastName").value.trim(),
-      email: document.getElementById("email").value.trim(),
-      phone: document.getElementById("phone").value.trim(),
-      nationality: document.getElementById("nationality").value.trim(),
-      passport_number: document.getElementById("passport").value.trim(),
-      date_of_birth: document.getElementById("dob").value,
-      country_id: countrySelect.value,
-      visa_type_id: visaSelect.value
-    };
+    const hasPassport = hasPassportSelect.value === "yes";
+    const isRefugee = isRefugeeSelect.value === "yes";
 
-    if (Object.entries(payload).some(([key, value]) =>
-      key !== "action" && !value
-    )) {
-      message.textContent = "Please complete every field.";
+    const passportNumber =
+      document.getElementById("passport").value.trim();
+
+    const refugeeCardNumber =
+      document.getElementById("refugeeCard").value.trim();
+
+    const manifestNumber =
+      document.getElementById("manifestNumber").value.trim();
+
+    if (hasPassport && !passportNumber) {
+      message.textContent = "Please enter your passport number.";
+      return;
+    }
+
+    if (hasPassport &&
+        !document.getElementById("passportPhoto").files[0]) {
+      message.textContent = "Please upload your passport photo.";
+      return;
+    }
+
+    if (isRefugee && !refugeeCardNumber && !manifestNumber) {
+      message.textContent =
+        "Please enter a refugee card number or UN manifest number.";
+      return;
+    }
+
+    if (isRefugee && refugeeCardNumber &&
+        !document.getElementById("refugeeCardFile").files[0]) {
+      message.textContent = "Please upload your refugee card.";
+      return;
+    }
+
+    if (isRefugee && manifestNumber &&
+        !document.getElementById("manifestFile").files[0]) {
+      message.textContent = "Please upload your UN manifest document.";
+      return;
+    }
+
+    const selectedCountry = countries.find(
+      item => item.id === countrySelect.value
+    );
+
+    if (!selectedCountry || !visaSelect.value) {
+      message.textContent = "Please select a country and visa type.";
+      return;
+    }
+
+    if (!serviceFee(selectedCountry.country_name)) {
+      message.textContent =
+        "The service fee for this destination has not yet been configured. Please contact support.";
       return;
     }
 
     submitButton.disabled = true;
-    message.textContent = "Submitting your application...";
+    message.textContent = "Preparing your application and documents...";
 
     try {
+      const documents = [];
+
+      if (hasPassport) {
+        await addDocument(documents, "passportPhoto", "passport_photo");
+      }
+
+      if (isRefugee && refugeeCardNumber) {
+        await addDocument(documents, "refugeeCardFile", "refugee_card");
+      }
+
+      if (isRefugee && manifestNumber) {
+        await addDocument(documents, "manifestFile", "un_manifest");
+      }
+
+      const payload = {
+        action: "submit",
+
+        first_name: document.getElementById("firstName").value.trim(),
+        last_name: document.getElementById("lastName").value.trim(),
+        email: document.getElementById("email").value.trim(),
+        phone: document.getElementById("phone").value.trim(),
+        nationality: document.getElementById("nationality").value.trim(),
+        date_of_birth: document.getElementById("dob").value,
+
+        has_passport: hasPassport,
+        is_refugee: isRefugee,
+
+        passport_number: hasPassport ? passportNumber : null,
+        refugee_card_number: isRefugee ? refugeeCardNumber || null : null,
+        un_manifest_number: isRefugee ? manifestNumber || null : null,
+
+        country_id: countrySelect.value,
+        visa_type_id: visaSelect.value,
+
+        documents: documents
+      };
+
+      message.textContent = "Submitting your application...";
+
       const result = await backendRequest(payload);
 
-      const reference =
-        result.application_id || result.id || "Submitted";
+      const reference = result.reference || result.application_id;
+      const officialFee = Number(result.official_visa_fee || 0);
+      const service = Number(result.service_fee || 0);
+      const total = Number(result.total_amount || service + officialFee);
 
-      message.textContent =
-        "Your application was submitted successfully. Reference: " +
-        reference;
+      document.getElementById("applicationReference").textContent =
+        "Application reference: " + reference;
 
-      form.reset();
-      visaSelect.disabled = true;
+      document.getElementById("paymentSummary").textContent =
+        "Destination: " + result.destination_country +
+        " | Visa: " + result.visa_type +
+        " | Official visa fee: " +
+        (officialFee > 0 ? "USD " + officialFee.toFixed(2) : "To be confirmed") +
+        " | Service fee: USD " + service.toFixed(2) +
+        " | Total currently calculated: USD " + total.toFixed(2);
+
+      submittedWhatsAppMessage = result.whatsapp_message ||
+        "Hello, I am ready to pay for my visa application. Reference: " +
+        reference + ". Destination: " + result.destination_country +
+        ". Visa type: " + result.visa_type +
+        ". Service fee: USD " + service.toFixed(2) +
+        ". Official visa fee: " +
+        (officialFee > 0 ? "USD " + officialFee.toFixed(2) : "To be confirmed") +
+        ". Total: USD " + total.toFixed(2) + ".";
+
+      document.getElementById("whatsappButton").href =
+        "https://wa.me/" + WHATSAPP_NUMBER +
+        "?text=" + encodeURIComponent(submittedWhatsAppMessage);
+
+      form.classList.add("hidden");
+      document.getElementById("paymentSection").classList.remove("hidden");
+
+      message.textContent = "";
 
     } catch (error) {
       console.error(error);
-      message.textContent = "Submission failed: " + error.message;
+      message.textContent =
+        "Submission failed: " + (error.message || "Please try again.");
+      message.classList.add("error");
     } finally {
       submitButton.disabled = false;
     }
@@ -337,5 +842,6 @@
 
   startApplication();
 </script>
+
 </body>
 </html>
