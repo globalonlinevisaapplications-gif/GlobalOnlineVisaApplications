@@ -566,8 +566,26 @@
     }
   }
 
-  checkSession();
-</script>
+  (async function startPage() {
+  if (!supabaseClient) return;
 
-</body>
-</html>
+  const { data, error } = await supabaseClient.auth.getSession();
+
+  if (error) {
+    message.textContent = error.message;
+    return;
+  }
+
+  const session = data.session;
+
+  if (session && window.location.hash.includes("type=recovery")) {
+    showNewPasswordForm();
+    return;
+  }
+
+  if (session) {
+    showSignedIn(session.user);
+  } else {
+    showRegister();
+  }
+})();
