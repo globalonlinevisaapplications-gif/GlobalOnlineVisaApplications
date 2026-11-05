@@ -1,4 +1,648 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Admin | Global Online Visa Applications</title><link rel="stylesheet" href="styles.css"><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js"></script><script defer src="app.js"></script></head><body><header class="site-header"><a class="brand" href="index.html"><span class="brand-mark">G</span><span>GLOBAL ONLINE<br><small>VISA APPLICATIONS</small></span></a><nav><a href="index.html">View website</a><a href="apply.html">Enquiry form</a></nav></header><main class="page-wrap admin-wrap"><p class="eyebrow">PRIVATE AREA</p><h1>Administrator dashboard</h1><p class="lead narrow">Sign in with the administrator account you create in Supabase. Never share your password or Supabase service-role key.</p>
-<section id="login-panel" class="form-card"><h2>Administrator login</h2><form id="login-form"><label>Email address<input id="admin-email" type="email" autocomplete="username" required></label><label>Password<input id="admin-password" type="password" autocomplete="current-password" required></label><button class="btn btn-primary" type="submit">Sign in</button><p id="login-status" class="form-status" role="status"></p></form></section>
-<section id="dashboard-panel" hidden><div class="dashboard-top"><div><h2>Enquiries</h2><p class="muted">Customer enquiries stored in your private database.</p></div><button id="logout-btn" class="btn btn-outline" type="button">Sign out</button></div><p id="dashboard-status" class="form-status" role="status"></p><div class="table-wrap"><table><thead><tr><th>Date</th><th>Name / contact</th><th>Destination</th><th>Purpose</th><th>Message</th><th>Status</th></tr></thead><tbody id="applications-body"></tbody></table></div></section>
-<div class="notice"><strong>Setup required:</strong> the dashboard will work after you configure Supabase and run the database setup instructions in README.md. It is not protected until that setup is complete. Netlify Forms submissions can also be viewed in your Netlify site dashboard.</div></main><footer><p>© Global Online Visa Applications</p></footer></body></html>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard | Global Online Visa Applications</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f9;
+      margin: 0;
+      color: #222;
+    }
+    header {
+      background: #092b50;
+      color: white;
+      padding: 18px;
+    }
+    header a {
+      color: white;
+      text-decoration: none;
+      margin-right: 15px;
+    }
+    main {
+      max-width: 1100px;
+      margin: 25px auto;
+      padding: 15px;
+    }
+    .card {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px #0001;
+    }
+    label {
+      display: block;
+      margin-top: 12px;
+    }
+    input, select, button {
+      padding: 11px;
+      margin-top: 6px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 15px;
+    }
+    input, select {
+      box-sizing: border-box;
+      width: 100%;
+    }
+    button {
+      cursor: pointer;
+      background: #0756a5;
+      color: white;
+      border: none;
+    }
+    button:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+    }
+    .hidden {
+      display: none !important;
+    }
+    .table-wrap {
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 650px;
+    }
+    th, td {
+      padding: 11px;
+      border-bottom: 1px solid #ddd;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background: #edf2f7;
+    }
+    .status {
+      margin: 12px 0;
+      overflow-wrap: anywhere;
+    }
+    .danger {
+      background: #a52b2b;
+    }
+    .secondary {
+      background: #555;
+    }
+    .section-title {
+      margin-top: 28px;
+    }
+    .small {
+      font-size: 13px;
+      color: #555;
+    }
+    .actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <h2>GLOBAL ONLINE VISA APPLICATIONS</h2>
+  <nav>
+    <a href="index.html">View Website</a>
+    <a href="apply.html">Application Form</a>
+  </nav>
+</header>
+
+<main>
+
+  <section id="loginPanel" class="card">
+    <h1>Administrator Login</h1>
+    <p>Sign in using your authorized administrator account.</p>
+
+    <form id="loginForm">
+      <label for="email">Email Address</label>
+      <input id="email" type="email" required autocomplete="username">
+
+      <label for="password">Password</label>
+      <input id="password" type="password" required
+             autocomplete="current-password">
+
+      <button type="submit" id="loginButton">Sign In</button>
+    </form>
+
+    <p id="loginMessage" class="status" role="status"></p>
+  </section>
+
+  <section id="dashboardPanel" class="hidden">
+
+    <div class="card">
+      <div class="actions">
+        <h1 style="flex:1">Administrator Dashboard</h1>
+        <button id="refreshButton" type="button">Refresh</button>
+        <button id="logoutButton" class="danger" type="button">
+          Sign Out
+        </button>
+      </div>
+      <p id="dashboardMessage" class="status" role="status"></p>
+    </div>
+
+    <section class="card">
+      <h2>Visa Applications</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Reference</th>
+              <th>Applicant</th>
+              <th>Destination</th>
+              <th>Visa Type</th>
+              <th>Date</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="applicationsBody">
+            <tr><td colspan="7">Loading applications...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 class="section-title">Application Documents</h2>
+
+      <label for="documentApplication">
+        Select Application
+      </label>
+      <select id="documentApplication">
+        <option value="">Choose an application</option>
+      </select>
+
+      <div id="documentsList" class="status">
+        Select an application to view its documents.
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 class="section-title">Payment Records</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Payment Reference</th>
+              <th>Application</th>
+              <th>Amount</th>
+              <th>Payment Status</th>
+              <th>Payment Date</th>
+            </tr>
+          </thead>
+          <tbody id="paymentsBody">
+            <tr><td colspan="5">Loading payments...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </section>
+
+</main>
+
+<script>
+  const loginPanel = document.getElementById("loginPanel");
+  const dashboardPanel = document.getElementById("dashboardPanel");
+  const loginMessage = document.getElementById("loginMessage");
+  const dashboardMessage = document.getElementById("dashboardMessage");
+
+  const applicationsBody =
+    document.getElementById("applicationsBody");
+  const paymentsBody =
+    document.getElementById("paymentsBody");
+  const documentApplication =
+    document.getElementById("documentApplication");
+  const documentsList =
+    document.getElementById("documentsList");
+
+  let db = null;
+  let applications = [];
+
+  const allowedStatuses = [
+    "pending",
+    "under_review",
+    "additional_documents_required",
+    "approved",
+    "rejected"
+  ];
+
+  function readable(value) {
+    return String(value || "")
+      .replaceAll("_", " ")
+      .replace(/\b\w/g, letter => letter.toUpperCase());
+  }
+
+  function safeText(value) {
+    return value === null || value === undefined
+      ? ""
+      : String(value);
+  }
+
+  async function getToken() {
+    const { data, error } = await db.auth.getSession();
+
+    if (error) throw error;
+
+    const token = data.session?.access_token;
+
+    if (!token) {
+      throw new Error("Your session has expired. Please sign in.");
+    }
+
+    return token;
+  }
+
+  async function backendRequest(payload) {
+    const token = await getToken();
+
+    const response = await fetch(
+      window.SUPABASE_FUNCTION_URL,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + token,
+          "apikey": window.SUPABASE_ANON_KEY
+        },
+        body: JSON.stringify(payload)
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok || result.error) {
+      throw new Error(
+        result.error || "The request could not be completed."
+      );
+    }
+
+    return result;
+  }
+
+  async function checkSession() {
+    try {
+      if (!window.SUPABASE_URL ||
+          !window.SUPABASE_ANON_KEY ||
+          !window.SUPABASE_FUNCTION_URL) {
+        throw new Error("Supabase configuration is missing.");
+      }
+
+      db = window.supabase.createClient(
+        window.SUPABASE_URL,
+        window.SUPABASE_ANON_KEY
+      );
+
+      const { data, error } = await db.auth.getUser();
+
+      if (error || !data.user) {
+        loginPanel.classList.remove("hidden");
+        dashboardPanel.classList.add("hidden");
+        return;
+      }
+
+      await openDashboard();
+
+    } catch (error) {
+      loginMessage.textContent = error.message;
+    }
+  }
+
+  async function openDashboard() {
+    loginPanel.classList.add("hidden");
+    dashboardPanel.classList.remove("hidden");
+
+    await loadDashboard();
+  }
+
+  document.getElementById("loginForm")
+    .addEventListener("submit", async function(event) {
+      event.preventDefault();
+
+      const button = document.getElementById("loginButton");
+      button.disabled = true;
+      loginMessage.textContent = "Signing in...";
+
+      try {
+        const { data, error } = await db.auth.signInWithPassword({
+          email: document.getElementById("email").value.trim(),
+          password: document.getElementById("password").value
+        });
+
+        if (error) throw error;
+
+        if (!data.user) {
+          throw new Error("Login could not be completed.");
+        }
+
+        await openDashboard();
+
+      } catch (error) {
+        loginMessage.textContent = error.message;
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+  async function loadDashboard() {
+    dashboardMessage.textContent = "Loading dashboard...";
+
+    applicationsBody.innerHTML =
+      '<tr><td colspan="7">Loading...</td></tr>';
+
+    paymentsBody.innerHTML =
+      '<tr><td colspan="5">Loading...</td></tr>';
+
+    try {
+      const results = await Promise.all([
+        backendRequest({ action: "admin_applications" }),
+        backendRequest({ action: "admin_payments" })
+      ]);
+
+      applications = results[0].applications || [];
+      const payments = results[1].payments || [];
+
+      displayApplications();
+      displayPayments(payments);
+      fillApplicationSelector();
+
+      dashboardMessage.textContent =
+        "Dashboard information loaded.";
+
+    } catch (error) {
+      dashboardMessage.textContent = error.message;
+
+      applicationsBody.innerHTML =
+        '<tr><td colspan="7">Could not load applications.</td></tr>';
+
+      paymentsBody.innerHTML =
+        '<tr><td colspan="5">Could not load payments.</td></tr>';
+    }
+  }
+
+  function displayApplications() {
+    applicationsBody.innerHTML = "";
+
+    if (applications.length === 0) {
+      applicationsBody.innerHTML =
+        '<tr><td colspan="7">No applications found.</td></tr>';
+      return;
+    }
+
+    applications.forEach(application => {
+      const row = document.createElement("tr");
+
+      const applicant = application.applicants || {};
+      const visa = application.visa_types || {};
+
+      const name = [
+        applicant.first_name,
+        applicant.last_name
+      ].filter(Boolean).join(" ");
+
+      const destination =
+        application.suggested_country ||
+        application.preferred_country ||
+        application.countries?.country_name ||
+        "";
+
+      const date = application.application_date ||
+                   application.created_at || "";
+
+      const cells = [
+        safeText(application.id),
+        name || "Applicant",
+        destination,
+        visa.visa_name || "",
+        date ? new Date(date).toLocaleDateString() : "",
+        readable(application.status)
+      ];
+
+      cells.forEach(value => {
+        const cell = document.createElement("td");
+        cell.textContent = value;
+        row.appendChild(cell);
+      });
+
+      const actionCell = document.createElement("td");
+
+      const select = document.createElement("select");
+
+      allowedStatuses.forEach(status => {
+        const option = document.createElement("option");
+        option.value = status;
+        option.textContent = readable(status);
+        select.appendChild(option);
+      });
+
+      select.value = allowedStatuses.includes(application.status)
+        ? application.status
+        : "pending";
+
+      const saveButton = document.createElement("button");
+      saveButton.textContent = "Update";
+
+      saveButton.addEventListener("click", async () => {
+        await updateStatus(
+          application.id,
+          select.value,
+          saveButton
+        );
+      });
+
+      actionCell.appendChild(select);
+      actionCell.appendChild(saveButton);
+      row.appendChild(actionCell);
+
+      applicationsBody.appendChild(row);
+    });
+  }
+
+  async function updateStatus(applicationId, status, button) {
+    button.disabled = true;
+    dashboardMessage.textContent = "Updating application status...";
+
+    try {
+      await backendRequest({
+        action: "admin_update_status",
+        application_id: applicationId,
+        status: status
+      });
+
+      dashboardMessage.textContent =
+        "Application status updated successfully.";
+
+      await loadDashboard();
+
+    } catch (error) {
+      dashboardMessage.textContent = error.message;
+    } finally {
+      button.disabled = false;
+    }
+  }
+
+  function fillApplicationSelector() {
+    documentApplication.innerHTML =
+      '<option value="">Choose an application</option>';
+
+    applications.forEach(application => {
+      const option = document.createElement("option");
+      option.value = application.id;
+
+      const applicant = application.applicants || {};
+
+      option.textContent =
+        (applicant.first_name || "Applicant") +
+        " - " + application.id;
+
+      documentApplication.appendChild(option);
+    });
+  }
+
+  documentApplication.addEventListener("change", async function() {
+    const applicationId = documentApplication.value;
+
+    if (!applicationId) {
+      documentsList.textContent =
+        "Select an application to view its documents.";
+      return;
+    }
+
+    documentsList.textContent = "Loading documents...";
+
+    try {
+      const result = await backendRequest({
+        action: "admin_documents",
+        application_id: applicationId
+      });
+
+      const documents = result.documents || [];
+
+      documentsList.innerHTML = "";
+
+      if (documents.length === 0) {
+        documentsList.textContent =
+          "No documents found for this application.";
+        return;
+      }
+
+      documents.forEach(document => {
+        const item = document.createElement("div");
+        item.className = "card";
+
+        const name = document.createElement("strong");
+        name.textContent =
+          document.original_file_name ||
+          readable(document.document_type);
+
+        const type = document.createElement("p");
+        type.className = "small";
+        type.textContent =
+          readable(document.document_type);
+
+        const downloadButton = document.createElement("button");
+        downloadButton.textContent = "Secure Download";
+
+        downloadButton.addEventListener("click", async () => {
+          downloadButton.disabled = true;
+
+          try {
+            const download = await backendRequest({
+              action: "download_document",
+              document_id: document.id
+            });
+
+            if (!download.signed_url) {
+              throw new Error("No download link was returned.");
+            }
+
+            window.open(
+              download.signed_url,
+              "_blank",
+              "noopener,noreferrer"
+            );
+
+          } catch (error) {
+            dashboardMessage.textContent = error.message;
+          } finally {
+            downloadButton.disabled = false;
+          }
+        });
+
+        item.appendChild(name);
+        item.appendChild(type);
+        item.appendChild(downloadButton);
+
+        documentsList.appendChild(item);
+      });
+
+    } catch (error) {
+      documentsList.textContent = error.message;
+    }
+  });
+
+  function displayPayments(payments) {
+    paymentsBody.innerHTML = "";
+
+    if (!payments.length) {
+      paymentsBody.innerHTML =
+        '<tr><td colspan="5">No payment records found.</td></tr>';
+      return;
+    }
+
+    payments.forEach(payment => {
+      const row = document.createElement("tr");
+
+      const values = [
+        payment.id,
+        payment.application_id,
+        payment.amount,
+        readable(payment.payment_status),
+        payment.payment_date
+          ? new Date(payment.payment_date).toLocaleString()
+          : ""
+      ];
+
+      values.forEach(value => {
+        const cell = document.createElement("td");
+        cell.textContent = safeText(value);
+        row.appendChild(cell);
+      });
+
+      paymentsBody.appendChild(row);
+    });
+  }
+
+  document.getElementById("refreshButton")
+    .addEventListener("click", loadDashboard);
+
+  document.getElementById("logoutButton")
+    .addEventListener("click", async function() {
+      const { error } = await db.auth.signOut();
+
+      if (error) {
+        dashboardMessage.textContent = error.message;
+        return;
+      }
+
+      dashboardPanel.classList.add("hidden");
+      loginPanel.classList.remove("hidden");
+      loginMessage.textContent = "You have signed out.";
+    });
+
+  checkSession();
+</script>
+
+</body>
+</html>
