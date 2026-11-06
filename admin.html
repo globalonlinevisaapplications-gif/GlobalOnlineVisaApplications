@@ -41,6 +41,7 @@
     header h2 {
       margin: 0 0 12px;
       font-size: 21px;
+      color: white;
     }
 
     header nav {
@@ -162,9 +163,7 @@
       margin: 0 0 7px;
     }
 
-    td button {
-      margin: 0;
-    }
+    td button { margin: 0; }
 
     .status {
       margin: 12px 0;
@@ -392,12 +391,14 @@
   let applications = [];
   let isAdmin = false;
 
+  // These values must exactly match visa-backend-v5.
   const allowedStatuses = [
-    "pending",
-    "under_review",
-    "additional_documents_required",
-    "approved",
-    "rejected"
+    "Pending",
+    "Under Review",
+    "Processing",
+    "Approved",
+    "Rejected",
+    "Missing Documents"
   ];
 
   function readable(value) {
@@ -516,7 +517,7 @@
 
   async function openDashboard() {
     try {
-      // This protected backend action verifies admin authorization.
+      // The backend verifies administrator authorization.
       await backendRequest({
         action: "admin_applications"
       });
@@ -582,7 +583,9 @@
 
   async function loadDashboard() {
     if (!isAdmin) {
-      throw new Error("Administrator authorization is required.");
+      throw new Error(
+        "Administrator authorization is required."
+      );
     }
 
     showDashboardMessage("Loading dashboard...");
@@ -696,14 +699,16 @@
           document.createElement("option");
 
         option.value = status;
-        option.textContent = readable(status);
+        option.textContent = status;
         select.appendChild(option);
       });
 
+      // Select the existing status when it is valid.
+      // Otherwise, default to the backend's Pending value.
       select.value =
         allowedStatuses.includes(application.status)
           ? application.status
-          : "pending";
+          : "Pending";
 
       const saveButton =
         document.createElement("button");
@@ -732,6 +737,14 @@
     button
   ) {
     if (!isAdmin) return;
+
+    if (!allowedStatuses.includes(status)) {
+      showDashboardMessage(
+        "Please select a valid application status.",
+        "error"
+      );
+      return;
+    }
 
     button.disabled = true;
 
