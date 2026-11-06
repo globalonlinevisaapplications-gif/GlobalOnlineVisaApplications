@@ -1,109 +1,242 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#123b70">
   <title>Admin Dashboard | Global Online Visa Applications</title>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
 
   <style>
+    :root {
+      --navy: #123b70;
+      --blue: #1765b5;
+      --light-blue: #edf5ff;
+      --background: #f3f6fb;
+      --ink: #1d2939;
+      --muted: #667085;
+      --border: #dce3ed;
+      --green: #167044;
+      --red: #b42318;
+    }
+
+    * { box-sizing: border-box; }
+
     body {
-      font-family: Arial, sans-serif;
-      background: #f4f6f9;
       margin: 0;
-      color: #222;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--background);
+      color: var(--ink);
+      line-height: 1.5;
     }
+
     header {
-      background: #092b50;
+      background: linear-gradient(135deg, var(--navy), var(--blue));
       color: white;
-      padding: 18px;
+      padding: 20px;
     }
+
+    header h2 {
+      margin: 0 0 12px;
+      font-size: 21px;
+    }
+
+    header nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 18px;
+    }
+
     header a {
       color: white;
       text-decoration: none;
-      margin-right: 15px;
+      font-size: 14px;
     }
+
+    header a:hover { text-decoration: underline; }
+
     main {
-      max-width: 1100px;
+      max-width: 1150px;
       margin: 25px auto;
-      padding: 15px;
+      padding: 0 15px 35px;
     }
+
     .card {
       background: white;
-      padding: 20px;
-      border-radius: 10px;
+      padding: 22px;
+      border: 1px solid var(--border);
+      border-radius: 13px;
       margin-bottom: 20px;
-      box-shadow: 0 2px 8px #0001;
+      box-shadow: 0 5px 20px #152d4b0c;
     }
+
+    h1, h2, h3 { color: var(--navy); }
+
+    h1 { font-size: 24px; }
+    h2 { font-size: 19px; }
+
     label {
       display: block;
-      margin-top: 12px;
+      margin-top: 13px;
+      font-weight: bold;
+      font-size: 14px;
     }
+
     input, select, button {
-      padding: 11px;
-      margin-top: 6px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      font-size: 15px;
-    }
-    input, select {
-      box-sizing: border-box;
       width: 100%;
+      min-height: 44px;
+      padding: 11px 12px;
+      margin-top: 7px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font: inherit;
+      font-size: 14px;
     }
+
+    input:focus, select:focus {
+      outline: 3px solid #1765b526;
+      border-color: var(--blue);
+    }
+
     button {
-      cursor: pointer;
-      background: #0756a5;
-      color: white;
+      width: auto;
+      background: var(--blue);
       border: none;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
     }
+
+    button:hover { background: var(--navy); }
+
     button:disabled {
-      opacity: .5;
+      opacity: .55;
       cursor: not-allowed;
     }
-    .hidden {
-      display: none !important;
+
+    .danger { background: var(--red); }
+    .danger:hover { background: #8f1d16; }
+
+    .secondary {
+      background: #eaf2fc;
+      color: var(--navy);
+      border: 1px solid #c6d8ed;
     }
+
+    .secondary:hover {
+      background: #dceaff;
+      color: var(--navy);
+    }
+
+    .hidden { display: none !important; }
+
     .table-wrap {
       overflow-x: auto;
+      width: 100%;
     }
+
     table {
       width: 100%;
       border-collapse: collapse;
-      min-width: 650px;
+      min-width: 720px;
     }
+
     th, td {
-      padding: 11px;
-      border-bottom: 1px solid #ddd;
+      padding: 12px;
+      border-bottom: 1px solid var(--border);
       text-align: left;
-      vertical-align: top;
+      vertical-align: middle;
+      font-size: 13px;
     }
+
     th {
-      background: #edf2f7;
+      background: var(--light-blue);
+      color: var(--navy);
+      font-weight: bold;
     }
+
+    td select {
+      min-width: 170px;
+      margin: 0 0 7px;
+    }
+
+    td button {
+      margin: 0;
+    }
+
     .status {
       margin: 12px 0;
       overflow-wrap: anywhere;
+      font-size: 14px;
     }
-    .danger {
-      background: #a52b2b;
+
+    .status.error {
+      color: var(--red);
+      background: #fff0ef;
+      padding: 12px;
+      border-radius: 8px;
     }
-    .secondary {
-      background: #555;
+
+    .status.success {
+      color: var(--green);
+      background: #edfaef;
+      padding: 12px;
+      border-radius: 8px;
     }
-    .section-title {
-      margin-top: 28px;
-    }
+
     .small {
       font-size: 13px;
-      color: #555;
+      color: var(--muted);
     }
+
     .actions {
       display: flex;
-      gap: 8px;
+      align-items: center;
+      gap: 10px;
       flex-wrap: wrap;
+    }
+
+    .actions h1 {
+      flex: 1 1 250px;
+      margin: 0;
+    }
+
+    .document-item {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 15px;
+      margin: 12px 0;
+      overflow-wrap: anywhere;
+    }
+
+    .section-title { margin-top: 0; }
+
+    .login-card {
+      max-width: 480px;
+      margin: 35px auto;
+    }
+
+    @media (max-width: 600px) {
+      main {
+        margin-top: 15px;
+        padding: 0 10px 25px;
+      }
+
+      header { padding: 17px; }
+
+      header h2 { font-size: 18px; }
+
+      .card { padding: 15px; }
+
+      .actions button {
+        flex: 1 1 100%;
+      }
+
+      .actions h1 {
+        flex-basis: 100%;
+      }
     }
   </style>
 </head>
@@ -120,19 +253,32 @@
 
 <main>
 
-  <section id="loginPanel" class="card">
+  <section id="loginPanel" class="card login-card">
     <h1>Administrator Login</h1>
-    <p>Sign in using your authorized administrator account.</p>
+    <p class="small">
+      Sign in using your authorized administrator account.
+    </p>
 
     <form id="loginForm">
       <label for="email">Email Address</label>
-      <input id="email" type="email" required autocomplete="username">
+      <input
+        id="email"
+        type="email"
+        required
+        autocomplete="username"
+      >
 
       <label for="password">Password</label>
-      <input id="password" type="password" required
-             autocomplete="current-password">
+      <input
+        id="password"
+        type="password"
+        required
+        autocomplete="current-password"
+      >
 
-      <button type="submit" id="loginButton">Sign In</button>
+      <button type="submit" id="loginButton">
+        Sign In
+      </button>
     </form>
 
     <p id="loginMessage" class="status" role="status"></p>
@@ -140,19 +286,23 @@
 
   <section id="dashboardPanel" class="hidden">
 
-    <div class="card">
+    <section class="card">
       <div class="actions">
-        <h1 style="flex:1">Administrator Dashboard</h1>
-        <button id="refreshButton" type="button">Refresh</button>
+        <h1>Administrator Dashboard</h1>
+        <button id="refreshButton" type="button">
+          Refresh
+        </button>
         <button id="logoutButton" class="danger" type="button">
           Sign Out
         </button>
       </div>
+
       <p id="dashboardMessage" class="status" role="status"></p>
-    </div>
+    </section>
 
     <section class="card">
       <h2>Visa Applications</h2>
+
       <div class="table-wrap">
         <table>
           <thead>
@@ -166,8 +316,11 @@
               <th>Action</th>
             </tr>
           </thead>
+
           <tbody id="applicationsBody">
-            <tr><td colspan="7">Loading applications...</td></tr>
+            <tr>
+              <td colspan="7">Loading applications...</td>
+            </tr>
           </tbody>
         </table>
       </div>
@@ -179,6 +332,7 @@
       <label for="documentApplication">
         Select Application
       </label>
+
       <select id="documentApplication">
         <option value="">Choose an application</option>
       </select>
@@ -190,6 +344,7 @@
 
     <section class="card">
       <h2 class="section-title">Payment Records</h2>
+
       <div class="table-wrap">
         <table>
           <thead>
@@ -201,8 +356,11 @@
               <th>Payment Date</th>
             </tr>
           </thead>
+
           <tbody id="paymentsBody">
-            <tr><td colspan="5">Loading payments...</td></tr>
+            <tr>
+              <td colspan="5">Loading payments...</td>
+            </tr>
           </tbody>
         </table>
       </div>
@@ -220,15 +378,19 @@
 
   const applicationsBody =
     document.getElementById("applicationsBody");
+
   const paymentsBody =
     document.getElementById("paymentsBody");
+
   const documentApplication =
     document.getElementById("documentApplication");
+
   const documentsList =
     document.getElementById("documentsList");
 
   let db = null;
   let applications = [];
+  let isAdmin = false;
 
   const allowedStatuses = [
     "pending",
@@ -250,6 +412,17 @@
       : String(value);
   }
 
+  function showLoginError(text) {
+    loginMessage.textContent = text;
+    loginMessage.className = "status error";
+  }
+
+  function showDashboardMessage(text, type = "") {
+    dashboardMessage.textContent = text;
+    dashboardMessage.className = "status" +
+      (type ? " " + type : "");
+  }
+
   async function getToken() {
     const { data, error } = await db.auth.getSession();
 
@@ -258,7 +431,9 @@
     const token = data.session?.access_token;
 
     if (!token) {
-      throw new Error("Your session has expired. Please sign in.");
+      throw new Error(
+        "Your session has expired. Please sign in again."
+      );
     }
 
     return token;
@@ -280,11 +455,25 @@
       }
     );
 
-    const result = await response.json();
+    let result;
 
-    if (!response.ok || result.error) {
+    try {
+      result = await response.json();
+    } catch {
       throw new Error(
-        result.error || "The request could not be completed."
+        "The server returned an unreadable response."
+      );
+    }
+
+    if (
+      !response.ok ||
+      result.error ||
+      result.success === false
+    ) {
+      throw new Error(
+        result.error ||
+        result.message ||
+        "The request could not be completed."
       );
     }
 
@@ -293,10 +482,14 @@
 
   async function checkSession() {
     try {
-      if (!window.SUPABASE_URL ||
-          !window.SUPABASE_ANON_KEY ||
-          !window.SUPABASE_FUNCTION_URL) {
-        throw new Error("Supabase configuration is missing.");
+      if (
+        !window.SUPABASE_URL ||
+        !window.SUPABASE_ANON_KEY ||
+        !window.SUPABASE_FUNCTION_URL
+      ) {
+        throw new Error(
+          "Supabase configuration is missing."
+        );
       }
 
       db = window.supabase.createClient(
@@ -315,48 +508,84 @@
       await openDashboard();
 
     } catch (error) {
-      loginMessage.textContent = error.message;
+      showLoginError(
+        error.message || "Could not verify your account."
+      );
     }
   }
 
   async function openDashboard() {
-    loginPanel.classList.add("hidden");
-    dashboardPanel.classList.remove("hidden");
+    try {
+      // This protected backend action verifies admin authorization.
+      await backendRequest({
+        action: "admin_applications"
+      });
 
-    await loadDashboard();
+      isAdmin = true;
+
+      loginPanel.classList.add("hidden");
+      dashboardPanel.classList.remove("hidden");
+
+      await loadDashboard();
+
+    } catch (error) {
+      isAdmin = false;
+
+      dashboardPanel.classList.add("hidden");
+      loginPanel.classList.remove("hidden");
+
+      showLoginError(
+        "Administrator access denied: " + error.message
+      );
+
+      throw error;
+    }
   }
 
   document.getElementById("loginForm")
     .addEventListener("submit", async function(event) {
       event.preventDefault();
 
-      const button = document.getElementById("loginButton");
+      const button =
+        document.getElementById("loginButton");
+
       button.disabled = true;
       loginMessage.textContent = "Signing in...";
 
       try {
-        const { data, error } = await db.auth.signInWithPassword({
-          email: document.getElementById("email").value.trim(),
-          password: document.getElementById("password").value
-        });
+        const { data, error } =
+          await db.auth.signInWithPassword({
+            email: document.getElementById("email")
+              .value.trim(),
+
+            password: document.getElementById("password")
+              .value
+          });
 
         if (error) throw error;
 
         if (!data.user) {
-          throw new Error("Login could not be completed.");
+          throw new Error(
+            "Login could not be completed."
+          );
         }
 
         await openDashboard();
 
       } catch (error) {
-        loginMessage.textContent = error.message;
+        showLoginError(error.message);
+
       } finally {
         button.disabled = false;
       }
     });
 
   async function loadDashboard() {
-    dashboardMessage.textContent = "Loading dashboard...";
+    if (!isAdmin) {
+      throw new Error("Administrator authorization is required.");
+    }
+
+    showDashboardMessage("Loading dashboard...");
 
     applicationsBody.innerHTML =
       '<tr><td colspan="7">Loading...</td></tr>';
@@ -366,22 +595,32 @@
 
     try {
       const results = await Promise.all([
-        backendRequest({ action: "admin_applications" }),
-        backendRequest({ action: "admin_payments" })
+        backendRequest({
+          action: "admin_applications"
+        }),
+
+        backendRequest({
+          action: "admin_payments"
+        })
       ]);
 
-      applications = results[0].applications || [];
-      const payments = results[1].payments || [];
+      applications =
+        results[0].applications || [];
+
+      const payments =
+        results[1].payments || [];
 
       displayApplications();
       displayPayments(payments);
       fillApplicationSelector();
 
-      dashboardMessage.textContent =
-        "Dashboard information loaded.";
+      showDashboardMessage(
+        "Dashboard information loaded.",
+        "success"
+      );
 
     } catch (error) {
-      dashboardMessage.textContent = error.message;
+      showDashboardMessage(error.message, "error");
 
       applicationsBody.innerHTML =
         '<tr><td colspan="7">Could not load applications.</td></tr>';
@@ -394,7 +633,7 @@
   function displayApplications() {
     applicationsBody.innerHTML = "";
 
-    if (applications.length === 0) {
+    if (!applications.length) {
       applicationsBody.innerHTML =
         '<tr><td colspan="7">No applications found.</td></tr>';
       return;
@@ -403,8 +642,11 @@
     applications.forEach(application => {
       const row = document.createElement("tr");
 
-      const applicant = application.applicants || {};
-      const visa = application.visa_types || {};
+      const applicant =
+        application.applicants || {};
+
+      const visa =
+        application.visa_types || {};
 
       const name = [
         applicant.first_name,
@@ -417,40 +659,55 @@
         application.countries?.country_name ||
         "";
 
-      const date = application.application_date ||
-                   application.created_at || "";
+      const date =
+        application.application_date ||
+        application.created_at ||
+        "";
+
+      const reference =
+        application.reference_number ||
+        "Reference unavailable";
 
       const cells = [
-        safeText(application.id),
+        reference,
         name || "Applicant",
         destination,
         visa.visa_name || "",
-        date ? new Date(date).toLocaleDateString() : "",
+        date
+          ? new Date(date).toLocaleDateString()
+          : "",
         readable(application.status)
       ];
 
       cells.forEach(value => {
         const cell = document.createElement("td");
-        cell.textContent = value;
+        cell.textContent = safeText(value);
         row.appendChild(cell);
       });
 
-      const actionCell = document.createElement("td");
+      const actionCell =
+        document.createElement("td");
 
-      const select = document.createElement("select");
+      const select =
+        document.createElement("select");
 
       allowedStatuses.forEach(status => {
-        const option = document.createElement("option");
+        const option =
+          document.createElement("option");
+
         option.value = status;
         option.textContent = readable(status);
         select.appendChild(option);
       });
 
-      select.value = allowedStatuses.includes(application.status)
-        ? application.status
-        : "pending";
+      select.value =
+        allowedStatuses.includes(application.status)
+          ? application.status
+          : "pending";
 
-      const saveButton = document.createElement("button");
+      const saveButton =
+        document.createElement("button");
+
       saveButton.textContent = "Update";
 
       saveButton.addEventListener("click", async () => {
@@ -469,9 +726,18 @@
     });
   }
 
-  async function updateStatus(applicationId, status, button) {
+  async function updateStatus(
+    applicationId,
+    status,
+    button
+  ) {
+    if (!isAdmin) return;
+
     button.disabled = true;
-    dashboardMessage.textContent = "Updating application status...";
+
+    showDashboardMessage(
+      "Updating application status..."
+    );
 
     try {
       await backendRequest({
@@ -480,13 +746,16 @@
         status: status
       });
 
-      dashboardMessage.textContent =
-        "Application status updated successfully.";
+      showDashboardMessage(
+        "Application status updated successfully.",
+        "success"
+      );
 
       await loadDashboard();
 
     } catch (error) {
-      dashboardMessage.textContent = error.message;
+      showDashboardMessage(error.message, "error");
+
     } finally {
       button.disabled = false;
     }
@@ -497,100 +766,138 @@
       '<option value="">Choose an application</option>';
 
     applications.forEach(application => {
-      const option = document.createElement("option");
+      const option =
+        document.createElement("option");
+
       option.value = application.id;
 
-      const applicant = application.applicants || {};
+      const applicant =
+        application.applicants || {};
 
       option.textContent =
         (applicant.first_name || "Applicant") +
-        " - " + application.id;
+        " - " +
+        (application.reference_number || application.id);
 
       documentApplication.appendChild(option);
     });
   }
 
-  documentApplication.addEventListener("change", async function() {
-    const applicationId = documentApplication.value;
+  documentApplication.addEventListener(
+    "change",
+    async function() {
+      const applicationId =
+        documentApplication.value;
 
-    if (!applicationId) {
-      documentsList.textContent =
-        "Select an application to view its documents.";
-      return;
-    }
-
-    documentsList.textContent = "Loading documents...";
-
-    try {
-      const result = await backendRequest({
-        action: "admin_documents",
-        application_id: applicationId
-      });
-
-      const documents = result.documents || [];
-
-      documentsList.innerHTML = "";
-
-      if (documents.length === 0) {
+      if (!applicationId) {
         documentsList.textContent =
-          "No documents found for this application.";
+          "Select an application to view its documents.";
         return;
       }
 
-      documents.forEach(document => {
-        const item = document.createElement("div");
-        item.className = "card";
+      if (!isAdmin) {
+        documentsList.textContent =
+          "Administrator authorization is required.";
+        return;
+      }
 
-        const name = document.createElement("strong");
-        name.textContent =
-          document.original_file_name ||
-          readable(document.document_type);
+      documentsList.textContent =
+        "Loading documents...";
 
-        const type = document.createElement("p");
-        type.className = "small";
-        type.textContent =
-          readable(document.document_type);
-
-        const downloadButton = document.createElement("button");
-        downloadButton.textContent = "Secure Download";
-
-        downloadButton.addEventListener("click", async () => {
-          downloadButton.disabled = true;
-
-          try {
-            const download = await backendRequest({
-              action: "download_document",
-              document_id: document.id
-            });
-
-            if (!download.signed_url) {
-              throw new Error("No download link was returned.");
-            }
-
-            window.open(
-              download.signed_url,
-              "_blank",
-              "noopener,noreferrer"
-            );
-
-          } catch (error) {
-            dashboardMessage.textContent = error.message;
-          } finally {
-            downloadButton.disabled = false;
-          }
+      try {
+        const result = await backendRequest({
+          action: "admin_documents",
+          application_id: applicationId
         });
 
-        item.appendChild(name);
-        item.appendChild(type);
-        item.appendChild(downloadButton);
+        const documents =
+          result.documents || [];
 
-        documentsList.appendChild(item);
-      });
+        documentsList.replaceChildren();
 
-    } catch (error) {
-      documentsList.textContent = error.message;
+        if (!documents.length) {
+          documentsList.textContent =
+            "No documents found for this application.";
+          return;
+        }
+
+        documents.forEach(docRecord => {
+          const item =
+            document.createElement("div");
+
+          item.className = "document-item";
+
+          const name =
+            document.createElement("strong");
+
+          name.textContent =
+            docRecord.original_file_name ||
+            readable(docRecord.document_type);
+
+          const type =
+            document.createElement("p");
+
+          type.className = "small";
+          type.textContent =
+            readable(docRecord.document_type);
+
+          const downloadButton =
+            document.createElement("button");
+
+          downloadButton.textContent =
+            "Secure Download";
+
+          downloadButton.addEventListener(
+            "click",
+            async () => {
+              downloadButton.disabled = true;
+
+              try {
+                const download =
+                  await backendRequest({
+                    action: "download_document",
+                    document_id: docRecord.id
+                  });
+
+                if (!download.signed_url) {
+                  throw new Error(
+                    "No download link was returned."
+                  );
+                }
+
+                const link =
+                  document.createElement("a");
+
+                link.href = download.signed_url;
+                link.target = "_blank";
+                link.rel = "noopener noreferrer";
+                link.click();
+
+              } catch (error) {
+                showDashboardMessage(
+                  error.message,
+                  "error"
+                );
+
+              } finally {
+                downloadButton.disabled = false;
+              }
+            }
+          );
+
+          item.appendChild(name);
+          item.appendChild(type);
+          item.appendChild(downloadButton);
+
+          documentsList.appendChild(item);
+        });
+
+      } catch (error) {
+        documentsList.textContent =
+          error.message;
+      }
     }
-  });
+  );
 
   function displayPayments(payments) {
     paymentsBody.innerHTML = "";
@@ -602,7 +909,8 @@
     }
 
     payments.forEach(payment => {
-      const row = document.createElement("tr");
+      const row =
+        document.createElement("tr");
 
       const values = [
         payment.id,
@@ -615,7 +923,9 @@
       ];
 
       values.forEach(value => {
-        const cell = document.createElement("td");
+        const cell =
+          document.createElement("td");
+
         cell.textContent = safeText(value);
         row.appendChild(cell);
       });
@@ -625,20 +935,35 @@
   }
 
   document.getElementById("refreshButton")
-    .addEventListener("click", loadDashboard);
+    .addEventListener("click", async () => {
+      try {
+        await loadDashboard();
+      } catch (error) {
+        showDashboardMessage(error.message, "error");
+      }
+    });
 
   document.getElementById("logoutButton")
     .addEventListener("click", async function() {
       const { error } = await db.auth.signOut();
 
       if (error) {
-        dashboardMessage.textContent = error.message;
+        showDashboardMessage(error.message, "error");
         return;
       }
 
+      isAdmin = false;
+      applications = [];
+
       dashboardPanel.classList.add("hidden");
       loginPanel.classList.remove("hidden");
-      loginMessage.textContent = "You have signed out.";
+
+      document.getElementById("password").value = "";
+
+      loginMessage.textContent =
+        "You have signed out.";
+
+      loginMessage.className = "status";
     });
 
   checkSession();
