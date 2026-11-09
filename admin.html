@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -391,14 +392,12 @@
   let applications = [];
   let isAdmin = false;
 
-  // These values must exactly match visa-backend-v5.
+  // These statuses match visa-backend-v9 exactly.
   const allowedStatuses = [
     "Pending",
     "Under Review",
-    "Processing",
     "Approved",
-    "Rejected",
-    "Missing Documents"
+    "Rejected"
   ];
 
   function readable(value) {
