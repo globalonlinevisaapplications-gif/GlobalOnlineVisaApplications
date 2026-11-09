@@ -1,11 +1,28 @@
-/* Additional mobile and accessibility improvements */
+
+/* Global Online Visa Applications
+   Shared responsive and accessibility styles for V11 */
+
+/* General improvements */
 
 html {
   scroll-behavior: smooth;
+  box-sizing: border-box;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
 }
 
 body {
   overflow-x: hidden;
+}
+
+img,
+video,
+iframe {
+  max-width: 100%;
 }
 
 button,
@@ -13,6 +30,7 @@ input,
 select,
 textarea {
   max-width: 100%;
+  font: inherit;
 }
 
 button:disabled {
@@ -20,19 +38,25 @@ button:disabled {
   cursor: not-allowed;
 }
 
+/* Keyboard accessibility */
+
 a:focus-visible,
 button:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-  outline: 3px solid var(--gold);
+  outline: 3px solid var(--gold, #c9a44c);
   outline-offset: 3px;
 }
+
+/* Navigation */
 
 .site-header nav a {
   padding-top: 5px;
   padding-bottom: 5px;
 }
+
+/* Cards */
 
 .card {
   transition: box-shadow 0.2s ease, transform 0.2s ease;
@@ -43,15 +67,87 @@ textarea:focus-visible {
   transform: translateY(-2px);
 }
 
+/* Forms */
+
 .form-card input,
 .form-card select,
 .form-card textarea {
   min-height: 44px;
+  width: 100%;
 }
 
 .form-card textarea {
   min-height: 110px;
   resize: vertical;
+}
+
+input,
+select,
+textarea {
+  min-width: 0;
+}
+
+/* Tables: applicant and admin pages */
+
+table {
+  max-width: 100%;
+  border-collapse: collapse;
+}
+
+.table-wrap,
+.table-responsive,
+.table-container {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-wrap table,
+.table-responsive table,
+.table-container table {
+  min-width: 600px;
+}
+
+/* Prevent long text from breaking page layouts */
+
+td,
+th,
+.card,
+.form-card {
+  overflow-wrap: break-word;
+}
+
+/* Buttons */
+
+.btn {
+  cursor: pointer;
+  transition: opacity 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+}
+
+/* Mobile improvements */
+
+@media (max-width: 768px) {
+  .site-header {
+    flex-wrap: wrap;
+  }
+
+  .site-header nav {
+    max-width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .page-wrap {
+    max-width: 100%;
+  }
+
+  table {
+    font-size: 14px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -82,7 +178,21 @@ textarea:focus-visible {
   .form-card {
     padding: 18px;
   }
+
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  .table-wrap table,
+  .table-responsive table,
+  .table-container table {
+    min-width: 550px;
+  }
 }
+
+/* Reduced-motion accessibility */
 
 @media (prefers-reduced-motion: reduce) {
   html {
@@ -94,5 +204,6 @@ textarea:focus-visible {
   *::after {
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
   }
 }
