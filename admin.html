@@ -1,135 +1,570 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Admin Dashboard | Global Online Visa Applications</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
 <style>
-*{box-sizing:border-box}body{margin:0;background:#f3f6fa;color:#172033;font:15px Arial,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;background:#f3f6fa;color:#172033;font:15px Arial,sans-serif}
 header{background:#12345a;color:#fff;padding:18px 24px;display:flex;justify-content:space-between;align-items:center;gap:15px}
-main{max-width:1400px;margin:24px auto;padding:0 16px}.toolbar,.panel,.stat{background:white;border:1px solid #e1e7ef;border-radius:10px;padding:16px;margin-bottom:16px}
-nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}button{border:0;border-radius:6px;background:#1557a0;color:white;padding:10px 14px;cursor:pointer}button.secondary{background:#475569}button.danger{background:#b42318}
-nav button.active{background:#0b2747}input,select{padding:10px;border:1px solid #cbd5e1;border-radius:6px;max-width:100%}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.stat strong{font-size:24px;display:block;margin-top:8px}
-table{width:100%;border-collapse:collapse;min-width:800px}th,td{text-align:left;padding:10px;border-bottom:1px solid #e5eaf0;vertical-align:top}th{background:#f8fafc}
-.table-wrap{overflow:auto}.muted{color:#64748b}.notice{padding:12px;background:#e0f2fe;border-radius:7px;margin-bottom:14px}.error{background:#fee2e2;color:#991b1b}
-.hidden{display:none!important}.actions{display:flex;gap:6px;flex-wrap:wrap}.actions button{padding:7px 9px;font-size:12px}
-@media(max-width:800px){.stats{grid-template-columns:repeat(2,1fr)}header{align-items:flex-start;flex-direction:column}}
-</style></head>
+main{max-width:1500px;margin:24px auto;padding:0 16px}
+.toolbar,.panel,.stat{background:#fff;border:1px solid #e1e7ef;border-radius:10px;padding:16px;margin-bottom:16px}
+nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+button{border:0;border-radius:6px;background:#1557a0;color:#fff;padding:10px 14px;cursor:pointer}
+button.secondary{background:#475569}
+button.danger{background:#b42318}
+button:disabled{opacity:.55;cursor:not-allowed}
+nav button.active{background:#0b2747}
+input,select{padding:10px;border:1px solid #cbd5e1;border-radius:6px;max-width:100%}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.stat strong{font-size:24px;display:block;margin-top:8px}
+table{width:100%;border-collapse:collapse;min-width:900px}
+th,td{text-align:left;padding:10px;border-bottom:1px solid #e5eaf0;vertical-align:top}
+th{background:#f8fafc}
+.table-wrap{overflow:auto}
+.muted{color:#64748b}
+.notice{padding:12px;background:#e0f2fe;border-radius:7px;margin-bottom:14px}
+.error{background:#fee2e2;color:#991b1b}
+.success{background:#dcfce7;color:#166534}
+.hidden{display:none!important}
+.actions{display:flex;gap:6px;flex-wrap:wrap;min-width:190px}
+.actions button{padding:7px 9px;font-size:12px}
+.fee-note{font-size:12px;color:#64748b;line-height:1.4;margin-top:5px}
+@media(max-width:800px){
+ .stats{grid-template-columns:repeat(2,1fr)}
+ header{align-items:flex-start;flex-direction:column}
+}
+</style>
+</head>
 <body>
-<header><div><strong>Global Online Visa Applications</strong><div class="muted" style="color:#dbeafe">Administrator Dashboard · V10</div></div><div><span id="adminEmail"></span> <button id="logout" class="secondary">Sign out</button></div></header>
+<header>
+  <div>
+    <strong>Global Online Visa Applications</strong>
+    <div style="color:#dbeafe">Administrator Dashboard · V11</div>
+  </div>
+  <div>
+    <span id="adminEmail"></span>
+    <button id="logout" class="secondary">Sign out</button>
+  </div>
+</header>
+
 <main>
-<div id="notice" class="notice">Checking administrator access…</div>
-<div id="dashboard" class="hidden">
-<div class="stats">
-<div class="stat">Applications<strong id="statApps">—</strong></div>
-<div class="stat">Pending payments<strong id="statPending">—</strong></div>
-<div class="stat">Paid applications<strong id="statPaid">—</strong></div>
-<div class="stat">Enquiries<strong id="statEnquiries">—</strong></div>
-</div>
-<div class="toolbar">
-<input id="search" placeholder="Search reference, applicant, email…" style="width:min(100%,420px)">
-<select id="statusFilter"><option value="">All application statuses</option><option>Pending</option><option>Under Review</option><option>Approved</option><option>Rejected</option></select>
-<button id="refresh">Refresh data</button>
-</div>
-<nav>
-<button data-tab="applications" class="active">Applications</button>
-<button data-tab="payments">Payments</button>
-<button data-tab="enquiries">Enquiries</button>
-<button data-tab="notifications">Email queue</button>
-</nav>
-<section id="applications" class="panel tab">
-<h2>Visa applications</h2><div class="table-wrap"><table><thead><tr><th>Reference</th><th>Applicant</th><th>Destination / Visa</th><th>Fees (USD)</th><th>Status</th><th>Payment</th><th>Actions</th></tr></thead><tbody id="appRows"></tbody></table></div>
-</section>
-<section id="payments" class="panel tab hidden"><h2>Payment records</h2><div class="table-wrap"><table><thead><tr><th>Date</th><th>Application</th><th>Amount</th><th>Status</th><th>Record</th></tr></thead><tbody id="paymentRows"></tbody></table></div></section>
-<section id="enquiries" class="panel tab hidden"><h2>Customer enquiries</h2><div class="table-wrap"><table><thead><tr><th>Date</th><th>Name</th><th>Email</th><th>Destination</th><th>Message</th><th>Status</th></tr></thead><tbody id="enquiryRows"></tbody></table></div></section>
-<section id="notifications" class="panel tab hidden"><h2>Email notification queue</h2><p class="muted">Notifications are queued only. Email delivery is not enabled in this version.</p><div class="table-wrap"><table><thead><tr><th>Date</th><th>Recipient</th><th>Type</th><th>Status</th><th>Event key</th></tr></thead><tbody id="notificationRows"></tbody></table></div></section>
-</div>
+  <div id="notice" class="notice" role="status" aria-live="polite">Checking administrator access…</div>
+
+  <div id="dashboard" class="hidden">
+    <div class="stats">
+      <div class="stat">Applications<strong id="statApps">—</strong></div>
+      <div class="stat">Pending payments<strong id="statPending">—</strong></div>
+      <div class="stat">Paid applications<strong id="statPaid">—</strong></div>
+      <div class="stat">Enquiries<strong id="statEnquiries">—</strong></div>
+    </div>
+
+    <div class="toolbar">
+      <input id="search" placeholder="Search reference, applicant, email…" style="width:min(100%,420px)">
+      <select id="statusFilter">
+        <option value="">All application statuses</option>
+        <option>Pending</option>
+        <option>Under Review</option>
+        <option>Approved</option>
+        <option>Rejected</option>
+      </select>
+      <button id="refresh">Refresh data</button>
+    </div>
+
+    <nav>
+      <button data-tab="applications" class="active">Applications</button>
+      <button data-tab="payments">Payments</button>
+      <button data-tab="enquiries">Enquiries</button>
+      <button data-tab="notifications">Email queue</button>
+    </nav>
+
+    <section id="applications" class="panel tab">
+      <h2>Visa applications</h2>
+      <p class="fee-note">
+        V11 displays official government fees as ranges. The stored application amount is a provisional estimate until the actual official fee is confirmed. Only confirm payment after independently checking the amount received.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Reference</th><th>Applicant</th><th>Destination / Visa</th>
+              <th>Fee estimate (USD)</th><th>Status</th><th>Payment</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="appRows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="payments" class="panel tab hidden">
+      <h2>Payment records</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Date</th><th>Application</th><th>Amount</th><th>Status</th><th>Record</th></tr></thead>
+          <tbody id="paymentRows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="enquiries" class="panel tab hidden">
+      <h2>Customer enquiries</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Date</th><th>Name</th><th>Email</th><th>Destination</th><th>Message</th><th>Status</th></tr></thead>
+          <tbody id="enquiryRows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="notifications" class="panel tab hidden">
+      <h2>Email notification queue</h2>
+      <p class="muted">Notifications are queued only. Email delivery is not enabled in this version.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Date</th><th>Recipient</th><th>Type</th><th>Status</th><th>Event key</th></tr></thead>
+          <tbody id="notificationRows"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
 </main>
+
 <script>
 (() => {
 "use strict";
-let sb,session,apps=[],payments=[],enquiries=[],notifications=[];
-const $=id=>document.getElementById(id);
-function notice(text,isError=false){$("notice").textContent=text;$("notice").className=isError?"notice error":"notice"}
-function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
-function money(v){return new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"}).format(Number(v||0))}
-function date(v){return v?new Date(v).toLocaleString():"—"}
-async function api(payload){
- const {data,error}=await sb.auth.getSession();if(error)throw error;
- if(!data.session)throw Error("Your session has expired. Sign in again.");
- const r=await fetch(window.SUPABASE_FUNCTION_URL,{method:"POST",headers:{"Content-Type":"application/json","apikey":window.SUPABASE_ANON_KEY,"Authorization":"Bearer "+data.session.access_token},body:JSON.stringify(payload)});
- const out=await r.json().catch(()=>({}));if(!r.ok||out.ok===false)throw Error(out.error||"Request failed.");
- if(out.version!=="visa-backend-v10")throw Error("V10 backend version mismatch.");
- return out;
+
+const BACKEND_VERSION = "visa-backend-v11";
+const SERVICE_FEE_PER_APPLICANT = 285;
+
+let sb;
+let apps = [];
+let payments = [];
+let enquiries = [];
+let notifications = [];
+
+const $ = id => document.getElementById(id);
+
+function notice(text, type = "info") {
+  $("notice").textContent = text;
+  $("notice").className = "notice" + (type === "error" ? " error" : type === "success" ? " success" : "");
 }
-function setTab(name){document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("hidden",x.id!==name));document.querySelectorAll("nav button").forEach(x=>x.classList.toggle("active",x.dataset.tab===name))}
-function primaryApplicant(a){const value=a.applicants||{};return Array.isArray(value)?(value[0]||{}):value}
-function renderApps(){
- const q=$("search").value.toLowerCase(),status=$("statusFilter").value;
- const rows=apps.filter(a=>{
-  const p=primaryApplicant(a),hay=[a.reference_number,p.first_name,p.last_name,p.email,a.destination_country_name,a.visa_types?.visa_name].join(" ").toLowerCase();
-  return (!q||hay.includes(q))&&(!status||a.status===status);
- });
- $("appRows").innerHTML=rows.map(a=>{
-  const p=primaryApplicant(a),name=[p.first_name,p.last_name].filter(Boolean).join(" ");
-  return `<tr><td>${esc(a.reference_number||a.id)}</td><td>${esc(name)}<br><span class="muted">${esc(p.email)}</span></td><td>${esc(a.destination_country_name)}<br>${esc(a.visa_types?.visa_name)}</td><td>Official: ${money(a.official_visa_fee)}<br>Service: ${money(a.service_fee)}<br><b>Total: ${money(a.total_amount)}</b></td><td>${esc(a.status)}</td><td>${esc(a.payment_status)}</td><td><div class="actions"><select data-status="${esc(a.id)}"><option ${a.status==="Pending"?"selected":""}>Pending</option><option ${a.status==="Under Review"?"selected":""}>Under Review</option><option ${a.status==="Approved"?"selected":""}>Approved</option><option ${a.status==="Rejected"?"selected":""}>Rejected</option></select><button data-update="${esc(a.id)}">Save</button><button class="secondary" data-docs="${esc(a.id)}">Documents</button>${a.payment_status!=="Paid"?`<button data-paid="${esc(a.id)}" data-amount="${esc(a.total_amount)}">Confirm payment</button>`:""}</div></td></tr>`;
- }).join("")||'<tr><td colspan="7">No applications found.</td></tr>';
+
+function esc(value) {
+  return String(value ?? "").replace(/[&<>"']/g, char => ({
+    "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"
+  }[char]));
 }
-function render(){
- $("statApps").textContent=apps.length;$("statPending").textContent=apps.filter(a=>a.payment_status!=="Paid").length;
- $("statPaid").textContent=apps.filter(a=>a.payment_status==="Paid").length;$("statEnquiries").textContent=enquiries.length;
- renderApps();
- $("paymentRows").innerHTML=payments.map(p=>`<tr><td>${esc(date(p.payment_date))}</td><td>${esc(p.application_id)}</td><td>${money(p.amount)}</td><td>${esc(p.payment_status)}</td><td>${esc(p.id)}</td></tr>`).join("")||'<tr><td colspan="5">No payment records.</td></tr>';
- $("enquiryRows").innerHTML=enquiries.map(e=>`<tr><td>${esc(date(e.created_at))}</td><td>${esc(e.full_name)}</td><td>${esc(e.email)}</td><td>${esc(e.destination)}</td><td>${esc(e.message)}</td><td>${esc(e.status)}</td></tr>`).join("")||'<tr><td colspan="6">No enquiries.</td></tr>';
- $("notificationRows").innerHTML=notifications.map(n=>`<tr><td>${esc(date(n.created_at||n.scheduled_for))}</td><td>${esc(n.recipient_email)}</td><td>${esc(n.email_type)}</td><td>${esc(n.status)}</td><td>${esc(n.event_key)}</td></tr>`).join("")||'<tr><td colspan="5">No notifications queued.</td></tr>';
+
+function money(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return "—";
+  return new Intl.NumberFormat("en-US", {
+    style:"currency", currency:"USD"
+  }).format(number);
 }
-async function refresh(){
- notice("Loading dashboard data…");
- try{
-  const [a,p,e,n]=await Promise.all([api({action:"admin_applications"}),api({action:"admin_payments"}),api({action:"admin_enquiries"}),api({action:"admin_notifications"})]);
-  apps=a.applications||[];payments=p.payments||[];enquiries=e.enquiries||[];notifications=n.notifications||[];
-  render();notice("Dashboard data updated.");$("dashboard").classList.remove("hidden");
- }catch(err){notice(err.message,true)}
+
+function date(value) {
+  if (!value) return "—";
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? "—" : parsed.toLocaleString();
 }
-async function init(){
- try{
-  if(!window.supabase||!window.SUPABASE_URL)throw Error("Supabase configuration is missing.");
-  sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
-  const {data,error}=await sb.auth.getUser();if(error||!data.user)throw Error("Please sign in with your administrator account.");
-  $("adminEmail").textContent=data.user.email||"";
-  // Server verifies User_roles.Role === Admin on every admin API request.
-  await api({action:"admin_applications"});
-  await refresh();
- }catch(err){notice(err.message,true);$("dashboard").classList.add("hidden")}
+
+function relationOne(value) {
+  return Array.isArray(value) ? (value[0] || {}) : (value || {});
 }
-document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
-$("refresh").onclick=refresh;$("search").oninput=renderApps;$("statusFilter").onchange=renderApps;
-$("logout").onclick=async()=>{if(sb)await sb.auth.signOut();location.href="login.html"};
-$("appRows").addEventListener("click",async ev=>{
- const b=ev.target.closest("button");if(!b)return;
- try{
-  if(b.dataset.update){
-   const select=document.querySelector(`[data-status="${CSS.escape(b.dataset.update)}"]`);
-   await api({action:"admin_update_status",application_id:b.dataset.update,status:select.value});
-   notice("Application status updated.");await refresh();
-  }else if(b.dataset.docs){
-   const out=await api({action:"admin_documents",application_id:b.dataset.docs});
-   const docs=out.documents||[];
-   if(!docs.length){alert("No documents uploaded for this application.");return}
-   const choice=docs.map((d,i)=>`${i+1}. ${d.original_file_name||d.document_type}`).join("\n");
-   const answer=prompt("Enter the document number to download:\n"+choice);
-   const index=Number(answer)-1;if(!Number.isInteger(index)||!docs[index])return;
-   const signed=await api({action:"download_document",document_id:docs[index].id});
-   window.open(signed.signed_url,"_blank","noopener");
-  }else if(b.dataset.paid){
-   const amount=Number(b.dataset.amount);
-   if(!confirm("Confirm that you have independently verified receipt of "+money(amount)+"?"))return;
-   await api({action:"admin_confirm_payment",application_id:b.dataset.paid,amount});
-   notice("Payment confirmation saved.");await refresh();
+
+function primaryApplicant(application) {
+  return relationOne(application.applicants);
+}
+
+function visaRecord(application) {
+  return relationOne(application.visa_types);
+}
+
+function feeRange(application) {
+  const visa = visaRecord(application);
+  const minValue = visa.visa_fee_min;
+  const maxValue = visa.visa_fee_max;
+
+  if (minValue === null || minValue === undefined || minValue === "" ||
+      maxValue === null || maxValue === undefined || maxValue === "") {
+    return null;
   }
- }catch(err){notice(err.message,true)}
+
+  const min = Number(minValue);
+  const max = Number(maxValue);
+
+  if (!Number.isFinite(min) || !Number.isFinite(max) || min < 0 || max < min) {
+    return null;
+  }
+
+  return {min, max};
+}
+
+function totalRange(application) {
+  const range = feeRange(application);
+  if (!range) return null;
+  return {
+    min: range.min + SERVICE_FEE_PER_APPLICANT,
+    max: range.max + SERVICE_FEE_PER_APPLICANT
+  };
+}
+
+// =====================================
+// AUTHENTICATED V11 BACKEND REQUEST
+// =====================================
+async function api(payload) {
+  const {data, error} = await sb.auth.getSession();
+  if (error) throw error;
+  if (!data.session) throw new Error("Your session has expired. Sign in again.");
+
+  if (!window.SUPABASE_FUNCTION_URL ||
+      !window.SUPABASE_FUNCTION_URL.includes("/visa-backend-v11")) {
+    throw new Error("The V11 backend URL is missing. Please check config.js.");
+  }
+
+  const response = await fetch(window.SUPABASE_FUNCTION_URL, {
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      "apikey":window.SUPABASE_ANON_KEY,
+      "Authorization":"Bearer " + data.session.access_token
+    },
+    body:JSON.stringify(payload)
+  });
+
+  const output = await response.json().catch(() => ({}));
+
+  if (!response.ok || output.ok === false) {
+    throw new Error(output.error || output.message || "Backend request failed.");
+  }
+
+  if (output.version !== BACKEND_VERSION) {
+    throw new Error("V11 backend version mismatch. Check the deployed function and config.js.");
+  }
+
+  return output;
+}
+
+// =====================================
+// NAVIGATION
+// =====================================
+function setTab(name) {
+  document.querySelectorAll(".tab").forEach(section => {
+    section.classList.toggle("hidden", section.id !== name);
+  });
+  document.querySelectorAll("nav button").forEach(button => {
+    button.classList.toggle("active", button.dataset.tab === name);
+  });
+}
+
+// =====================================
+// APPLICATION TABLE
+// =====================================
+function renderApps() {
+  const query = $("search").value.trim().toLowerCase();
+  const status = $("statusFilter").value;
+
+  const filtered = apps.filter(application => {
+    const applicant = primaryApplicant(application);
+    const visa = visaRecord(application);
+    const haystack = [
+      application.reference_number,
+      applicant.first_name,
+      applicant.last_name,
+      applicant.email,
+      application.destination_country_name,
+      visa.visa_name
+    ].join(" ").toLowerCase();
+
+    return (!query || haystack.includes(query)) &&
+      (!status || application.status === status);
+  });
+
+  $("appRows").innerHTML = filtered.map(application => {
+    const applicant = primaryApplicant(application);
+    const visa = visaRecord(application);
+    const range = feeRange(application);
+    const totals = totalRange(application);
+    const applicantName = [applicant.first_name, applicant.last_name].filter(Boolean).join(" ");
+    const officialText = range
+      ? money(range.min) + " – " + money(range.max)
+      : "Range not available";
+    const totalText = totals
+      ? money(totals.min) + " – " + money(totals.max)
+      : "Estimate: " + money(application.total_amount);
+
+    return `<tr>
+      <td>${esc(application.reference_number || application.id)}</td>
+      <td>${esc(applicantName)}<br><span class="muted">${esc(applicant.email)}</span></td>
+      <td>${esc(application.destination_country_name)}<br>${esc(visa.visa_name)}</td>
+      <td>
+        Official: ${officialText}<br>
+        Service: ${money(SERVICE_FEE_PER_APPLICANT)}<br>
+        <b>Total estimate: ${totalText}</b>
+        <div class="fee-note">Actual official fee must be verified before payment confirmation.</div>
+      </td>
+      <td>${esc(application.status)}</td>
+      <td>${esc(application.payment_status)}</td>
+      <td>
+        <div class="actions">
+          <select data-status="${esc(application.id)}" aria-label="Application status">
+            <option ${application.status==="Pending"?"selected":""}>Pending</option>
+            <option ${application.status==="Under Review"?"selected":""}>Under Review</option>
+            <option ${application.status==="Approved"?"selected":""}>Approved</option>
+            <option ${application.status==="Rejected"?"selected":""}>Rejected</option>
+          </select>
+          <button data-update="${esc(application.id)}">Save status</button>
+          <button class="secondary" data-docs="${esc(application.id)}">Documents</button>
+          ${application.payment_status!=="Paid"
+            ? `<button data-paid="${esc(application.id)}">Confirm payment</button>`
+            : ""}
+        </div>
+      </td>
+    </tr>`;
+  }).join("") || '<tr><td colspan="7">No applications found.</td></tr>';
+}
+
+// =====================================
+// DASHBOARD RENDER
+// =====================================
+function render() {
+  $("statApps").textContent = apps.length;
+  $("statPending").textContent = apps.filter(a => a.payment_status !== "Paid").length;
+  $("statPaid").textContent = apps.filter(a => a.payment_status === "Paid").length;
+  $("statEnquiries").textContent = enquiries.length;
+
+  renderApps();
+
+  $("paymentRows").innerHTML = payments.map(payment => `
+    <tr>
+      <td>${esc(date(payment.payment_date))}</td>
+      <td>${esc(payment.application_id)}</td>
+      <td>${money(payment.amount)}</td>
+      <td>${esc(payment.payment_status)}</td>
+      <td>${esc(payment.id)}</td>
+    </tr>
+  `).join("") || '<tr><td colspan="5">No payment records.</td></tr>';
+
+  $("enquiryRows").innerHTML = enquiries.map(enquiry => `
+    <tr>
+      <td>${esc(date(enquiry.created_at))}</td>
+      <td>${esc(enquiry.full_name)}</td>
+      <td>${esc(enquiry.email)}</td>
+      <td>${esc(enquiry.destination)}</td>
+      <td>${esc(enquiry.message)}</td>
+      <td>${esc(enquiry.status)}</td>
+    </tr>
+  `).join("") || '<tr><td colspan="6">No enquiries.</td></tr>';
+
+  $("notificationRows").innerHTML = notifications.map(item => `
+    <tr>
+      <td>${esc(date(item.created_at || item.scheduled_for))}</td>
+      <td>${esc(item.recipient_email)}</td>
+      <td>${esc(item.email_type)}</td>
+      <td>${esc(item.status)}</td>
+      <td>${esc(item.event_key)}</td>
+    </tr>
+  `).join("") || '<tr><td colspan="5">No notifications queued.</td></tr>';
+}
+
+// =====================================
+// LOAD DATA
+// =====================================
+async function refresh() {
+  notice("Loading dashboard data…");
+  $("refresh").disabled = true;
+
+  try {
+    const [applicationResult, paymentResult, enquiryResult, notificationResult] =
+      await Promise.all([
+        api({action:"admin_applications"}),
+        api({action:"admin_payments"}),
+        api({action:"admin_enquiries"}),
+        api({action:"admin_notifications"})
+      ]);
+
+    apps = applicationResult.applications || [];
+    payments = paymentResult.payments || [];
+    enquiries = enquiryResult.enquiries || [];
+    notifications = notificationResult.notifications || [];
+
+    render();
+    $("dashboard").classList.remove("hidden");
+    notice("V11 dashboard data updated.", "success");
+  } catch (error) {
+    notice(error.message, "error");
+  } finally {
+    $("refresh").disabled = false;
+  }
+}
+
+// =====================================
+// INITIALIZE ADMIN ACCESS
+// =====================================
+async function init() {
+  try {
+    if (!window.supabase || !window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) {
+      throw new Error("Supabase configuration is missing.");
+    }
+
+    sb = window.supabase.createClient(
+      window.SUPABASE_URL,
+      window.SUPABASE_ANON_KEY
+    );
+
+    const {data, error} = await sb.auth.getUser();
+    if (error || !data.user) {
+      throw new Error("Please sign in with your administrator account.");
+    }
+
+    $("adminEmail").textContent = data.user.email || "";
+
+    // The backend performs the authoritative administrator-role check.
+    await api({action:"admin_applications"});
+    await refresh();
+  } catch (error) {
+    notice(error.message, "error");
+    $("dashboard").classList.add("hidden");
+  }
+}
+
+// =====================================
+// APPLICATION ACTIONS
+// =====================================
+$("appRows").addEventListener("click", async event => {
+  const button = event.target.closest("button");
+  if (!button) return;
+
+  try {
+    if (button.dataset.update) {
+      const applicationId = button.dataset.update;
+      const selector = document.querySelector(
+        `[data-status="${CSS.escape(applicationId)}"]`
+      );
+
+      if (!selector) throw new Error("Could not find the application status selector.");
+
+      await api({
+        action:"admin_update_status",
+        application_id:applicationId,
+        status:selector.value
+      });
+
+      notice("Application status updated.", "success");
+      await refresh();
+
+    } else if (button.dataset.docs) {
+      const result = await api({
+        action:"admin_documents",
+        application_id:button.dataset.docs
+      });
+
+      const documents = result.documents || [];
+      if (!documents.length) {
+        alert("No documents uploaded for this application.");
+        return;
+      }
+
+      const choices = documents.map((document, index) =>
+        `${index + 1}. ${document.original_file_name || document.document_type || "Document"}`
+      ).join("\n");
+
+      const answer = prompt("Enter the document number to download:\n" + choices);
+      if (answer === null) return;
+
+      const index = Number(answer) - 1;
+      if (!Number.isInteger(index) || !documents[index]) {
+        alert("That document number is not valid.");
+        return;
+      }
+
+      const signed = await api({
+        action:"download_document",
+        document_id:documents[index].id
+      });
+
+      if (!signed.signed_url) throw new Error("The backend did not return a download link.");
+      window.open(signed.signed_url, "_blank", "noopener");
+
+    } else if (button.dataset.paid) {
+      const application = apps.find(item => String(item.id) === String(button.dataset.paid));
+      if (!application) throw new Error("Application record not found.");
+
+      const range = feeRange(application);
+      const total = totalRange(application);
+
+      let promptText = "Enter the actual total amount received in USD.";
+      if (range && total) {
+        promptText +=
+          "\nOfficial fee range: " + money(range.min) + " – " + money(range.max) +
+          "\nService fee: " + money(SERVICE_FEE_PER_APPLICANT) +
+          "\nAcceptable total range: " + money(total.min) + " – " + money(total.max);
+      }
+      promptText += "\n\nOnly continue after independently verifying the payment.";
+
+      const entered = prompt(promptText);
+      if (entered === null) return;
+
+      const amount = Number(entered);
+      if (!Number.isFinite(amount) || amount <= 0) {
+        alert("Enter a valid positive payment amount.");
+        return;
+      }
+
+      if (total && (amount < total.min || amount > total.max)) {
+        alert(
+          "The amount is outside the V11 total fee range (" +
+          money(total.min) + " – " + money(total.max) +
+          "). Check the payment and official fee before continuing."
+        );
+        return;
+      }
+
+      if (!confirm(
+        "Confirm that you independently verified receipt of " +
+        money(amount) + " for this application?"
+      )) return;
+
+      await api({
+        action:"admin_confirm_payment",
+        application_id:application.id,
+        amount
+      });
+
+      notice("Payment confirmation saved.", "success");
+      await refresh();
+    }
+  } catch (error) {
+    notice(error.message, "error");
+  }
 });
+
+// =====================================
+// GENERAL EVENTS AND SIGN OUT
+// =====================================
+document.querySelectorAll("nav button").forEach(button => {
+  button.addEventListener("click", () => setTab(button.dataset.tab));
+});
+
+$("refresh").addEventListener("click", refresh);
+$("search").addEventListener("input", renderApps);
+$("statusFilter").addEventListener("change", renderApps);
+
+$("logout").addEventListener("click", async () => {
+  try {
+    if (sb) await sb.auth.signOut();
+  } finally {
+    window.location.href = "login.html";
+  }
+});
+
 init();
+
 })();
-</script></body></html>
+</script>
+</body>
+</html>
