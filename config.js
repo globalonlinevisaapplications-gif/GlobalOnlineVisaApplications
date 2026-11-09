@@ -1,4 +1,3 @@
-
 /**
  * GLOBAL ONLINE VISA APPLICATIONS
  * Production Configuration
@@ -35,12 +34,12 @@
 
 
   // =====================================
-  // SUPABASE EDGE FUNCTION
+  // SUPABASE EDGE FUNCTION — V10
   // =====================================
 
   window.SUPABASE_FUNCTION_URL =
     window.SUPABASE_URL +
-    "/functions/v1/visa-backend-v9";
+    "/functions/v1/visa-backend-v10";
 
 
   // =====================================
@@ -67,7 +66,8 @@
     home: "/",
     apply: "/apply.html",
     success: "/success.html",
-    contact: "/contact.html"
+    contact: "/contact.html",
+    admin: "/admin.html"
   };
 
 
