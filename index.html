@@ -1,654 +1,221 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Global Online Visa Applications - Apply for visas, submit applications and track your visa progress online.">
-  <title>Global Online Visa Applications</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Global Online Visa Applications</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="config.js"></script>
-
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      font-family: Arial, sans-serif;
-      color: #172033;
-      background: #f5f7fb;
-      line-height: 1.6;
-    }
-
-    header {
-      background: #082b50;
-      color: white;
-      padding: 17px 6%;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 15px;
-    }
-
-    .logo { font-size: 20px; font-weight: bold; }
-
-    nav {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 17px;
-      align-items: center;
-    }
-
-    nav a {
-      color: white;
-      text-decoration: none;
-      font-size: 14px;
-    }
-
-    nav a:hover { color: #f4c542; }
-
-    .hero {
-      background: linear-gradient(120deg, #082b50, #12639a);
-      color: white;
-      text-align: center;
-      padding: 85px 20px;
-    }
-
-    .hero h1 {
-      font-size: clamp(30px, 5vw, 48px);
-      margin-bottom: 18px;
-    }
-
-    .hero p {
-      max-width: 700px;
-      margin: auto;
-      font-size: 17px;
-      color: #e3edf7;
-    }
-
-    .btn {
-      display: inline-block;
-      background: #e8b72f;
-      color: #10263e;
-      padding: 13px 25px;
-      border: none;
-      border-radius: 6px;
-      text-decoration: none;
-      font-weight: bold;
-      cursor: pointer;
-      margin-top: 22px;
-    }
-
-    .btn:hover { background: #ffd45d; }
-
-    .section { padding: 55px 7%; text-align: center; }
-
-    .section h2 {
-      color: #082b50;
-      font-size: 29px;
-      margin-bottom: 15px;
-    }
-
-    .cards {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 22px;
-      margin-top: 30px;
-    }
-
-    .card {
-      background: white;
-      padding: 27px 20px;
-      border-radius: 10px;
-      box-shadow: 0 3px 14px rgba(0,0,0,0.07);
-    }
-
-    .card h3 { color: #12639a; margin-bottom: 12px; }
-
-    .auth-section { background: #eaf0f7; }
-
-    .auth-box {
-      background: white;
-      max-width: 470px;
-      margin: 25px auto;
-      padding: 28px;
-      border-radius: 10px;
-      box-shadow: 0 3px 15px rgba(0,0,0,0.08);
-    }
-
-    .auth-box input {
-      width: 100%;
-      padding: 13px;
-      margin: 9px 0;
-      border: 1px solid #ccd4df;
-      border-radius: 5px;
-      font-size: 15px;
-    }
-
-    .auth-box button {
-      width: 100%;
-      margin-top: 12px;
-      padding: 13px;
-      border: none;
-      background: #12639a;
-      color: white;
-      border-radius: 5px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-
-    .auth-box button:disabled {
-      opacity: .6;
-      cursor: not-allowed;
-    }
-
-    .switch { margin-top: 17px; font-size: 14px; }
-
-    .switch a {
-      color: #12639a;
-      cursor: pointer;
-      font-weight: bold;
-    }
-
-    #message {
-      margin-top: 15px;
-      font-size: 14px;
-      overflow-wrap: anywhere;
-    }
-
-    .hidden { display: none !important; }
-
-    footer {
-      background: #082b50;
-      color: white;
-      padding: 30px 15px;
-      text-align: center;
-    }
-
-    footer a {
-      color: #f4c542;
-      text-decoration: none;
-      margin: 0 8px;
-    }
-
-    @media(max-width: 600px) {
-      header { justify-content: center; text-align: center; }
-      nav { justify-content: center; }
-      .hero { padding: 60px 18px; }
-    }
-  </style>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;color:#253047;background:#f5f7fb}
+header{background:#092c50;color:white;padding:18px 6%;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:15px}
+header h2{margin:0;font-size:21px}
+nav{display:flex;gap:17px;flex-wrap:wrap}
+nav a{color:white;text-decoration:none;font-size:14px}
+nav a:hover{text-decoration:underline}
+.hero{background:linear-gradient(120deg,#092c50,#1265a0);color:white;text-align:center;padding:75px 20px}
+.hero h1{font-size:38px;margin:0 0 15px}
+.hero p{font-size:17px;line-height:1.6;max-width:650px;margin:0 auto 25px}
+.btn{display:inline-block;background:#e6a629;color:#102b45;padding:13px 23px;border-radius:5px;text-decoration:none;font-weight:bold;border:0;cursor:pointer}
+section{padding:45px 7%;text-align:center}
+h2{color:#092c50}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px;margin-top:25px}
+.card{background:white;padding:25px;border-radius:9px;box-shadow:0 3px 14px #00000010}
+.card h3{color:#1265a0}
+.account{max-width:480px;margin:20px auto;background:white;padding:25px;border-radius:9px;box-shadow:0 3px 14px #00000012}
+input{width:100%;padding:13px;margin:8px 0 15px;border:1px solid #ccd3dc;border-radius:5px}
+.account button{width:100%;margin:6px 0;padding:13px;background:#1265a0;color:white;border:0;border-radius:5px;cursor:pointer}
+#message{margin-top:12px;font-size:14px}
+footer{background:#092c50;color:white;text-align:center;padding:25px}
+footer a{color:white;margin:8px;text-decoration:none}
+@media(max-width:600px){.hero h1{font-size:29px}header{justify-content:center}nav{justify-content:center}}
+</style>
 </head>
 
 <body>
 
 <header>
-  <div class="logo">Global Online Visa Applications</div>
+  <h2>Global Online Visa Applications</h2>
   <nav>
     <a href="index.html">Home</a>
-    <a href="services.html">Services</a>
+    <a href="#services">Services</a>
     <a href="apply.html">Apply</a>
-    <a href="contact.html">Contact</a>
+    <a href="#contact">Contact</a>
     <a href="#account">My Account</a>
+    <a href="admin.html">Administrator Login</a>
   </nav>
 </header>
 
-<section class="hero">
-  <h1>Your Journey Starts Here</h1>
-  <p>
-    Access online visa application assistance, submit your
-    application information, and follow your application progress
-    through one convenient platform.
-  </p>
-  <a href="#account" class="btn">Get Started</a>
-</section>
+<div class="hero">
+  <h1>Global Online Visa Applications</h1>
+  <p>Apply for your visa online through a simple and convenient application process.</p>
+  <a class="btn" href="apply.html">Apply for a Visa</a>
+</div>
 
-<section class="section">
+<section id="services">
   <h2>Our Services</h2>
-  <p>Explore the services available through our platform.</p>
-
+  <p>Get started with your online visa application.</p>
   <div class="cards">
     <div class="card">
       <h3>Visa Applications</h3>
-      <p>Submit your visa application information online.</p>
-      <a href="apply.html" class="btn">Apply Now</a>
+      <p>Complete your visa application online.</p>
+      <a class="btn" href="apply.html">Apply Now</a>
     </div>
-
     <div class="card">
-      <h3>Visa Guidance</h3>
-      <p>Get information about visa requirements and application processes.</p>
-      <a href="services.html" class="btn">Learn More</a>
+      <h3>Application Support</h3>
+      <p>Get assistance with your application process.</p>
     </div>
-
     <div class="card">
       <h3>Application Tracking</h3>
-      <p>Access your account to follow your application progress.</p>
-      <a href="#account" class="btn">Track Application</a>
-    </div>
-
-    <div class="card">
-      <h3>Online Assistance</h3>
-      <p>Contact our team for assistance with your application.</p>
-      <a href="contact.html" class="btn">Contact Us</a>
+      <p>Access your account to follow your application.</p>
+      <a class="btn" href="#account">My Account</a>
     </div>
   </div>
 </section>
 
-<section class="section auth-section" id="account">
+<section id="account">
   <h2>Applicant Account</h2>
-  <p>Create an account or sign in to continue.</p>
+  <p>Register or sign in to access your applicant account.</p>
 
-  <div class="auth-box">
+  <div class="account">
+    <h3>Create an Account</h3>
+    <form id="registerForm">
+      <input type="email" id="registerEmail" placeholder="Email address" required>
+      <input type="password" id="registerPassword" placeholder="Create password (minimum 6 characters)" required minlength="6">
+      <button type="submit">Register</button>
+    </form>
 
-    <div id="registerForm">
-      <h3>Create Your Account</h3>
-      <input type="text" id="firstName" placeholder="First Name" autocomplete="given-name">
-      <input type="text" id="lastName" placeholder="Last Name" autocomplete="family-name">
-      <input type="email" id="registerEmail" placeholder="Email Address" autocomplete="email">
-      <input type="password" id="registerPassword" placeholder="Create Password (minimum 8 characters)" autocomplete="new-password">
+    <hr>
 
-      <button id="registerButton" type="button" onclick="registerUser()">
-        Create Account
-      </button>
+    <h3>Applicant Login</h3>
+    <form id="loginForm">
+      <input type="email" id="loginEmail" placeholder="Email address" required>
+      <input type="password" id="loginPassword" placeholder="Password" required>
+      <button type="submit">Login</button>
+    </form>
 
-      <p class="switch">
-        Already registered?
-        <a onclick="showLogin()">Sign In</a>
-      </p>
-    </div>
-
-    <div id="loginForm" class="hidden">
-      <h3>Applicant Sign In</h3>
-      <input type="email" id="loginEmail" placeholder="Email Address" autocomplete="email">
-      <input type="password" id="loginPassword" placeholder="Password" autocomplete="current-password">
-
-      <button id="loginButton" type="button" onclick="loginUser()">
-        Sign In
-      </button>
-
-      <p class="switch">
-        <a onclick="showForgotPassword()">Forgot password?</a>
-      </p>
-
-      <p class="switch">
-        New applicant?
-        <a onclick="showRegister()">Create Account</a>
-      </p>
-    </div>
-
-    <div id="forgotForm" class="hidden">
-      <h3>Reset Your Password</h3>
-      <p>Enter your registered email address. We will send you a password reset link.</p>
-
-      <input type="email" id="forgotEmail" placeholder="Registered Email Address" autocomplete="email">
-
-      <button id="forgotButton" type="button" onclick="sendPasswordReset()">
-        Send Reset Link
-      </button>
-
-      <p class="switch">
-        <a onclick="showLogin()">Back to Sign In</a>
-      </p>
-    </div>
-
-    <div id="newPasswordForm" class="hidden">
-      <h3>Create a New Password</h3>
-      <p>Enter your new password below.</p>
-
-      <input type="password" id="newPassword" placeholder="New Password (minimum 8 characters)" autocomplete="new-password">
-      <input type="password" id="confirmNewPassword" placeholder="Confirm New Password" autocomplete="new-password">
-
-      <button id="updatePasswordButton" type="button" onclick="updatePassword()">
-        Save New Password
-      </button>
-    </div>
-
-    <div id="signedInPanel" class="hidden">
-      <h3>You are signed in</h3>
-      <p id="signedInEmail"></p>
-      <a href="apply.html" class="btn">Continue to Application</a>
-      <button id="logoutButton" type="button">Sign Out</button>
-    </div>
-
-    <div id="message" role="status" aria-live="polite"></div>
+    <button type="button" id="resetPassword">Reset Password</button>
+    <p id="message"></p>
   </div>
+</section>
+
+<section id="contact">
+  <h2>Contact Us</h2>
+  <p>Global Online Visa Applications</p>
+  <p>Email: globalonlinevisaapplications@gmail.com</p>
 </section>
 
 <footer>
-  <p>Global Online Visa Applications</p>
-  <p>Visa application assistance and online services.</p>
-  <p>
-    <a href="privacy.html">Privacy Policy</a>
-    <a href="contact.html">Contact</a>
-  </p>
-  <p>&copy; 2026 Global Online Visa Applications. All rights reserved.</p>
+  <p>© 2026 Global Online Visa Applications. All rights reserved.</p>
+  <a href="apply.html">Apply</a>
+  <a href="admin.html">Administrator Login</a>
 </footer>
 
 <script>
-  let supabaseClient = null;
-  let recoveryMode = false;
+const message = document.getElementById("message");
 
-  const message = document.getElementById("message");
+function showMessage(text, success=false) {
+  message.textContent = text;
+  message.style.color = success ? "green" : "red";
+}
 
-  try {
-    if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) {
-      throw new Error("Supabase configuration is missing.");
-    }
+function getSupabaseSettings() {
+  const url =
+    window.SUPABASE_URL ||
+    window.APP_CONFIG?.supabaseUrl ||
+    window.APP_CONFIG?.SUPABASE_URL ||
+    window.API_CONFIG?.supabaseUrl ||
+    window.API_CONFIG?.SUPABASE_URL;
 
-    supabaseClient = window.supabase.createClient(
-      window.SUPABASE_URL,
-      window.SUPABASE_ANON_KEY,
-      {
-        auth: {
-          persistSession: true,
-          autoRefreshToken: true,
-          detectSessionInUrl: true,
-          flowType: "implicit"
-        }
-      }
-    );
-  } catch (error) {
-    message.textContent =
-      "Connection configuration error. Please contact the administrator.";
-    console.error(error);
+  const key =
+    window.SUPABASE_ANON_KEY ||
+    window.SUPABASE_PUBLISHABLE_KEY ||
+    window.APP_CONFIG?.supabaseAnonKey ||
+    window.APP_CONFIG?.publishableKey ||
+    window.API_CONFIG?.supabaseAnonKey ||
+    window.API_CONFIG?.publishableKey;
+
+  return {url, key};
+}
+
+let supabaseClient = null;
+
+try {
+  const settings = getSupabaseSettings();
+
+  if (settings.url && settings.key && window.supabase) {
+    supabaseClient = window.supabase.createClient(settings.url, settings.key);
+  }
+} catch (error) {
+  console.error(error);
+}
+
+document.getElementById("registerForm").addEventListener("submit", async function(e) {
+  e.preventDefault();
+
+  if (!supabaseClient) {
+    showMessage("Supabase configuration could not be found in config.js.");
+    return;
   }
 
-  function hideAllForms() {
-    [
-      "registerForm",
-      "loginForm",
-      "forgotForm",
-      "newPasswordForm",
-      "signedInPanel"
-    ].forEach(id => {
-      document.getElementById(id).classList.add("hidden");
-    });
+  const email = document.getElementById("registerEmail").value.trim();
+  const password = document.getElementById("registerPassword").value;
+
+  const {error} = await supabaseClient.auth.signUp({email, password});
+
+  if (error) {
+    showMessage(error.message);
+  } else {
+    showMessage("Registration successful. Check your email if confirmation is required.", true);
+  }
+});
+
+document.getElementById("loginForm").addEventListener("submit", async function(e) {
+  e.preventDefault();
+
+  if (!supabaseClient) {
+    showMessage("Supabase configuration could not be found in config.js.");
+    return;
   }
 
-  function showLogin() {
-    hideAllForms();
-    document.getElementById("loginForm").classList.remove("hidden");
-    message.textContent = "";
+  const email = document.getElementById("loginEmail").value.trim();
+  const password = document.getElementById("loginPassword").value;
+
+  const {error} = await supabaseClient.auth.signInWithPassword({email, password});
+
+  if (error) {
+    showMessage(error.message);
+  } else {
+    showMessage("Login successful. Redirecting...", true);
+    setTimeout(() => window.location.href = "apply.html", 1000);
+  }
+});
+
+document.getElementById("resetPassword").addEventListener("click", async function() {
+  if (!supabaseClient) {
+    showMessage("Supabase configuration could not be found in config.js.");
+    return;
   }
 
-  function showRegister() {
-    hideAllForms();
-    document.getElementById("registerForm").classList.remove("hidden");
-    message.textContent = "";
+  const email = document.getElementById("loginEmail").value.trim();
+
+  if (!email) {
+    showMessage("Enter your email address in the login email field first.");
+    return;
   }
 
-  function showForgotPassword() {
-    hideAllForms();
-    document.getElementById("forgotForm").classList.remove("hidden");
+  const {error} = await supabaseClient.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin + "/"
+  });
 
-    document.getElementById("forgotEmail").value =
-      document.getElementById("loginEmail").value.trim();
-
-    message.textContent = "";
+  if (error) {
+    showMessage(error.message);
+  } else {
+    showMessage("Password reset instructions have been sent to your email.", true);
   }
-
-  function showNewPasswordForm() {
-    recoveryMode = true;
-    hideAllForms();
-    document.getElementById("newPasswordForm").classList.remove("hidden");
-    message.textContent = "Enter and confirm your new password.";
-  }
-
-  function showSignedIn(user) {
-    hideAllForms();
-    document.getElementById("signedInPanel").classList.remove("hidden");
-    document.getElementById("signedInEmail").textContent = user.email || "";
-  }
-
-  async function registerUser() {
-    if (!supabaseClient) return;
-
-    const button = document.getElementById("registerButton");
-    const firstName = document.getElementById("firstName").value.trim();
-    const lastName = document.getElementById("lastName").value.trim();
-    const email = document.getElementById("registerEmail").value.trim();
-    const password = document.getElementById("registerPassword").value;
-
-    if (!firstName || !lastName || !email || !password) {
-      message.textContent = "Please complete all fields.";
-      return;
-    }
-
-    if (password.length < 8) {
-      message.textContent = "Your password must have at least 8 characters.";
-      return;
-    }
-
-    button.disabled = true;
-    message.textContent = "Creating your account...";
-
-    try {
-      const { data, error } = await supabaseClient.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: window.location.origin + "/",
-          data: {
-            first_name: firstName,
-            last_name: lastName
-          }
-        }
-      });
-
-      if (error) throw error;
-
-      if (data.session) {
-        message.textContent = "Account created successfully.";
-        window.location.href = "apply.html";
-      } else {
-        message.textContent =
-          "Registration received. Please check your email and confirm your account before signing in.";
-      }
-    } catch (error) {
-      message.textContent = error.message || "Unable to create your account.";
-    } finally {
-      button.disabled = false;
-    }
-  }
-
-  async function loginUser() {
-    if (!supabaseClient) return;
-
-    const button = document.getElementById("loginButton");
-    const email = document.getElementById("loginEmail").value.trim();
-    const password = document.getElementById("loginPassword").value;
-
-    if (!email || !password) {
-      message.textContent = "Enter your email and password.";
-      return;
-    }
-
-    button.disabled = true;
-    message.textContent = "Signing in...";
-
-    try {
-      const { data, error } =
-        await supabaseClient.auth.signInWithPassword({ email, password });
-
-      if (error) throw error;
-
-      if (data.session) {
-        window.location.href = "apply.html";
-      } else {
-        message.textContent = "Sign-in did not complete. Please try again.";
-      }
-    } catch (error) {
-      message.textContent = error.message || "Unable to sign in. Please try again.";
-    } finally {
-      button.disabled = false;
-    }
-  }
-
-  async function sendPasswordReset() {
-    if (!supabaseClient) return;
-
-    const button = document.getElementById("forgotButton");
-    const email = document.getElementById("forgotEmail").value.trim();
-
-    if (!email) {
-      message.textContent = "Please enter your registered email address.";
-      return;
-    }
-
-    button.disabled = true;
-    message.textContent = "Sending password reset email...";
-
-    try {
-      const { error } = await supabaseClient.auth.resetPasswordForEmail(
-        email,
-        {
-          redirectTo: window.location.origin + "/"
-        }
-      );
-
-      if (error) throw error;
-
-      message.textContent =
-        "If an account exists for that email, a password reset link will be sent. Please check your inbox.";
-    } catch (error) {
-      message.textContent = error.message || "Unable to send the reset email.";
-    } finally {
-      button.disabled = false;
-    }
-  }
-
-  async function updatePassword() {
-    if (!supabaseClient) return;
-
-    const button = document.getElementById("updatePasswordButton");
-    const password = document.getElementById("newPassword").value;
-    const confirmPassword = document.getElementById("confirmNewPassword").value;
-
-    if (password.length < 8) {
-      message.textContent = "Your new password must have at least 8 characters.";
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      message.textContent = "The passwords do not match.";
-      return;
-    }
-
-    if (!recoveryMode) {
-      message.textContent = "Please open a fresh password reset email before changing your password.";
-      return;
-    }
-
-    button.disabled = true;
-    message.textContent = "Updating your password...";
-
-    try {
-      const { error } = await supabaseClient.auth.updateUser({
-        password: password
-      });
-
-      if (error) throw error;
-
-      recoveryMode = false;
-
-      await supabaseClient.auth.signOut();
-
-      showLogin();
-      message.textContent =
-        "Your password has been updated successfully. Please sign in with your new password.";
-    } catch (error) {
-      message.textContent = error.message || "Unable to update your password.";
-    } finally {
-      button.disabled = false;
-    }
-  }
-
-  document.getElementById("logoutButton")
-    .addEventListener("click", async function() {
-      if (!supabaseClient) return;
-
-      const { error } = await supabaseClient.auth.signOut();
-
-      if (error) {
-        message.textContent = error.message;
-        return;
-      }
-
-      recoveryMode = false;
-      showRegister();
-      message.textContent = "You have signed out.";
-    });
-
-  if (supabaseClient) {
-    supabaseClient.auth.onAuthStateChange((event, session) => {
-      if (event === "PASSWORD_RECOVERY") {
-        showNewPasswordForm();
-        return;
-      }
-
-      if (event === "SIGNED_IN" && session && !recoveryMode) {
-        showSignedIn(session.user);
-      }
-    });
-  }
-
-  async function startPage() {
-    if (!supabaseClient) return;
-
-    const hash = window.location.hash;
-
-    if (hash.includes("error=")) {
-      const params = new URLSearchParams(hash.substring(1));
-      const errorCode = params.get("error_code");
-      const errorDescription = params.get("error_description");
-
-      showLogin();
-
-      if (errorCode === "otp_expired" || errorCode === "access_denied") {
-        message.textContent =
-          "This email link has expired or has already been used. Please request a fresh email link and try again.";
-      } else {
-        message.textContent = errorDescription
-          ? decodeURIComponent(errorDescription.replace(/\+/g, " "))
-          : "The email link could not be verified. Please request a new link.";
-      }
-
-      return;
-    }
-
-    const hashParams = new URLSearchParams(hash.substring(1));
-    const isRecovery = hashParams.get("type") === "recovery";
-
-    if (isRecovery) {
-      showNewPasswordForm();
-    }
-
-    try {
-      const { data, error } = await supabaseClient.auth.getSession();
-
-      if (error) {
-        message.textContent = error.message;
-        if (!isRecovery) showRegister();
-        return;
-      }
-
-      if (isRecovery) {
-        showNewPasswordForm();
-        return;
-      }
-
-      if (data.session) {
-        showSignedIn(data.session.user);
-      } else {
-        showRegister();
-      }
-    } catch (error) {
-      message.textContent =
-        "Unable to check your account session. Please refresh the page.";
-      console.error(error);
-    }
-  }
-
-  startPage();
+});
 </script>
 
 </body>
