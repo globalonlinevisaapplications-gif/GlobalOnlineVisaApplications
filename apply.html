@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#12345a">
-<title>Apply for a Visa | Global Online Visa Applications</title>
+<title>Apply and Track Your Visa | Global Online Visa Applications</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
@@ -42,6 +42,11 @@ button:disabled{opacity:.5;cursor:not-allowed}
 .info{background:#e0f2fe;color:#075985}
 .muted{color:var(--muted);font-size:13px;line-height:1.5}
 .hidden{display:none!important}
+.tracking-card{border:1px solid var(--border);border-radius:9px;padding:15px;margin:12px 0;background:#fff}
+.status{display:inline-block;padding:5px 10px;border-radius:20px;background:#e0f2fe;color:#075985;font-weight:bold;font-size:13px}
+.payment-method{border:1px solid var(--border);border-radius:9px;padding:15px;margin:14px 0}
+.payment-number{font-size:22px;font-weight:bold;color:var(--navy);letter-spacing:.5px}
+a.contact-link{color:var(--blue);font-weight:bold}
 footer{border-top:1px solid var(--border);margin-top:24px;padding-top:16px;color:var(--muted);font-size:13px}
 @media(max-width:650px){
  body{padding:12px 8px}
@@ -60,16 +65,30 @@ footer{border-top:1px solid var(--border);margin-top:24px;padding-top:16px;color
   <div class="brand">Global Online Visa Applications</div>
   <nav aria-label="Main navigation">
     <a href="/">Home</a>
-    <a href="/apply.html">Apply</a>
+    <a href="/apply.html">Apply & Track</a>
+    <a href="/contact.html">Contact</a>
     <a href="/admin.html">Administrator Login</a>
   </nav>
 </header>
 
 <main>
-<h1>Visa Application</h1>
-<p>Complete the form below to submit your visa application.</p>
+<h1>Visa Application and Tracking</h1>
+<p>Sign in to submit an application and track its progress.</p>
 
 <div id="message" class="notice" role="status" aria-live="polite"></div>
+
+<!-- APPLICANT TRACKING -->
+<div class="section" id="trackingSection">
+  <h2>Your Application Tracking</h2>
+  <p class="muted">Your applications and their latest status will appear here after you sign in.</p>
+  <button type="button" id="refreshTracking">Refresh Application Status</button>
+  <div id="trackingResults">
+    <p class="muted">Loading your applications...</p>
+  </div>
+</div>
+
+<!-- APPLICATION FORM -->
+<div id="applicationForm">
 
 <div class="section">
 <h2>1. Destination and Visa Type</h2>
@@ -118,7 +137,8 @@ footer{border-top:1px solid var(--border);margin-top:24px;padding-top:16px;color
   </div>
 </div>
 <p class="muted">
-The service fee is USD 285 per applicant. Official visa fees are shown as a range where available. The total is an estimate, not a final payment quote. The actual official fee and final amount must be confirmed before payment. This form does not collect payment.
+The service fee is USD 285 per applicant. Official visa fees are estimates.
+The final official fee and total must be confirmed before payment.
 </p>
 </div>
 
@@ -132,14 +152,90 @@ I confirm that the information supplied is accurate and that I agree to the appl
 <p class="muted">Your application will be submitted with payment status pending.</p>
 </div>
 
+</div>
+
 <div id="results" class="section hidden">
 <h2>Application submission results</h2>
 <div id="resultDetails"></div>
 </div>
+
+<!-- PAYMENT INSTRUCTIONS -->
+<div class="section" id="paymentInstructions">
+<h2>Payment Instructions</h2>
+<p>Use one of the methods below to send your payment after receiving your confirmed payment amount.</p>
+
+<div class="payment-method">
+<h3>Payment recipient – Airtel Money Kenya</h3>
+<div class="payment-number">+254 751 896 015</div>
+<button type="button" id="copyPaymentNumber">Copy Payment Number</button>
+<p class="muted">Recipient: Global Online Visa Applications. Please verify the recipient's registered name before sending money.</p>
+</div>
+
+<div class="payment-method">
+<h3>Method 1: M-Pesa to Airtel Money</h3>
+<ol>
+<li>Open M-Pesa on your Safaricom line or dial *334#.</li>
+<li>Choose the option for sending money to another mobile network, if available.</li>
+<li>Select Airtel Money where that option is offered.</li>
+<li>Enter the recipient number: <strong>0751896015</strong>.</li>
+<li>Enter the confirmed payment amount.</li>
+<li>Check the recipient details carefully before confirming with your M-Pesa PIN.</li>
+<li>Keep the M-Pesa confirmation message and transaction code.</li>
+</ol>
+<p class="muted">M-Pesa menu options may change. If the other-network option is unavailable, contact Safaricom or use another supported payment method. Do not send money to an unverified number.</p>
+</div>
+
+<div class="payment-method">
+<h3>Method 2: Bank transfer to Airtel Money</h3>
+<ol>
+<li>Open your bank's mobile banking app, internet banking or visit a branch.</li>
+<li>Look for Mobile Money, Airtel Money or Bank-to-Wallet transfer.</li>
+<li>Select Airtel Money as the receiving network, if supported by your bank.</li>
+<li>Enter the recipient number: <strong>+254 751 896 015</strong>.</li>
+<li>Enter the confirmed payment amount.</li>
+<li>Verify the recipient details and any transaction charges before confirming.</li>
+<li>Keep your bank transaction reference or receipt.</li>
+</ol>
+<p class="muted">Bank transfer options differ between banks. Confirm with your bank that it supports transfers to Airtel Money before making payment. Do not use bank account details that have not been officially provided to you.</p>
+</div>
+
+<div class="payment-method">
+<h3>Method 3: Sending money from outside Kenya</h3>
+<p>Applicants outside Kenya can check international remittance providers that support Airtel Money wallet payouts to Kenya.</p>
+<ul>
+<li><a href="https://www.remitly.com/" target="_blank" rel="noopener">Remitly</a></li>
+<li><a href="https://www.worldremit.com/" target="_blank" rel="noopener">WorldRemit</a></li>
+<li><a href="https://www.westernunion.com/" target="_blank" rel="noopener">Western Union</a></li>
+</ul>
+<ol>
+<li>Choose Kenya as the receiving country.</li>
+<li>Check whether Airtel Money or Airtel mobile wallet payout is available.</li>
+<li>Enter the recipient number: <strong>+254 751 896 015</strong>.</li>
+<li>Enter the recipient name exactly as requested by the provider.</li>
+<li>Review the exchange rate, fees and amount to be received.</li>
+<li>Confirm the transfer only after checking the recipient details.</li>
+<li>Keep the transfer confirmation and reference number.</li>
+</ol>
+<p class="muted">International payout availability depends on your country and the remittance provider. If Airtel Money is not listed as a payout option, do not send the money using an alternative method without first contacting us.</p>
+</div>
+
+<div class="notice info" style="display:block">
+<strong>Important:</strong> Always wait for your confirmed payment amount before paying. Sending money does not automatically mark an application as Paid. Our administrator must verify the payment.
+</div>
+
+<h3>After making payment</h3>
+<p>Keep your transaction reference and contact our support team so your payment can be matched to your application.</p>
+<p><strong>Phone:</strong> <a class="contact-link" href="tel:+254751896015">+254 751 896 015</a></p>
+<p><strong>WhatsApp:</strong> <a class="contact-link" href="https://wa.me/254751896015?text=Hello%20Global%20Online%20Visa%20Applications%2C%20I%20have%20made%20a%20payment%20and%20need%20assistance." target="_blank" rel="noopener">Message us on WhatsApp</a></p>
+</div>
+
 </main>
 
 <footer>
-Global Online Visa Applications. Official visa fees are determined by the relevant government authorities. Please verify the final amount before making payment.
+<p>Global Online Visa Applications.</p>
+<p>Phone: <a href="tel:+254751896015">+254 751 896 015</a></p>
+<p>WhatsApp: <a href="https://wa.me/254751896015" target="_blank" rel="noopener">Contact customer support</a></p>
+<p>Official visa fees are determined by the relevant government authorities. Verify the final amount before payment.</p>
 </footer>
 
 </div>
@@ -148,9 +244,6 @@ Global Online Visa Applications. Official visa fees are determined by the releva
 (() => {
 "use strict";
 
-// =====================================
-// APPLICATION SETTINGS — V12
-// =====================================
 const BACKEND_VERSION = "visa-backend-v12";
 const SERVICE_FEE_PER_APPLICANT =
   Number(window.APP_CONFIG?.serviceFeePerApplicant) || 285;
@@ -165,14 +258,12 @@ const ALLOWED_FILE_TYPES = [
   "image/png"
 ];
 
-// =====================================
-// PAGE ELEMENTS AND STATE
-// =====================================
 const messageEl = document.getElementById("message");
 const countryEl = document.getElementById("country");
 const visaTypeEl = document.getElementById("visaType");
 const applicantsEl = document.getElementById("applicants");
 const submitButton = document.getElementById("submitButton");
+const trackingResults = document.getElementById("trackingResults");
 
 let currentUser = null;
 let selectedVisa = null;
@@ -181,9 +272,6 @@ let applicantNumber = 0;
 let submitting = false;
 let visaRequestNumber = 0;
 
-// =====================================
-// DISPLAY HELPERS
-// =====================================
 function showMessage(text, type = "info") {
   messageEl.textContent = text;
   messageEl.className = "notice " + type;
@@ -213,8 +301,6 @@ function firstDefined(object, keys, fallback) {
   return fallback;
 }
 
-// V12 returns official_fee_min and official_fee_max.
-// Legacy field names are accepted as fallback only.
 function getFeeBounds(visa) {
   if (!visa) return null;
 
@@ -232,24 +318,14 @@ function getFeeBounds(visa) {
     "fee_max"
   ], null);
 
-  if (
-    minValue === null || maxValue === null ||
-    minValue === "" || maxValue === ""
-  ) {
-    return null;
-  }
+  if (minValue === null || maxValue === null ||
+      minValue === "" || maxValue === "") return null;
 
   const min = Number(minValue);
   const max = Number(maxValue);
 
-  if (
-    !Number.isFinite(min) ||
-    !Number.isFinite(max) ||
-    min < 0 ||
-    max < min
-  ) {
-    return null;
-  }
+  if (!Number.isFinite(min) || !Number.isFinite(max) ||
+      min < 0 || max < min) return null;
 
   return {min, max};
 }
@@ -265,15 +341,9 @@ function feeRangeText(visa) {
     : "Fee range unavailable";
 }
 
-// =====================================
-// SUPABASE CLIENT
-// =====================================
 function getSupabaseClient() {
-  if (
-    !window.supabase ||
-    !window.SUPABASE_URL ||
-    !window.SUPABASE_ANON_KEY
-  ) {
+  if (!window.supabase || !window.SUPABASE_URL ||
+      !window.SUPABASE_ANON_KEY) {
     throw new Error("Supabase configuration is missing. Please check config.js.");
   }
 
@@ -287,27 +357,20 @@ function getSupabaseClient() {
   return window.supabaseClient;
 }
 
-// =====================================
-// BACKEND REQUEST — V12
-// =====================================
 async function backendRequest(payload) {
   const client = getSupabaseClient();
-
   const {data:sessionData, error:sessionError} =
     await client.auth.getSession();
 
   if (sessionError) throw sessionError;
 
   const session = sessionData.session;
-
   if (!session) {
     throw new Error("Your session has expired. Please sign in again.");
   }
 
-  if (
-    !window.SUPABASE_FUNCTION_URL ||
-    !window.SUPABASE_FUNCTION_URL.includes("/visa-backend-v12")
-  ) {
+  if (!window.SUPABASE_FUNCTION_URL ||
+      !window.SUPABASE_FUNCTION_URL.includes("/visa-backend-v12")) {
     throw new Error("The V12 backend URL is missing. Please check config.js.");
   }
 
@@ -324,48 +387,148 @@ async function backendRequest(payload) {
   const result = await response.json().catch(() => ({}));
 
   if (!response.ok || result.ok === false) {
-    throw new Error(
-      result.error ||
-      result.message ||
-      "The backend request failed."
-    );
+    throw new Error(result.error || result.message || "The backend request failed.");
   }
 
   if (result.version && result.version !== BACKEND_VERSION) {
-    throw new Error(
-      "The response did not come from the expected V12 backend. Check the deployment and config.js."
-    );
+    throw new Error("The response did not come from the expected V12 backend.");
   }
 
   return result;
 }
 
-// =====================================
-// AUTHENTICATION
-// =====================================
 async function loadUser() {
   const {data,error} = await getSupabaseClient().auth.getUser();
-
   if (error || !data.user) {
     throw new Error("Please sign in before submitting a visa application.");
   }
-
   currentUser = data.user;
 }
 
-// =====================================
-// LOAD COUNTRIES
-// =====================================
+/* APPLICATION TRACKING */
+
+function displayValue(value) {
+  if (value === null || value === undefined || value === "") {
+    return "Not provided";
+  }
+  return String(value);
+}
+
+function addTrackingRow(parent, label, value) {
+  const p = document.createElement("p");
+  const strong = document.createElement("strong");
+  strong.textContent = label + ": ";
+  p.appendChild(strong);
+  p.appendChild(document.createTextNode(displayValue(value)));
+  parent.appendChild(p);
+}
+
+function getApplicationStatus(application) {
+  return firstDefined(application, [
+    "status",
+    "application_status",
+    "current_status"
+  ], "Submitted");
+}
+
+function getPaymentStatus(application) {
+  return firstDefined(application, [
+    "payment_status",
+    "paymentStatus"
+  ], "Pending");
+}
+
+function renderTracking(applications) {
+  trackingResults.innerHTML = "";
+
+  if (!Array.isArray(applications) || applications.length === 0) {
+    trackingResults.textContent =
+      "You do not have any applications yet. Your submitted applications will appear here.";
+    return;
+  }
+
+  applications.forEach((application) => {
+    const card = document.createElement("div");
+    card.className = "tracking-card";
+
+    const heading = document.createElement("h3");
+    heading.textContent = "Visa Application";
+    card.appendChild(heading);
+
+    addTrackingRow(card, "Reference number",
+      firstDefined(application, ["reference_number","application_reference","reference"], "Pending"));
+
+    addTrackingRow(card, "Destination",
+      firstDefined(application, ["destination_country","country_name","country"], "Not provided"));
+
+    addTrackingRow(card, "Visa type",
+      firstDefined(application, ["visa_type","visa_name","visa_type_name"], "Not provided"));
+
+    addTrackingRow(card, "Application date",
+      firstDefined(application, ["created_at","submitted_at","application_date"], "Not provided"));
+
+    const status = document.createElement("p");
+    const statusLabel = document.createElement("strong");
+    statusLabel.textContent = "Application status: ";
+    status.appendChild(statusLabel);
+
+    const statusBadge = document.createElement("span");
+    statusBadge.className = "status";
+    statusBadge.textContent = getApplicationStatus(application);
+    status.appendChild(statusBadge);
+    card.appendChild(status);
+
+    addTrackingRow(card, "Payment status", getPaymentStatus(application));
+
+    addTrackingRow(card, "Administrator update",
+      firstDefined(application, [
+        "admin_notes",
+        "status_message",
+        "remarks",
+        "message"
+      ], "No additional update at this time."));
+
+    trackingResults.appendChild(card);
+  });
+}
+
+async function loadTracking() {
+  if (!currentUser) {
+    trackingResults.textContent = "Please sign in to view your applications.";
+    return;
+  }
+
+  trackingResults.textContent = "Loading your applications...";
+
+  try {
+    const result = await backendRequest({
+      action:"my_applications"
+    });
+
+    const applications = result.applications ||
+      result.my_applications ||
+      result.data ||
+      [];
+
+    renderTracking(applications);
+  } catch(error) {
+    console.error("Application tracking error:", error);
+    trackingResults.textContent =
+      "We could not load your applications. Please try refreshing or contact support. " +
+      (error.message || "");
+  }
+}
+
+/* COUNTRIES AND VISA TYPES */
+
 async function loadCountries() {
   countryEl.disabled = true;
-  countryEl.innerHTML =
-    '<option value="">Loading countries...</option>';
+  countryEl.innerHTML = '<option value="">Loading countries...</option>';
 
   const result = await backendRequest({action:"countries"});
   const countries = result.countries || [];
 
-  countryEl.innerHTML =
-    '<option value="">Select a country</option>';
+  countryEl.innerHTML = '<option value="">Select a country</option>';
 
   countries.forEach(country => {
     const option = document.createElement("option");
@@ -377,22 +540,15 @@ async function loadCountries() {
   countryEl.disabled = false;
 
   if (!countries.length) {
-    showMessage(
-      "No destination countries are currently available.",
-      "info"
-    );
+    showMessage("No destination countries are currently available.", "info");
   }
 }
 
-// =====================================
-// LOAD VISA TYPES AND FEE RANGES
-// =====================================
 async function loadVisaTypes(countryId) {
   const requestNumber = ++visaRequestNumber;
 
   visaTypeEl.disabled = true;
-  visaTypeEl.innerHTML =
-    '<option value="">Loading visa types...</option>';
+  visaTypeEl.innerHTML = '<option value="">Loading visa types...</option>';
 
   selectedVisa = null;
   visaTypes = [];
@@ -406,44 +562,31 @@ async function loadVisaTypes(countryId) {
   if (requestNumber !== visaRequestNumber) return;
 
   visaTypes = result.visa_types || [];
-
-  visaTypeEl.innerHTML =
-    '<option value="">Select a visa type</option>';
+  visaTypeEl.innerHTML = '<option value="">Select a visa type</option>';
 
   visaTypes.forEach(visa => {
     const option = document.createElement("option");
     option.value = visa.id;
-    option.textContent =
-      (visa.visa_name || "Visa") + " — " + feeRangeText(visa);
+    option.textContent = (visa.visa_name || "Visa") + " — " + feeRangeText(visa);
     visaTypeEl.appendChild(option);
   });
 
   visaTypeEl.disabled = false;
 
   if (!visaTypes.length) {
-    showMessage(
-      "No visa types are available for this destination.",
-      "info"
-    );
+    showMessage("No visa types are available for this destination.", "info");
   }
 }
 
-// =====================================
-// FEE CALCULATION — V12
-// =====================================
-function updateFees() {
-  const count =
-    applicantsEl.querySelectorAll(".applicant").length || 1;
+/* FEES */
 
+function updateFees() {
+  const count = applicantsEl.querySelectorAll(".applicant").length || 1;
   const bounds = getFeeBounds(selectedVisa);
 
-  document.getElementById("applicantCount").textContent =
-    String(count);
-
+  document.getElementById("applicantCount").textContent = String(count);
   document.getElementById("officialFee").textContent =
-    bounds
-      ? money(bounds.min) + " – " + money(bounds.max)
-      : "Select a visa type";
+    bounds ? money(bounds.min) + " – " + money(bounds.max) : "Select a visa type";
 
   document.getElementById("serviceFee").textContent =
     money(SERVICE_FEE_PER_APPLICANT);
@@ -453,39 +596,29 @@ function updateFees() {
 
   document.getElementById("grandTotal").textContent =
     bounds
-      ? money(
-          (bounds.min + SERVICE_FEE_PER_APPLICANT) * count
-        ) + " – " +
-        money(
-          (bounds.max + SERVICE_FEE_PER_APPLICANT) * count
-        )
+      ? money((bounds.min + SERVICE_FEE_PER_APPLICANT) * count) +
+        " – " +
+        money((bounds.max + SERVICE_FEE_PER_APPLICANT) * count)
       : "—";
 }
 
-// =====================================
-// APPLICANT FIELD HELPERS
-// =====================================
+/* FORM FIELD HELPERS */
+
 function addField(parent,labelText,name,type="text",required=false) {
   const wrap = document.createElement("div");
   const label = document.createElement("label");
   const input = document.createElement("input");
 
-  label.appendChild(
-    document.createTextNode(labelText + (required ? " *" : ""))
-  );
-
+  label.appendChild(document.createTextNode(labelText + (required ? " *" : "")));
   input.name = name;
   input.type = type;
   input.required = required;
 
-  if (type === "file") {
-    input.accept = ".pdf,.jpg,.jpeg,.png";
-  }
+  if (type === "file") input.accept = ".pdf,.jpg,.jpeg,.png";
 
   label.appendChild(input);
   wrap.appendChild(label);
   parent.appendChild(wrap);
-
   return input;
 }
 
@@ -494,10 +627,7 @@ function addSelect(parent,labelText,name,options,required=false) {
   const label = document.createElement("label");
   const select = document.createElement("select");
 
-  label.appendChild(
-    document.createTextNode(labelText + (required ? " *" : ""))
-  );
-
+  label.appendChild(document.createTextNode(labelText + (required ? " *" : "")));
   select.name = name;
   select.required = required;
 
@@ -511,22 +641,16 @@ function addSelect(parent,labelText,name,options,required=false) {
   label.appendChild(select);
   wrap.appendChild(label);
   parent.appendChild(wrap);
-
   return select;
 }
 
-// =====================================
-// ADD APPLICANT
-// =====================================
+/* ADD APPLICANT */
+
 function addApplicant(isPrimary=false) {
-  const count =
-    applicantsEl.querySelectorAll(".applicant").length;
+  const count = applicantsEl.querySelectorAll(".applicant").length;
 
   if (count >= MAX_APPLICANTS) {
-    showMessage(
-      "You can add a maximum of " + MAX_APPLICANTS + " applicants.",
-      "error"
-    );
+    showMessage("You can add a maximum of " + MAX_APPLICANTS + " applicants.", "error");
     return;
   }
 
@@ -534,11 +658,9 @@ function addApplicant(isPrimary=false) {
 
   const card = document.createElement("div");
   card.className = "applicant";
-  card.dataset.applicant = String(applicantNumber);
 
   const heading = document.createElement("h3");
-  heading.textContent =
-    isPrimary ? "Primary Applicant" : "Family Member " + count;
+  heading.textContent = isPrimary ? "Primary Applicant" : "Family Member " + count;
   card.appendChild(heading);
 
   const grid = document.createElement("div");
@@ -553,74 +675,35 @@ function addApplicant(isPrimary=false) {
   addField(grid,"Passport number","passport_number");
   addField(grid,"Date of birth","date_of_birth","date");
 
-  const passport = addSelect(
-    grid,
-    "Do you have a passport?",
-    "has_passport",
-    [
-      {value:"true",label:"Yes"},
-      {value:"false",label:"No"}
-    ],
-    true
-  );
+  const passport = addSelect(grid,"Do you have a passport?","has_passport",[
+    {value:"true",label:"Yes"},
+    {value:"false",label:"No"}
+  ],true);
 
-  const refugee = addSelect(
-    grid,
-    "Are you a refugee?",
-    "is_refugee",
-    [
-      {value:"false",label:"No"},
-      {value:"true",label:"Yes"}
-    ],
-    true
-  );
+  const refugee = addSelect(grid,"Are you a refugee?","is_refugee",[
+    {value:"false",label:"No"},
+    {value:"true",label:"Yes"}
+  ],true);
 
-  const refugeeNumber =
-    addField(grid,"Refugee card number","refugee_card_number");
+  const refugeeNumber = addField(grid,"Refugee card number","refugee_card_number");
+  const unNumber = addField(grid,"UN manifest number","un_manifest_number");
+  const passportPhoto = addField(grid,"Passport photo","passport_photo","file");
+  const passportPage = addField(grid,"Passport information page","passport_page","file");
+  const refugeeCard = addField(grid,"Refugee card document","refugee_card","file");
+  const unManifest = addField(grid,"UN manifest document","un_manifest","file");
 
-  const unNumber =
-    addField(grid,"UN manifest number","un_manifest_number");
-
-  const passportPhoto =
-    addField(grid,"Passport photo","passport_photo","file");
-
-  const passportPage =
-    addField(grid,"Passport information page","passport_page","file");
-
-  const refugeeCard =
-    addField(grid,"Refugee card document","refugee_card","file");
-
-  const unManifest =
-    addField(grid,"UN manifest document","un_manifest","file");
-
-  addField(
-    grid,
-    "Other supporting document",
-    "supporting_document",
-    "file"
-  );
+  addField(grid,"Other supporting document","supporting_document","file");
 
   function updateConditionalFields() {
     const hasPassport = passport.value === "true";
     const isRefugee = refugee.value === "true";
 
-    passportPhoto.parentElement.style.display =
-      hasPassport ? "" : "none";
-
-    passportPage.parentElement.style.display =
-      hasPassport ? "" : "none";
-
-    refugeeNumber.parentElement.style.display =
-      isRefugee ? "" : "none";
-
-    refugeeCard.parentElement.style.display =
-      isRefugee ? "" : "none";
-
-    unNumber.parentElement.style.display =
-      isRefugee ? "" : "none";
-
-    unManifest.parentElement.style.display =
-      isRefugee ? "" : "none";
+    passportPhoto.parentElement.style.display = hasPassport ? "" : "none";
+    passportPage.parentElement.style.display = hasPassport ? "" : "none";
+    refugeeNumber.parentElement.style.display = isRefugee ? "" : "none";
+    refugeeCard.parentElement.style.display = isRefugee ? "" : "none";
+    unNumber.parentElement.style.display = isRefugee ? "" : "none";
+    unManifest.parentElement.style.display = isRefugee ? "" : "none";
 
     if (!hasPassport) {
       passportPhoto.value = "";
@@ -658,104 +741,59 @@ function addApplicant(isPrimary=false) {
   updateFees();
 }
 
-// =====================================
-// RENUMBER APPLICANTS
-// =====================================
 function renumberApplicants() {
-  [...applicantsEl.querySelectorAll(".applicant")].forEach(
-    (card,index) => {
-      card.querySelector("h3").textContent =
-        index === 0
-          ? "Primary Applicant"
-          : "Family Member " + index;
-    }
-  );
+  [...applicantsEl.querySelectorAll(".applicant")].forEach((card,index) => {
+    card.querySelector("h3").textContent =
+      index === 0 ? "Primary Applicant" : "Family Member " + index;
+  });
 }
 
-// =====================================
-// VALIDATE AND ENCODE DOCUMENTS
-// =====================================
+/* DOCUMENT HANDLING */
+
 function fileToBase64(file) {
   return new Promise((resolve,reject) => {
     if (!file) return resolve(null);
 
     if (file.size > MAX_FILE_SIZE) {
-      return reject(
-        new Error(file.name + " exceeds the 8 MB file limit.")
-      );
+      return reject(new Error(file.name + " exceeds the 8 MB file limit."));
     }
 
     if (!ALLOWED_FILE_TYPES.includes(file.type)) {
-      return reject(
-        new Error(file.name + " must be a PDF, JPEG or PNG file.")
-      );
+      return reject(new Error(file.name + " must be a PDF, JPEG or PNG file."));
     }
 
     const reader = new FileReader();
-
-    reader.onload = () => {
-      resolve(String(reader.result).split(",")[1]);
-    };
-
-    reader.onerror = () => {
-      reject(new Error("Could not read " + file.name));
-    };
-
+    reader.onload = () => resolve(String(reader.result).split(",")[1]);
+    reader.onerror = () => reject(new Error("Could not read " + file.name));
     reader.readAsDataURL(file);
   });
 }
 
-// =====================================
-// COLLECT APPLICANT INFORMATION
-// =====================================
 async function collectApplicant(card,index) {
-  const get = name =>
-    card.querySelector('[name="' + name + '"]');
+  const get = name => card.querySelector('[name="' + name + '"]');
 
   const firstName = get("first_name").value.trim();
   const lastName = get("last_name").value.trim();
 
   if (!firstName || !lastName) {
-    throw new Error(
-      "Please enter the first and last name for applicant " +
-      (index+1) + "."
-    );
+    throw new Error("Please enter the first and last name for applicant " + (index+1) + ".");
   }
 
-  const hasPassport =
-    get("has_passport").value === "true";
-
-  const isRefugee =
-    get("is_refugee").value === "true";
-
+  const hasPassport = get("has_passport").value === "true";
+  const isRefugee = get("is_refugee").value === "true";
   const enteredEmail = get("email").value.trim();
-  const email =
-    enteredEmail || (index === 0 ? currentUser.email : null);
+  const email = enteredEmail || (index === 0 ? currentUser.email : null);
 
   if (index === 0 && !email) {
-    throw new Error(
-      "The primary applicant needs an email address."
-    );
+    throw new Error("The primary applicant needs an email address.");
   }
 
-  if (
-    email &&
-    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
-  ) {
-    throw new Error(
-      "Please enter a valid email address for applicant " +
-      (index+1) + "."
-    );
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    throw new Error("Please enter a valid email address for applicant " + (index+1) + ".");
   }
 
-  if (
-    isRefugee &&
-    !get("refugee_card_number").value.trim()
-  ) {
-    throw new Error(
-      "Please enter the refugee card number for applicant " +
-      (index+1) + "."
-    );
+  if (isRefugee && !get("refugee_card_number").value.trim()) {
+    throw new Error("Please enter the refugee card number for applicant " + (index+1) + ".");
   }
 
   const fileFields = [
@@ -770,7 +808,6 @@ async function collectApplicant(card,index) {
 
   for (const [field,type,applicable] of fileFields) {
     if (!applicable) continue;
-
     const file = get(field).files[0];
 
     if (file) {
@@ -783,24 +820,12 @@ async function collectApplicant(card,index) {
     }
   }
 
-  if (
-    hasPassport &&
-    !documents.some(d => d.document_type === "passport_photo")
-  ) {
-    throw new Error(
-      "Please upload a passport photo for applicant " +
-      (index+1) + "."
-    );
+  if (hasPassport && !documents.some(d => d.document_type === "passport_photo")) {
+    throw new Error("Please upload a passport photo for applicant " + (index+1) + ".");
   }
 
-  if (
-    hasPassport &&
-    !documents.some(d => d.document_type === "passport_page")
-  ) {
-    throw new Error(
-      "Please upload the passport information page for applicant " +
-      (index+1) + "."
-    );
+  if (hasPassport && !documents.some(d => d.document_type === "passport_page")) {
+    throw new Error("Please upload the passport information page for applicant " + (index+1) + ".");
   }
 
   return {
@@ -813,88 +838,55 @@ async function collectApplicant(card,index) {
     date_of_birth:get("date_of_birth").value || null,
     has_passport:hasPassport,
     is_refugee:isRefugee,
-    refugee_card_number:
-      isRefugee
-        ? get("refugee_card_number").value.trim()
-        : null,
-    un_manifest_number:
-      isRefugee
-        ? get("un_manifest_number").value.trim()
-        : null,
+    refugee_card_number:isRefugee ? get("refugee_card_number").value.trim() : null,
+    un_manifest_number:isRefugee ? get("un_manifest_number").value.trim() : null,
     documents
   };
 }
 
-// =====================================
-// SAFE RESULT DISPLAY
-// =====================================
+/* RESULT DISPLAY */
+
 function appendResultRow(parent,label,value) {
   const row = document.createElement("p");
   const strong = document.createElement("strong");
-
   strong.textContent = label + ": ";
   row.appendChild(strong);
-
-  row.appendChild(
-    document.createTextNode(
-      value === null || value === undefined || value === ""
-        ? "Not provided"
-        : String(value)
-    )
-  );
-
+  row.appendChild(document.createTextNode(
+    value === null || value === undefined || value === "" ? "Not provided" : String(value)
+  ));
   parent.appendChild(row);
 }
 
-// =====================================
-// SUBMIT APPLICATION
-// =====================================
+/* SUBMIT APPLICATION */
+
 async function submitApplication() {
   if (submitting) return;
-
   hideMessage();
 
   if (!currentUser) {
-    showMessage(
-      "Please sign in before submitting.",
-      "error"
-    );
+    showMessage("Please sign in before submitting.", "error");
     return;
   }
 
   if (!countryEl.value || !visaTypeEl.value || !selectedVisa) {
-    showMessage(
-      "Please select a destination country and visa type.",
-      "error"
-    );
+    showMessage("Please select a destination country and visa type.", "error");
     return;
   }
 
   if (!validFeeRange(selectedVisa)) {
-    showMessage(
-      "The official visa fee range for this visa type is missing or invalid. Please choose another visa type or contact support. No application has been submitted.",
-      "error"
-    );
+    showMessage("The official visa fee range is missing or invalid. No application has been submitted.", "error");
     return;
   }
 
   if (!document.getElementById("confirm").checked) {
-    showMessage(
-      "Please confirm the information before submitting.",
-      "error"
-    );
+    showMessage("Please confirm the information before submitting.", "error");
     return;
   }
 
-  const cards = [
-    ...applicantsEl.querySelectorAll(".applicant")
-  ];
+  const cards = [...applicantsEl.querySelectorAll(".applicant")];
 
   if (!cards.length || cards.length > MAX_APPLICANTS) {
-    showMessage(
-      "Please check the number of applicants.",
-      "error"
-    );
+    showMessage("Please check the number of applicants.", "error");
     return;
   }
 
@@ -906,13 +898,9 @@ async function submitApplication() {
     const applicants = [];
 
     for (let i=0; i<cards.length; i++) {
-      applicants.push(
-        await collectApplicant(cards[i],i)
-      );
+      applicants.push(await collectApplicant(cards[i],i));
     }
 
-    // V12 calculates fee values from the database.
-    // The browser does not send an authoritative payment amount.
     const result = await backendRequest({
       action:"submit",
       country_id:countryEl.value,
@@ -921,9 +909,7 @@ async function submitApplication() {
     });
 
     const submitted = result.applications || [];
-    const resultDetails =
-      document.getElementById("resultDetails");
-
+    const resultDetails = document.getElementById("resultDetails");
     resultDetails.innerHTML = "";
 
     submitted.forEach((application,index) => {
@@ -934,129 +920,69 @@ async function submitApplication() {
       heading.textContent = "Applicant " + (index+1);
       item.appendChild(heading);
 
-      const selectedBounds =
-        getFeeBounds(selectedVisa) || {min:0,max:0};
+      const selectedBounds = getFeeBounds(selectedVisa) || {min:0,max:0};
 
       const min = firstDefined(application, [
-        "official_fee_min",
-        "official_visa_fee_min",
-        "visa_fee_min"
+        "official_fee_min","official_visa_fee_min","visa_fee_min"
       ], selectedBounds.min);
 
       const max = firstDefined(application, [
-        "official_fee_max",
-        "official_visa_fee_max",
-        "visa_fee_max"
+        "official_fee_max","official_visa_fee_max","visa_fee_max"
       ], selectedBounds.max);
 
       const totalMin = firstDefined(application, [
-        "total_min",
-        "total_fee_min",
-        "total_amount_min"
+        "total_min","total_fee_min","total_amount_min"
       ], Number(min) + SERVICE_FEE_PER_APPLICANT);
 
       const totalMax = firstDefined(application, [
-        "total_max",
-        "total_fee_max",
-        "total_amount_max"
+        "total_max","total_fee_max","total_amount_max"
       ], Number(max) + SERVICE_FEE_PER_APPLICANT);
 
-      const serviceFee = firstDefined(
-        application,
-        ["service_fee"],
-        SERVICE_FEE_PER_APPLICANT
-      );
-
-      appendResultRow(
-        item,
-        "Reference number",
-        application.reference_number
-      );
-
-      appendResultRow(
-        item,
-        "Destination",
-        application.destination_country
-      );
-
-      appendResultRow(
-        item,
-        "Visa type",
-        application.visa_type
-      );
-
-      appendResultRow(
-        item,
-        "Estimated official visa fee",
-        money(min) + " – " + money(max)
-      );
-
-      appendResultRow(
-        item,
-        "Service fee",
-        money(serviceFee)
-      );
-
-      appendResultRow(
-        item,
-        "Estimated total",
-        money(totalMin) + " – " + money(totalMax)
-      );
-
-      appendResultRow(
-        item,
-        "Payment status",
-        "Pending"
-      );
+      appendResultRow(item,"Reference number",application.reference_number);
+      appendResultRow(item,"Destination",application.destination_country);
+      appendResultRow(item,"Visa type",application.visa_type);
+      appendResultRow(item,"Estimated official visa fee",money(min) + " – " + money(max));
+      appendResultRow(item,"Service fee",money(firstDefined(application,["service_fee"],SERVICE_FEE_PER_APPLICANT)));
+      appendResultRow(item,"Estimated total",money(totalMin) + " – " + money(totalMax));
+      appendResultRow(item,"Payment status","Pending");
 
       resultDetails.appendChild(item);
     });
 
-    document.getElementById("results")
-      .classList.remove("hidden");
+    document.getElementById("results").classList.remove("hidden");
 
     if (submitted.length !== applicants.length) {
-      showMessage(
-        "The backend accepted the submission but returned an unexpected number of application records. Do not submit again. Please contact support and provide the reference details shown below.",
-        "info"
-      );
+      showMessage("The backend accepted the submission but returned an unexpected number of records. Do not submit again. Contact support with the reference details shown.", "info");
     } else {
       showMessage(
         result.message ||
-        "Your application was submitted. The displayed fee is an estimate; the final official fee and payment amount must be confirmed before payment.",
+        "Your application was submitted. The final fee must be confirmed before payment.",
         "success"
       );
     }
 
     submitButton.textContent = "Application submitted";
 
+    await loadTracking();
+
   } catch(error) {
     console.error("Application submission error:",error);
-
-    showMessage(
-      error.message || "Application submission failed.",
-      "error"
-    );
-
+    showMessage(error.message || "Application submission failed.", "error");
     submitButton.disabled = false;
     submitButton.textContent = "Submit Visa Application";
-
   } finally {
     submitting = false;
   }
 }
 
-// =====================================
-// COUNTRY CHANGE
-// =====================================
+/* EVENTS */
+
 countryEl.addEventListener("change",async() => {
   hideMessage();
   visaRequestNumber++;
 
   if (!countryEl.value) {
-    visaTypeEl.innerHTML =
-      '<option value="">Select a destination country first</option>';
-
+    visaTypeEl.innerHTML = '<option value="">Select a destination country first</option>';
     visaTypeEl.disabled = true;
     selectedVisa = null;
     visaTypes = [];
@@ -1067,61 +993,55 @@ countryEl.addEventListener("change",async() => {
   try {
     await loadVisaTypes(countryEl.value);
   } catch(error) {
-    visaTypeEl.innerHTML =
-      '<option value="">Could not load visa types</option>';
-
+    visaTypeEl.innerHTML = '<option value="">Could not load visa types</option>';
     visaTypeEl.disabled = true;
     showMessage(error.message,"error");
   }
 });
 
-// =====================================
-// VISA TYPE CHANGE
-// =====================================
 visaTypeEl.addEventListener("change",() => {
-  selectedVisa =
-    visaTypes.find(
-      visa => String(visa.id) === String(visaTypeEl.value)
-    ) || null;
+  selectedVisa = visaTypes.find(
+    visa => String(visa.id) === String(visaTypeEl.value)
+  ) || null;
 
   updateFees();
 
   if (selectedVisa && !validFeeRange(selectedVisa)) {
-    showMessage(
-      "The official fee range for this visa type is not configured. You cannot submit this application until the fee range is corrected.",
-      "error"
-    );
+    showMessage("The official fee range is not configured for this visa type.", "error");
   } else {
     hideMessage();
   }
 });
 
-// =====================================
-// BUTTON EVENTS
-// =====================================
 document.getElementById("addApplicant")
   .addEventListener("click",() => addApplicant(false));
 
-submitButton.addEventListener(
-  "click",
-  submitApplication
-);
+submitButton.addEventListener("click",submitApplication);
 
-// =====================================
-// PAGE INITIALIZATION
-// =====================================
+document.getElementById("refreshTracking")
+  .addEventListener("click",loadTracking);
+
+document.getElementById("copyPaymentNumber")
+  .addEventListener("click",async() => {
+    try {
+      await navigator.clipboard.writeText("+254751896015");
+      showMessage("Airtel Money number copied.", "success");
+    } catch(error) {
+      showMessage("Please copy the payment number manually: +254 751 896 015", "info");
+    }
+  });
+
+/* INITIALIZATION */
+
 async function initialise() {
   try {
     await loadUser();
     addApplicant(true);
     await loadCountries();
     updateFees();
-
+    await loadTracking();
   } catch(error) {
-    console.error(
-      "Application page initialisation:",
-      error
-    );
+    console.error("Application page initialisation:",error);
 
     showMessage(
       error.message || "Could not initialise application page.",
@@ -1129,6 +1049,8 @@ async function initialise() {
     );
 
     submitButton.disabled = true;
+    trackingResults.textContent =
+      "Please sign in to view your application tracking and submit an application.";
   }
 }
 
