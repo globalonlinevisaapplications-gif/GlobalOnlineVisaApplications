@@ -1,7 +1,6 @@
-
 /**
  * GLOBAL ONLINE VISA APPLICATIONS
- * Production Configuration - V11
+ * Production Configuration - V12
  *
  * File: config.js
  * Hosting: Netlify
@@ -35,12 +34,12 @@
 
 
   // =====================================
-  // SUPABASE EDGE FUNCTION — V11
+  // SUPABASE EDGE FUNCTION — V12
   // =====================================
 
   window.SUPABASE_FUNCTION_URL =
     window.SUPABASE_URL +
-    "/functions/v1/visa-backend-v11";
+    "/functions/v1/visa-backend-v12";
 
 
   // =====================================
@@ -82,7 +81,7 @@
     defaultCountry: "",
     allowApplicationSubmission: true,
     productionMode: true,
-    backendVersion: "visa-backend-v11",
+    backendVersion: "visa-backend-v12",
     serviceFeePerApplicant: 285,
     maximumApplicants: 10
   };
@@ -147,7 +146,7 @@
 
   if (window.validateAppConfig()) {
     console.info(
-      "Global Online Visa Applications configuration loaded - V11."
+      "Global Online Visa Applications configuration loaded - V12."
     );
   } else {
     console.error("Application configuration is incomplete.");
