@@ -19,6 +19,7 @@ main{max-width:1500px;margin:24px auto;padding:0 16px}
 nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
 button{border:0;border-radius:6px;background:#1557a0;color:#fff;padding:10px 14px;cursor:pointer}
 button.secondary{background:#475569}
+button.danger{background:#b91c1c}
 button:disabled{opacity:.55;cursor:not-allowed}
 nav button.active{background:#0b2747}
 input,select{padding:10px;border:1px solid #cbd5e1;border-radius:6px;max-width:100%}
@@ -36,9 +37,31 @@ th{background:#f8fafc}
 .actions{display:flex;gap:6px;flex-wrap:wrap;min-width:190px}
 .actions button{padding:7px 9px;font-size:12px}
 .fee-note{font-size:12px;color:#64748b;line-height:1.4;margin-top:5px}
+.detail-overlay{position:fixed;inset:0;background:rgba(15,23,42,.65);z-index:1000;display:none;overflow-y:auto;padding:20px}
+.detail-overlay.open{display:block}
+.detail-modal{background:#fff;max-width:950px;margin:20px auto;border-radius:12px;padding:22px;box-shadow:0 15px 50px rgba(0,0,0,.25)}
+.detail-header{display:flex;justify-content:space-between;align-items:flex-start;gap:15px;border-bottom:1px solid #e5eaf0;padding-bottom:14px;margin-bottom:18px}
+.detail-header h2{margin:0 0 6px;color:#12345a}
+.detail-section{margin:22px 0}
+.detail-section h3{color:#12345a;border-bottom:1px solid #e5eaf0;padding-bottom:9px}
+.detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.detail-field{background:#f8fafc;border:1px solid #e5eaf0;border-radius:7px;padding:11px;min-width:0;overflow-wrap:anywhere}
+.detail-field label{display:block;color:#64748b;font-size:12px;margin-bottom:6px}
+.detail-field strong{font-size:14px;white-space:pre-wrap}
+.document-list{display:grid;gap:10px}
+.document-item{border:1px solid #e2e8f0;border-radius:8px;padding:12px;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.document-item small{display:block;color:#64748b;margin-top:5px}
+.document-actions{display:flex;gap:7px;flex-wrap:wrap}
+.document-actions button{font-size:12px}
+.close-button{background:#475569}
+.empty{color:#64748b;padding:12px;background:#f8fafc;border-radius:7px}
 @media(max-width:800px){
  .stats{grid-template-columns:repeat(2,1fr)}
  header{align-items:flex-start;flex-direction:column}
+ .detail-grid{grid-template-columns:1fr}
+ .detail-modal{padding:15px;margin:5px auto}
+ .detail-overlay{padding:8px}
+ .document-item{align-items:flex-start;flex-direction:column}
 }
 </style>
 </head>
@@ -148,6 +171,22 @@ th{background:#f8fafc}
   </div>
 </main>
 
+<!-- Applicant details modal -->
+<div id="detailOverlay" class="detail-overlay" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
+  <div class="detail-modal">
+    <div class="detail-header">
+      <div>
+        <h2 id="detailTitle">Applicant details</h2>
+        <div id="detailReference" class="muted"></div>
+      </div>
+      <button id="closeDetails" class="close-button" type="button">Close</button>
+    </div>
+    <div id="detailContent">
+      <p class="muted">Loading applicant details…</p>
+    </div>
+  </div>
+</div>
+
 <script>
 (() => {
 "use strict";
@@ -157,6 +196,8 @@ const SERVICE_FEE_PER_APPLICANT = 285;
 
 let sb;
 let apps = [], payments = [], enquiries = [], notifications = [];
+let activeDetailApplication = null;
+
 const $ = id => document.getElementById(id);
 
 function notice(text,type="info"){
@@ -186,8 +227,13 @@ function relationOne(value){
   return Array.isArray(value)?(value[0]||{}):(value||{});
 }
 
-function primaryApplicant(application){return relationOne(application.applicants);}
-function visaRecord(application){return relationOne(application.visa_types);}
+function primaryApplicant(application){
+  return relationOne(application.applicants);
+}
+
+function visaRecord(application){
+  return relationOne(application.visa_types);
+}
 
 function feeRange(application){
   const visa=visaRecord(application);
@@ -205,7 +251,10 @@ function feeRange(application){
 function totalRange(application){
   const range=feeRange(application);
   if(!range)return null;
-  return {min:range.min+SERVICE_FEE_PER_APPLICANT,max:range.max+SERVICE_FEE_PER_APPLICANT};
+  return {
+    min:range.min+SERVICE_FEE_PER_APPLICANT,
+    max:range.max+SERVICE_FEE_PER_APPLICANT
+  };
 }
 
 async function api(payload){
@@ -229,14 +278,22 @@ async function api(payload){
   });
 
   const output=await response.json().catch(()=>({}));
-  if(!response.ok||output.ok===false)throw new Error(output.error||output.message||"Backend request failed.");
-  if(output.version!==BACKEND_VERSION)throw new Error("V12 backend version mismatch. Check the deployed function and config.js.");
+  if(!response.ok||output.ok===false)
+    throw new Error(output.error||output.message||"Backend request failed.");
+
+  if(output.version!==BACKEND_VERSION)
+    throw new Error("V12 backend version mismatch. Check the deployed function and config.js.");
+
   return output;
 }
 
 function setTab(name){
-  document.querySelectorAll(".tab").forEach(section=>section.classList.toggle("hidden",section.id!==name));
-  document.querySelectorAll("nav button").forEach(button=>button.classList.toggle("active",button.dataset.tab===name));
+  document.querySelectorAll(".tab").forEach(section=>
+    section.classList.toggle("hidden",section.id!==name)
+  );
+  document.querySelectorAll("nav button").forEach(button=>
+    button.classList.toggle("active",button.dataset.tab===name)
+  );
 }
 
 function renderApps(){
@@ -244,40 +301,73 @@ function renderApps(){
   const status=$("statusFilter").value;
 
   const filtered=apps.filter(application=>{
-    const applicant=primaryApplicant(application),visa=visaRecord(application);
+    const applicant=primaryApplicant(application);
+    const visa=visaRecord(application);
     const haystack=[
-      application.reference_number,applicant.first_name,applicant.last_name,
-      applicant.email,application.destination_country_name,visa.visa_name
+      application.reference_number,
+      applicant.first_name,
+      applicant.last_name,
+      applicant.email,
+      applicant.phone,
+      applicant.passport_number,
+      applicant.nationality,
+      application.destination_country_name,
+      application.destination_country,
+      visa.visa_name
     ].join(" ").toLowerCase();
-    return (!query||haystack.includes(query))&&(!status||application.status===status);
+
+    return (!query||haystack.includes(query))&&
+      (!status||application.status===status);
   });
 
   $("appRows").innerHTML=filtered.map(application=>{
-    const applicant=primaryApplicant(application),visa=visaRecord(application);
-    const range=feeRange(application),totals=totalRange(application);
-    const applicantName=[applicant.first_name,applicant.last_name].filter(Boolean).join(" ");
-    const officialText=range?money(range.min)+" – "+money(range.max):"Range not available";
-    const totalText=totals?money(totals.min)+" – "+money(totals.max):"Estimate: "+money(application.total_amount);
+    const applicant=primaryApplicant(application);
+    const visa=visaRecord(application);
+    const range=feeRange(application);
+    const totals=totalRange(application);
+    const applicantName=[applicant.first_name,applicant.last_name]
+      .filter(Boolean).join(" ");
+
+    const officialText=range
+      ?money(range.min)+" – "+money(range.max)
+      :"Range not available";
+
+    const totalText=totals
+      ?money(totals.min)+" – "+money(totals.max)
+      :"Estimate: "+money(application.total_amount);
 
     return `<tr>
       <td>${esc(application.reference_number||application.id)}</td>
-      <td>${esc(applicantName)}<br><span class="muted">${esc(applicant.email)}</span></td>
-      <td>${esc(application.destination_country_name)}<br>${esc(visa.visa_name)}</td>
-      <td>Official: ${officialText}<br>Service: ${money(SERVICE_FEE_PER_APPLICANT)}<br><b>Total estimate: ${totalText}</b>
-      <div class="fee-note">Verify the actual official fee before payment confirmation.</div></td>
+      <td>${esc(applicantName)}<br>
+        <span class="muted">${esc(applicant.email)}</span>
+      </td>
+      <td>${esc(application.destination_country_name||application.destination_country)}<br>
+        ${esc(visa.visa_name||application.visa_type)}
+      </td>
+      <td>
+        Official: ${officialText}<br>
+        Service: ${money(SERVICE_FEE_PER_APPLICANT)}<br>
+        <b>Total estimate: ${totalText}</b>
+        <div class="fee-note">Verify the actual official fee before payment confirmation.</div>
+      </td>
       <td>${esc(application.status)}</td>
       <td>${esc(application.payment_status)}</td>
-      <td><div class="actions">
-        <select data-status="${esc(application.id)}" aria-label="Application status">
-          <option ${application.status==="Pending"?"selected":""}>Pending</option>
-          <option ${application.status==="Under Review"?"selected":""}>Under Review</option>
-          <option ${application.status==="Approved"?"selected":""}>Approved</option>
-          <option ${application.status==="Rejected"?"selected":""}>Rejected</option>
-        </select>
-        <button data-update="${esc(application.id)}">Save status</button>
-        <button class="secondary" data-docs="${esc(application.id)}">Documents</button>
-        ${application.payment_status!=="Paid"?`<button data-paid="${esc(application.id)}">Confirm payment</button>`:""}
-      </div></td>
+      <td>
+        <div class="actions">
+          <button data-details="${esc(application.id)}">Full details</button>
+          <select data-status="${esc(application.id)}" aria-label="Application status">
+            <option ${application.status==="Pending"?"selected":""}>Pending</option>
+            <option ${application.status==="Under Review"?"selected":""}>Under Review</option>
+            <option ${application.status==="Approved"?"selected":""}>Approved</option>
+            <option ${application.status==="Rejected"?"selected":""}>Rejected</option>
+          </select>
+          <button data-update="${esc(application.id)}">Save status</button>
+          <button class="secondary" data-docs="${esc(application.id)}">Documents</button>
+          ${application.payment_status!=="Paid"
+            ?`<button data-paid="${esc(application.id)}">Confirm payment</button>`
+            :""}
+        </div>
+      </td>
     </tr>`;
   }).join("")||'<tr><td colspan="7">No applications found.</td></tr>';
 }
@@ -287,29 +377,196 @@ function render(){
   $("statPending").textContent=apps.filter(a=>a.payment_status!=="Paid").length;
   $("statPaid").textContent=apps.filter(a=>a.payment_status==="Paid").length;
   $("statEnquiries").textContent=enquiries.length;
+
   renderApps();
 
   $("paymentRows").innerHTML=payments.map(p=>`
-    <tr><td>${esc(date(p.payment_date))}</td><td>${esc(p.application_id)}</td>
-    <td>${money(p.amount)}</td><td>${esc(p.payment_status)}</td><td>${esc(p.id)}</td></tr>
+    <tr>
+      <td>${esc(date(p.payment_date))}</td>
+      <td>${esc(p.application_id)}</td>
+      <td>${money(p.amount)}</td>
+      <td>${esc(p.payment_status)}</td>
+      <td>${esc(p.id)}</td>
+    </tr>
   `).join("")||'<tr><td colspan="5">No payment records.</td></tr>';
 
   $("enquiryRows").innerHTML=enquiries.map(e=>`
-    <tr><td>${esc(date(e.created_at))}</td><td>${esc(e.full_name)}</td>
-    <td>${esc(e.email)}</td><td>${esc(e.destination)}</td>
-    <td>${esc(e.message)}</td><td>${esc(e.status)}</td></tr>
+    <tr>
+      <td>${esc(date(e.created_at))}</td>
+      <td>${esc(e.full_name)}</td>
+      <td>${esc(e.email)}</td>
+      <td>${esc(e.destination)}</td>
+      <td>${esc(e.message)}</td>
+      <td>${esc(e.status)}</td>
+    </tr>
   `).join("")||'<tr><td colspan="6">No enquiries.</td></tr>';
 
   $("notificationRows").innerHTML=notifications.map(n=>`
-    <tr><td>${esc(date(n.created_at||n.scheduled_for))}</td>
-    <td>${esc(n.recipient_email)}</td><td>${esc(n.email_type)}</td>
-    <td>${esc(n.status)}</td><td>${esc(n.event_key)}</td></tr>
+    <tr>
+      <td>${esc(date(n.created_at||n.scheduled_for))}</td>
+      <td>${esc(n.recipient_email)}</td>
+      <td>${esc(n.email_type)}</td>
+      <td>${esc(n.status)}</td>
+      <td>${esc(n.event_key)}</td>
+    </tr>
   `).join("")||'<tr><td colspan="5">No notifications queued.</td></tr>';
+}
+
+function field(label,value){
+  const display=value===true?"Yes":value===false?"No":
+    (value===null||value===undefined||value==="")?"Not provided":String(value);
+
+  return `<div class="detail-field">
+    <label>${esc(label)}</label>
+    <strong>${esc(display)}</strong>
+  </div>`;
+}
+
+function showDetailSections(application){
+  const applicant=primaryApplicant(application);
+  const visa=visaRecord(application);
+
+  const applicantName=[
+    applicant.first_name,
+    applicant.last_name
+  ].filter(Boolean).join(" ")||"Applicant";
+
+  $("detailTitle").textContent=applicantName;
+  $("detailReference").textContent=
+    "Application reference: "+(application.reference_number||application.id);
+
+  $("detailContent").innerHTML=`
+    <section class="detail-section">
+      <h3>Personal information</h3>
+      <div class="detail-grid">
+        ${field("First name",applicant.first_name)}
+        ${field("Last name",applicant.last_name)}
+        ${field("Email address",applicant.email)}
+        ${field("Phone number",applicant.phone)}
+        ${field("Nationality",applicant.nationality)}
+        ${field("Date of birth",applicant.date_of_birth)}
+      </div>
+    </section>
+
+    <section class="detail-section">
+      <h3>Passport and immigration information</h3>
+      <div class="detail-grid">
+        ${field("Passport number",applicant.passport_number)}
+        ${field("Has passport",applicant.has_passport)}
+        ${field("Is refugee",applicant.is_refugee)}
+        ${field("Refugee card number",applicant.refugee_card_number)}
+        ${field("UN manifest number",applicant.un_manifest_number)}
+      </div>
+    </section>
+
+    <section class="detail-section">
+      <h3>Application information</h3>
+      <div class="detail-grid">
+        ${field("Reference number",application.reference_number)}
+        ${field("Destination country",application.destination_country_name||application.destination_country)}
+        ${field("Visa type",visa.visa_name||application.visa_type)}
+        ${field("Application date",application.application_date||application.created_at)}
+        ${field("Application status",application.status)}
+        ${field("Payment status",application.payment_status)}
+        ${field("Official visa fee",money(application.official_visa_fee))}
+        ${field("Service fee",money(application.service_fee??SERVICE_FEE_PER_APPLICANT))}
+        ${field("Total amount",money(application.total_amount))}
+        ${field("Currency",application.currency||"USD")}
+      </div>
+    </section>
+
+    <section class="detail-section">
+      <h3>Uploaded documents</h3>
+      <p class="muted">Document links are generated securely when requested. Links expire after 60 seconds.</p>
+      <div id="applicantDocuments" class="document-list">
+        <p class="muted">Loading uploaded documents…</p>
+      </div>
+    </section>
+  `;
+}
+
+async function loadApplicantDocuments(applicationId){
+  const container=$("applicantDocuments");
+
+  try{
+    const result=await api({
+      action:"admin_documents",
+      application_id:applicationId
+    });
+
+    const documents=result.documents||[];
+
+    if(!documents.length){
+      container.innerHTML='<div class="empty">No documents have been uploaded for this application.</div>';
+      return;
+    }
+
+    container.innerHTML=documents.map((doc,index)=>`
+      <div class="document-item">
+        <div>
+          <strong>${esc(doc.original_file_name||"Uploaded document")}</strong>
+          <small>
+            Type: ${esc(doc.document_type||"Not specified")}
+            · Format: ${esc(doc.content_type||"Unknown")}
+            · Size: ${doc.file_size?esc((Number(doc.file_size)/1024).toFixed(1)+" KB"):"Unknown"}
+          </small>
+        </div>
+        <div class="document-actions">
+          <button data-document="${esc(doc.id)}" data-document-action="view">View</button>
+          <button class="secondary" data-document="${esc(doc.id)}" data-document-action="download">Download</button>
+        </div>
+      </div>
+    `).join("");
+
+  }catch(error){
+    container.innerHTML=`<div class="notice error">${esc(error.message)}</div>`;
+  }
+}
+
+async function openApplicantDetails(applicationId){
+  const application=apps.find(item=>String(item.id)===String(applicationId));
+  if(!application)throw new Error("Application record not found.");
+
+  activeDetailApplication=application;
+  showDetailSections(application);
+  $("detailOverlay").classList.add("open");
+  document.body.style.overflow="hidden";
+
+  await loadApplicantDocuments(applicationId);
+}
+
+function closeApplicantDetails(){
+  $("detailOverlay").classList.remove("open");
+  document.body.style.overflow="";
+  activeDetailApplication=null;
+}
+
+async function openDocument(documentId,action){
+  const result=await api({
+    action:"download_document",
+    document_id:documentId
+  });
+
+  if(!result.signed_url)throw new Error("No secure document link was returned.");
+
+  const link=document.createElement("a");
+  link.href=result.signed_url;
+  link.target="_blank";
+  link.rel="noopener noreferrer";
+
+  if(action==="download"){
+    link.download=result.file_name||"applicant-document";
+  }
+
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
 }
 
 async function refresh(){
   notice("Loading dashboard data…");
   $("refresh").disabled=true;
+
   try{
     const [a,p,e,n]=await Promise.all([
       api({action:"admin_applications"}),
@@ -317,27 +574,38 @@ async function refresh(){
       api({action:"admin_enquiries"}),
       api({action:"admin_notifications"})
     ]);
+
     apps=a.applications||[];
     payments=p.payments||[];
     enquiries=e.enquiries||[];
     notifications=n.notifications||[];
+
     render();
     $("dashboard").classList.remove("hidden");
     notice("V12 dashboard data updated.","success");
-  }catch(error){notice(error.message,"error");}
-  finally{$("refresh").disabled=false;}
+
+  }catch(error){
+    notice(error.message,"error");
+  }finally{
+    $("refresh").disabled=false;
+  }
 }
 
 async function showDashboard(){
   $("loginPanel").classList.add("hidden");
   $("logout").classList.remove("hidden");
+
   try{
     const {data,error}=await sb.auth.getUser();
-    if(error||!data.user)throw new Error("Please sign in with your administrator account.");
+    if(error||!data.user)
+      throw new Error("Please sign in with your administrator account.");
+
     $("adminEmail").textContent=data.user.email||"";
+
     // V12 backend verifies the administrator role.
     await api({action:"admin_applications"});
     await refresh();
+
   }catch(error){
     $("dashboard").classList.add("hidden");
     notice(error.message,"error");
@@ -349,9 +617,15 @@ async function init(){
     if(!window.supabase||!window.SUPABASE_URL||!window.SUPABASE_ANON_KEY){
       throw new Error("Supabase configuration is missing. Check config.js.");
     }
-    sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
+
+    sb=window.supabase.createClient(
+      window.SUPABASE_URL,
+      window.SUPABASE_ANON_KEY
+    );
+
     const {data,error}=await sb.auth.getSession();
     if(error)throw error;
+
     if(!data.session){
       $("loginPanel").classList.remove("hidden");
       $("dashboard").classList.add("hidden");
@@ -359,86 +633,190 @@ async function init(){
       notice("Please sign in with your administrator account.");
       return;
     }
+
     await showDashboard();
-  }catch(error){notice(error.message,"error");}
+
+  }catch(error){
+    notice(error.message,"error");
+  }
 }
 
 $("loginForm").addEventListener("submit",async event=>{
   event.preventDefault();
   $("loginButton").disabled=true;
   notice("Signing in…");
+
   try{
     const {error}=await sb.auth.signInWithPassword({
       email:$("email").value.trim(),
       password:$("password").value
     });
+
     if(error)throw error;
+
     $("password").value="";
     await showDashboard();
+
   }catch(error){
     notice(error.message,"error");
     $("loginPanel").classList.remove("hidden");
-  }finally{$("loginButton").disabled=false;}
+  }finally{
+    $("loginButton").disabled=false;
+  }
 });
 
 $("appRows").addEventListener("click",async event=>{
   const button=event.target.closest("button");
   if(!button)return;
+
   try{
-    if(button.dataset.update){
+    if(button.dataset.details){
+      await openApplicantDetails(button.dataset.details);
+
+    }else if(button.dataset.update){
       const id=button.dataset.update;
-      const selector=document.querySelector(`[data-status="${CSS.escape(id)}"]`);
-      if(!selector)throw new Error("Could not find application status selector.");
-      await api({action:"admin_update_status",application_id:id,status:selector.value});
+      const selector=document.querySelector(
+        `[data-status="${CSS.escape(id)}"]`
+      );
+
+      if(!selector)
+        throw new Error("Could not find application status selector.");
+
+      await api({
+        action:"admin_update_status",
+        application_id:id,
+        status:selector.value
+      });
+
       notice("Application status updated.","success");
       await refresh();
 
     }else if(button.dataset.docs){
-      const result=await api({action:"admin_documents",application_id:button.dataset.docs});
-      const documents=result.documents||[];
-      if(!documents.length){alert("No documents uploaded for this application.");return;}
-      const choices=documents.map((d,i)=>`${i+1}. ${d.original_file_name||d.document_type||"Document"}`).join("\n");
-      const answer=prompt("Enter document number to download:\n"+choices);
-      if(answer===null)return;
-      const index=Number(answer)-1;
-      if(!Number.isInteger(index)||!documents[index]){alert("Invalid document number.");return;}
-      const signed=await api({action:"download_document",document_id:documents[index].id});
-      if(!signed.signed_url)throw new Error("No download link was returned.");
-      window.open(signed.signed_url,"_blank","noopener");
+      const result=await api({
+        action:"admin_documents",
+        application_id:button.dataset.docs
+      });
 
-    }else if(button.dataset.paid){
-      const application=apps.find(item=>String(item.id)===String(button.dataset.paid));
-      if(!application)throw new Error("Application record not found.");
-      const total=totalRange(application);
-      let promptText="Enter the actual total amount received in USD.";
-      if(total)promptText+="\nAcceptable total range: "+money(total.min)+" – "+money(total.max);
-      promptText+="\n\nOnly continue after independently verifying the payment.";
-      const entered=prompt(promptText);
-      if(entered===null)return;
-      const amount=Number(entered);
-      if(!Number.isFinite(amount)||amount<=0){alert("Enter a valid positive payment amount.");return;}
-      if(total&&(amount<total.min||amount>total.max)){
-        alert("Amount is outside the V12 total fee range ("+money(total.min)+" – "+money(total.max)+").");
+      const documents=result.documents||[];
+
+      if(!documents.length){
+        alert("No documents uploaded for this application.");
         return;
       }
+
+      const choices=documents.map((d,i)=>
+        `${i+1}. ${d.original_file_name||d.document_type||"Document"}`
+      ).join("\n");
+
+      const answer=prompt("Enter document number to download:\n"+choices);
+      if(answer===null)return;
+
+      const index=Number(answer)-1;
+
+      if(!Number.isInteger(index)||!documents[index]){
+        alert("Invalid document number.");
+        return;
+      }
+
+      await openDocument(documents[index].id,"download");
+
+    }else if(button.dataset.paid){
+      const application=apps.find(
+        item=>String(item.id)===String(button.dataset.paid)
+      );
+
+      if(!application)
+        throw new Error("Application record not found.");
+
+      const total=totalRange(application);
+      let promptText="Enter the actual total amount received in USD.";
+
+      if(total){
+        promptText+="\nAcceptable total range: "+
+          money(total.min)+" – "+money(total.max);
+      }
+
+      promptText+="\n\nOnly continue after independently verifying the payment.";
+
+      const entered=prompt(promptText);
+      if(entered===null)return;
+
+      const amount=Number(entered);
+
+      if(!Number.isFinite(amount)||amount<=0){
+        alert("Enter a valid positive payment amount.");
+        return;
+      }
+
+      if(total&&(amount<total.min||amount>total.max)){
+        alert("Amount is outside the V12 total fee range ("+
+          money(total.min)+" – "+money(total.max)+").");
+        return;
+      }
+
       if(!confirm("Confirm verified receipt of "+money(amount)+"?"))return;
-      await api({action:"admin_confirm_payment",application_id:application.id,amount});
+
+      await api({
+        action:"admin_confirm_payment",
+        application_id:application.id,
+        amount
+      });
+
       notice("Payment confirmation saved.","success");
       await refresh();
     }
-  }catch(error){notice(error.message,"error");}
+
+  }catch(error){
+    notice(error.message,"error");
+  }
+});
+
+// Secure view and download actions inside the applicant details window.
+$("detailContent").addEventListener("click",async event=>{
+  const button=event.target.closest("button[data-document]");
+  if(!button)return;
+
+  button.disabled=true;
+
+  try{
+    await openDocument(
+      button.dataset.document,
+      button.dataset.documentAction
+    );
+  }catch(error){
+    notice(error.message,"error");
+  }finally{
+    button.disabled=false;
+  }
 });
 
 document.querySelectorAll("nav button").forEach(button=>{
   button.addEventListener("click",()=>setTab(button.dataset.tab));
 });
+
 $("refresh").addEventListener("click",refresh);
 $("search").addEventListener("input",renderApps);
 $("statusFilter").addEventListener("change",renderApps);
 
+$("closeDetails").addEventListener("click",closeApplicantDetails);
+
+$("detailOverlay").addEventListener("click",event=>{
+  if(event.target===$("detailOverlay")){
+    closeApplicantDetails();
+  }
+});
+
+document.addEventListener("keydown",event=>{
+  if(event.key==="Escape"&&$("detailOverlay").classList.contains("open")){
+    closeApplicantDetails();
+  }
+});
+
 $("logout").addEventListener("click",async()=>{
-  try{await sb.auth.signOut();}
-  finally{
+  try{
+    await sb.auth.signOut();
+  }finally{
+    closeApplicantDetails();
     $("dashboard").classList.add("hidden");
     $("loginPanel").classList.remove("hidden");
     $("logout").classList.add("hidden");
