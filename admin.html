@@ -6,6 +6,7 @@
 <title>Admin Dashboard | Global Online Visa Applications</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
+
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#f3f6fa;color:#172033;font:15px Arial,sans-serif}
@@ -22,7 +23,9 @@ button.secondary{background:#475569}
 button.danger{background:#b91c1c}
 button:disabled{opacity:.55;cursor:not-allowed}
 nav button.active{background:#0b2747}
-input,select{padding:10px;border:1px solid #cbd5e1;border-radius:6px;max-width:100%}
+input,select,textarea{padding:10px;border:1px solid #cbd5e1;border-radius:6px;max-width:100%;font:inherit}
+textarea{width:100%;min-height:100px;resize:vertical}
+label{display:block;margin:8px 0 5px;font-weight:bold}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
 .stat strong{font-size:24px;display:block;margin-top:8px}
 table{width:100%;border-collapse:collapse;min-width:900px}
@@ -30,7 +33,7 @@ th,td{text-align:left;padding:10px;border-bottom:1px solid #e5eaf0;vertical-alig
 th{background:#f8fafc}
 .table-wrap{overflow:auto}
 .muted{color:#64748b}
-.notice{padding:12px;background:#e0f2fe;border-radius:7px;margin-bottom:14px}
+.notice{padding:12px;background:#e0f2fe;border-radius:7px;margin-bottom:14px;overflow-wrap:anywhere}
 .error{background:#fee2e2;color:#991b1b}
 .success{background:#dcfce7;color:#166534}
 .hidden{display:none!important}
@@ -46,7 +49,7 @@ th{background:#f8fafc}
 .detail-section h3{color:#12345a;border-bottom:1px solid #e5eaf0;padding-bottom:9px}
 .detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .detail-field{background:#f8fafc;border:1px solid #e5eaf0;border-radius:7px;padding:11px;min-width:0;overflow-wrap:anywhere}
-.detail-field label{display:block;color:#64748b;font-size:12px;margin-bottom:6px}
+.detail-field label{display:block;color:#64748b;font-size:12px;margin:0 0 6px}
 .detail-field strong{font-size:14px;white-space:pre-wrap}
 .document-list{display:grid;gap:10px}
 .document-item{border:1px solid #e2e8f0;border-radius:8px;padding:12px;display:flex;justify-content:space-between;align-items:center;gap:12px}
@@ -55,6 +58,22 @@ th{background:#f8fafc}
 .document-actions button{font-size:12px}
 .close-button{background:#475569}
 .empty{color:#64748b;padding:12px;background:#f8fafc;border-radius:7px}
+.filter-grid{display:grid;grid-template-columns:repeat(5,minmax(130px,1fr));gap:9px;margin-top:12px}
+.filter-grid input,.filter-grid select{width:100%}
+.message-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.message-box{border:1px solid #e2e8f0;border-radius:8px;padding:14px;margin:12px 0}
+.message-item{border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin:9px 0;overflow-wrap:anywhere}
+.message-item.admin{background:#eff6ff}
+.message-item.applicant{background:#f8fafc}
+.message-item small{display:block;color:#64748b;margin-top:7px}
+.timeline{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin:14px 0}
+.stage{padding:10px 5px;text-align:center;border-radius:7px;background:#e2e8f0;color:#475569;font-size:12px}
+.stage.done{background:#dcfce7;color:#166534}
+.stage.current{background:#dbeafe;color:#1d4ed8;font-weight:bold}
+@media(max-width:900px){
+ .filter-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .message-grid{grid-template-columns:1fr}
+}
 @media(max-width:800px){
  .stats{grid-template-columns:repeat(2,1fr)}
  header{align-items:flex-start;flex-direction:column}
@@ -62,11 +81,12 @@ th{background:#f8fafc}
  .detail-modal{padding:15px;margin:5px auto}
  .detail-overlay{padding:8px}
  .document-item{align-items:flex-start;flex-direction:column}
+ .timeline{grid-template-columns:1fr}
 }
 </style>
 </head>
-<body>
 
+<body>
 <header>
   <div>
     <strong>Global Online Visa Applications</strong>
@@ -85,17 +105,16 @@ th{background:#f8fafc}
     <h2>Administrator Login</h2>
     <p class="muted">Sign in using your administrator account.</p>
     <form id="loginForm">
-      <label for="email"><strong>Email address</strong></label>
+      <label for="email">Email address</label>
       <input id="email" type="email" placeholder="Administrator email" autocomplete="username" required>
-
-      <label for="password"><strong>Password</strong></label>
+      <label for="password">Password</label>
       <input id="password" type="password" placeholder="Password" autocomplete="current-password" required>
-
       <button id="loginButton" type="submit">Sign in</button>
     </form>
   </section>
 
   <div id="dashboard" class="hidden">
+
     <div class="stats">
       <div class="stat">Applications<strong id="statApps">—</strong></div>
       <div class="stat">Pending payments<strong id="statPending">—</strong></div>
@@ -104,15 +123,24 @@ th{background:#f8fafc}
     </div>
 
     <div class="toolbar">
-      <input id="search" placeholder="Search reference, applicant, email…" style="width:min(100%,420px)">
-      <select id="statusFilter">
-        <option value="">All application statuses</option>
-        <option>Pending</option>
-        <option>Under Review</option>
-        <option>Approved</option>
-        <option>Rejected</option>
-      </select>
-      <button id="refresh">Refresh data</button>
+      <h3>Search and filter applications</h3>
+      <input id="search" placeholder="Reference, applicant, email, passport…" style="width:100%">
+      <div class="filter-grid">
+        <select id="statusFilter">
+          <option value="">All application statuses</option>
+        </select>
+        <select id="paymentFilter">
+          <option value="">All payment statuses</option>
+        </select>
+        <select id="destinationFilter">
+          <option value="">All destinations</option>
+        </select>
+        <select id="visaFilter">
+          <option value="">All visa types</option>
+        </select>
+        <button id="clearFilters" class="secondary">Clear filters</button>
+      </div>
+      <button id="refresh" style="margin-top:12px">Refresh data</button>
     </div>
 
     <nav>
@@ -120,19 +148,23 @@ th{background:#f8fafc}
       <button data-tab="payments">Payments</button>
       <button data-tab="enquiries">Enquiries</button>
       <button data-tab="notifications">Email queue</button>
+      <button data-tab="messages">Applicant messages</button>
     </nav>
 
     <section id="applications" class="panel tab">
       <h2>Visa applications</h2>
       <p class="fee-note">
-        V12 displays official government fees as ranges. The service fee is $285 per applicant. Verify the actual amount received before confirming payment.
+        The service fee is $285 per applicant. Government fees are estimates.
+        Verify the actual payment received before confirming payment.
       </p>
       <div class="table-wrap">
         <table>
-          <thead><tr>
-            <th>Reference</th><th>Applicant</th><th>Destination / Visa</th>
-            <th>Fee estimate (USD)</th><th>Status</th><th>Payment</th><th>Actions</th>
-          </tr></thead>
+          <thead>
+            <tr>
+              <th>Reference</th><th>Applicant</th><th>Destination / Visa</th>
+              <th>Fee estimate (USD)</th><th>Status</th><th>Payment</th><th>Actions</th>
+            </tr>
+          </thead>
           <tbody id="appRows"></tbody>
         </table>
       </div>
@@ -168,10 +200,59 @@ th{background:#f8fafc}
         </table>
       </div>
     </section>
+
+    <section id="messages" class="panel tab hidden">
+      <h2>Applicant messaging centre</h2>
+      <p class="muted">
+        Send announcements to registered applicants, private messages, and missing-document requests.
+        Applicants can reply through their My Messages page.
+      </p>
+
+      <div class="message-grid">
+        <div class="message-box">
+          <h3>Announcement to all applicants</h3>
+          <p class="muted">This sends a website message to every applicant account found in the applicants table.</p>
+          <label for="broadcastMessage">Announcement</label>
+          <textarea id="broadcastMessage" placeholder="Write your announcement here…"></textarea>
+          <button id="sendBroadcast">Send announcement to all</button>
+        </div>
+
+        <div class="message-box">
+          <h3>Private message</h3>
+          <label for="messageApplicant">Select applicant</label>
+          <select id="messageApplicant" style="width:100%">
+            <option value="">Load applicants first</option>
+          </select>
+
+          <label for="privateMessage">Message</label>
+          <textarea id="privateMessage" placeholder="Write a private message…"></textarea>
+          <button id="sendPrivate">Send private message</button>
+
+          <hr style="border:0;border-top:1px solid #e2e8f0;margin:18px 0">
+
+          <h3>Request missing documents</h3>
+          <label for="missingDocumentMessage">Documents required</label>
+          <textarea id="missingDocumentMessage" placeholder="Example: Please upload a clear copy of your passport biodata page."></textarea>
+          <button id="sendMissingDocument" class="secondary">Send document request</button>
+        </div>
+      </div>
+
+      <div class="message-box">
+        <h3>Applicant replies and administrator responses</h3>
+        <p class="muted">Choose an applicant to load the conversation.</p>
+        <button id="loadReplies" class="secondary">Load applicant conversation</button>
+        <div id="replyThread" style="margin-top:14px">
+          <div class="empty">Select an applicant above and load the conversation.</div>
+        </div>
+        <label for="adminReply">Administrator response</label>
+        <textarea id="adminReply" placeholder="Write your response to the applicant…"></textarea>
+        <button id="sendReply">Send response</button>
+      </div>
+    </section>
+
   </div>
 </main>
 
-<!-- Applicant details modal -->
 <div id="detailOverlay" class="detail-overlay" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
   <div class="detail-modal">
     <div class="detail-header">
@@ -196,9 +277,20 @@ const SERVICE_FEE_PER_APPLICANT = 285;
 
 let sb;
 let apps = [], payments = [], enquiries = [], notifications = [];
+let messageApplicants = [];
 let activeDetailApplication = null;
+let currentAdmin = null;
 
 const $ = id => document.getElementById(id);
+
+const STATUS_OPTIONS = [
+  "Pending",
+  "Under Review",
+  "Documents Verified",
+  "Processing",
+  "Approved",
+  "Rejected"
+];
 
 function notice(text,type="info"){
   $("notice").textContent=text;
@@ -264,7 +356,7 @@ async function api(payload){
 
   if(!window.SUPABASE_FUNCTION_URL||
      !window.SUPABASE_FUNCTION_URL.includes("/visa-backend-v12")){
-    throw new Error("The V12 backend URL is missing. Update config.js to visa-backend-v12.");
+    throw new Error("The V12 backend URL is missing. Check config.js.");
   }
 
   const response=await fetch(window.SUPABASE_FUNCTION_URL,{
@@ -278,6 +370,7 @@ async function api(payload){
   });
 
   const output=await response.json().catch(()=>({}));
+
   if(!response.ok||output.ok===false)
     throw new Error(output.error||output.message||"Backend request failed.");
 
@@ -285,6 +378,12 @@ async function api(payload){
     throw new Error("V12 backend version mismatch. Check the deployed function and config.js.");
 
   return output;
+}
+
+async function verifyAdminDatabaseAccess(){
+  const {data,error}=await sb.rpc("is_admin");
+  if(error)throw new Error("Could not verify administrator database access: "+error.message);
+  if(data!==true)throw new Error("Your account is not authorised for administrator messaging.");
 }
 
 function setTab(name){
@@ -296,13 +395,35 @@ function setTab(name){
   );
 }
 
+function fillSelect(id,values,defaultLabel){
+  const select=$(id);
+  const previous=select.value;
+  const unique=[...new Set(values.filter(v=>v!==null&&v!==undefined&&String(v).trim()!=="").map(String))].sort();
+
+  select.innerHTML=`<option value="">${esc(defaultLabel)}</option>`+
+    unique.map(value=>`<option value="${esc(value)}">${esc(value)}</option>`).join("");
+
+  if(unique.includes(previous))select.value=previous;
+}
+
+function populateFilters(){
+  fillSelect("statusFilter",apps.map(a=>a.status),"All application statuses");
+  fillSelect("paymentFilter",apps.map(a=>a.payment_status),"All payment statuses");
+  fillSelect("destinationFilter",apps.map(a=>a.destination_country_name||a.destination_country),"All destinations");
+  fillSelect("visaFilter",apps.map(a=>visaRecord(a).visa_name||a.visa_type),"All visa types");
+}
+
 function renderApps(){
   const query=$("search").value.trim().toLowerCase();
   const status=$("statusFilter").value;
+  const payment=$("paymentFilter").value;
+  const destination=$("destinationFilter").value;
+  const visaFilter=$("visaFilter").value;
 
   const filtered=apps.filter(application=>{
     const applicant=primaryApplicant(application);
     const visa=visaRecord(application);
+
     const haystack=[
       application.reference_number,
       applicant.first_name,
@@ -313,11 +434,18 @@ function renderApps(){
       applicant.nationality,
       application.destination_country_name,
       application.destination_country,
-      visa.visa_name
+      visa.visa_name,
+      application.visa_type
     ].join(" ").toLowerCase();
 
+    const appDestination=String(application.destination_country_name||application.destination_country||"");
+    const appVisa=String(visa.visa_name||application.visa_type||"");
+
     return (!query||haystack.includes(query))&&
-      (!status||application.status===status);
+      (!status||String(application.status||"")===status)&&
+      (!payment||String(application.payment_status||"")===payment)&&
+      (!destination||appDestination===destination)&&
+      (!visaFilter||appVisa===visaFilter);
   });
 
   $("appRows").innerHTML=filtered.map(application=>{
@@ -325,30 +453,21 @@ function renderApps(){
     const visa=visaRecord(application);
     const range=feeRange(application);
     const totals=totalRange(application);
-    const applicantName=[applicant.first_name,applicant.last_name]
-      .filter(Boolean).join(" ");
+    const applicantName=[applicant.first_name,applicant.last_name].filter(Boolean).join(" ");
 
-    const officialText=range
-      ?money(range.min)+" – "+money(range.max)
-      :"Range not available";
+    const officialText=range?money(range.min)+" – "+money(range.max):"Range not available";
+    const totalText=totals?money(totals.min)+" – "+money(totals.max):"Estimate: "+money(application.total_amount);
 
-    const totalText=totals
-      ?money(totals.min)+" – "+money(totals.max)
-      :"Estimate: "+money(application.total_amount);
+    const statusOptions=[...new Set([...STATUS_OPTIONS,application.status].filter(Boolean))];
 
     return `<tr>
       <td>${esc(application.reference_number||application.id)}</td>
-      <td>${esc(applicantName)}<br>
-        <span class="muted">${esc(applicant.email)}</span>
-      </td>
-      <td>${esc(application.destination_country_name||application.destination_country)}<br>
-        ${esc(visa.visa_name||application.visa_type)}
-      </td>
+      <td>${esc(applicantName)}<br><span class="muted">${esc(applicant.email)}</span></td>
+      <td>${esc(application.destination_country_name||application.destination_country)}<br>${esc(visa.visa_name||application.visa_type)}</td>
       <td>
         Official: ${officialText}<br>
         Service: ${money(SERVICE_FEE_PER_APPLICANT)}<br>
         <b>Total estimate: ${totalText}</b>
-        <div class="fee-note">Verify the actual official fee before payment confirmation.</div>
       </td>
       <td>${esc(application.status)}</td>
       <td>${esc(application.payment_status)}</td>
@@ -356,20 +475,16 @@ function renderApps(){
         <div class="actions">
           <button data-details="${esc(application.id)}">Full details</button>
           <select data-status="${esc(application.id)}" aria-label="Application status">
-            <option ${application.status==="Pending"?"selected":""}>Pending</option>
-            <option ${application.status==="Under Review"?"selected":""}>Under Review</option>
-            <option ${application.status==="Approved"?"selected":""}>Approved</option>
-            <option ${application.status==="Rejected"?"selected":""}>Rejected</option>
+            ${statusOptions.map(s=>`<option value="${esc(s)}" ${application.status===s?"selected":""}>${esc(s)}</option>`).join("")}
           </select>
           <button data-update="${esc(application.id)}">Save status</button>
           <button class="secondary" data-docs="${esc(application.id)}">Documents</button>
-          ${application.payment_status!=="Paid"
-            ?`<button data-paid="${esc(application.id)}">Confirm payment</button>`
-            :""}
+          <button class="secondary" data-message="${esc(application.id)}">Message applicant</button>
+          ${application.payment_status!=="Paid"?`<button data-paid="${esc(application.id)}">Confirm payment</button>`:""}
         </div>
       </td>
     </tr>`;
-  }).join("")||'<tr><td colspan="7">No applications found.</td></tr>';
+  }).join("")||'<tr><td colspan="7">No applications match these filters.</td></tr>';
 }
 
 function render(){
@@ -378,6 +493,7 @@ function render(){
   $("statPaid").textContent=apps.filter(a=>a.payment_status==="Paid").length;
   $("statEnquiries").textContent=enquiries.length;
 
+  populateFilters();
   renderApps();
 
   $("paymentRows").innerHTML=payments.map(p=>`
@@ -416,26 +532,84 @@ function field(label,value){
   const display=value===true?"Yes":value===false?"No":
     (value===null||value===undefined||value==="")?"Not provided":String(value);
 
-  return `<div class="detail-field">
-    <label>${esc(label)}</label>
-    <strong>${esc(display)}</strong>
-  </div>`;
+  return `<div class="detail-field"><label>${esc(label)}</label><strong>${esc(display)}</strong></div>`;
+}
+
+/* Processing estimate and progress timeline.
+   The estimate is shown only if processing_days exists on the application
+   or its visa type record. */
+function processingEstimate(application){
+  const visa=visaRecord(application);
+  const raw=application.processing_days??visa.processing_days;
+  const days=Number(raw);
+
+  if(raw===null||raw===undefined||raw===""||!Number.isInteger(days)||days<0){
+    return "Not configured";
+  }
+
+  const startValue=application.application_date||application.created_at;
+  if(!startValue)return "Application date unavailable";
+
+  const start=new Date(startValue);
+  if(Number.isNaN(start.getTime()))return "Application date unavailable";
+
+  start.setDate(start.getDate()+days);
+  return start.toLocaleDateString();
+}
+
+function timelineHTML(application){
+  const status=String(application.status||"").toLowerCase();
+
+  const stages=[
+    "Application Received",
+    "Under Review",
+    "Documents Verified",
+    "Processing",
+    "Decision Made"
+  ];
+
+  let current=0;
+
+  if(status==="under review")current=1;
+  else if(status==="documents verified")current=2;
+  else if(status==="processing")current=3;
+  else if(["approved","rejected","decision made"].includes(status))current=4;
+
+  return `
+    <div class="timeline">
+      ${stages.map((stage,index)=>`
+        <div class="stage ${index<current?"done":index===current?"current":""}">
+          ${index<current?"✓ ":""}${esc(stage)}
+        </div>
+      `).join("")}
+    </div>
+    <p class="fee-note">
+      This timeline is based on the saved application status. It does not independently verify document checks or earlier milestones.
+    </p>
+  `;
 }
 
 function showDetailSections(application){
   const applicant=primaryApplicant(application);
   const visa=visaRecord(application);
 
-  const applicantName=[
-    applicant.first_name,
-    applicant.last_name
-  ].filter(Boolean).join(" ")||"Applicant";
+  const applicantName=[applicant.first_name,applicant.last_name].filter(Boolean).join(" ")||"Applicant";
 
   $("detailTitle").textContent=applicantName;
-  $("detailReference").textContent=
-    "Application reference: "+(application.reference_number||application.id);
+  $("detailReference").textContent="Application reference: "+(application.reference_number||application.id);
 
   $("detailContent").innerHTML=`
+    <section class="detail-section">
+      <h3>Application progress</h3>
+      ${timelineHTML(application)}
+      <div class="detail-grid">
+        ${field("Current status",application.status)}
+        ${field("Estimated completion date",processingEstimate(application))}
+        ${field("Processing days",application.processing_days??visa.processing_days)}
+        ${field("Application date",application.application_date||application.created_at)}
+      </div>
+    </section>
+
     <section class="detail-section">
       <h3>Personal information</h3>
       <div class="detail-grid">
@@ -465,7 +639,6 @@ function showDetailSections(application){
         ${field("Reference number",application.reference_number)}
         ${field("Destination country",application.destination_country_name||application.destination_country)}
         ${field("Visa type",visa.visa_name||application.visa_type)}
-        ${field("Application date",application.application_date||application.created_at)}
         ${field("Application status",application.status)}
         ${field("Payment status",application.payment_status)}
         ${field("Official visa fee",money(application.official_visa_fee))}
@@ -477,7 +650,7 @@ function showDetailSections(application){
 
     <section class="detail-section">
       <h3>Uploaded documents</h3>
-      <p class="muted">Document links are generated securely when requested. Links expire after 60 seconds.</p>
+      <p class="muted">Secure document links expire after 60 seconds.</p>
       <div id="applicantDocuments" class="document-list">
         <p class="muted">Loading uploaded documents…</p>
       </div>
@@ -489,11 +662,7 @@ async function loadApplicantDocuments(applicationId){
   const container=$("applicantDocuments");
 
   try{
-    const result=await api({
-      action:"admin_documents",
-      application_id:applicationId
-    });
-
+    const result=await api({action:"admin_documents",application_id:applicationId});
     const documents=result.documents||[];
 
     if(!documents.length){
@@ -501,7 +670,7 @@ async function loadApplicantDocuments(applicationId){
       return;
     }
 
-    container.innerHTML=documents.map((doc,index)=>`
+    container.innerHTML=documents.map(doc=>`
       <div class="document-item">
         <div>
           <strong>${esc(doc.original_file_name||"Uploaded document")}</strong>
@@ -531,7 +700,6 @@ async function openApplicantDetails(applicationId){
   showDetailSections(application);
   $("detailOverlay").classList.add("open");
   document.body.style.overflow="hidden";
-
   await loadApplicantDocuments(applicationId);
 }
 
@@ -542,11 +710,7 @@ function closeApplicantDetails(){
 }
 
 async function openDocument(documentId,action){
-  const result=await api({
-    action:"download_document",
-    document_id:documentId
-  });
-
+  const result=await api({action:"download_document",document_id:documentId});
   if(!result.signed_url)throw new Error("No secure document link was returned.");
 
   const link=document.createElement("a");
@@ -554,9 +718,7 @@ async function openDocument(documentId,action){
   link.target="_blank";
   link.rel="noopener noreferrer";
 
-  if(action==="download"){
-    link.download=result.file_name||"applicant-document";
-  }
+  if(action==="download")link.download=result.file_name||"applicant-document";
 
   document.body.appendChild(link);
   link.click();
@@ -591,20 +753,168 @@ async function refresh(){
   }
 }
 
+/* Applicant messaging */
+
+async function loadMessageApplicants(){
+  await verifyAdminDatabaseAccess();
+
+  const {data,error}=await sb
+    .from("applicants")
+    .select("id,user_id,first_name,last_name,email")
+    .not("user_id","is",null);
+
+  if(error)throw new Error("Could not load applicants: "+error.message);
+
+  const seen=new Set();
+  messageApplicants=(data||[]).filter(applicant=>{
+    if(!applicant.user_id||seen.has(applicant.user_id))return false;
+    seen.add(applicant.user_id);
+    return true;
+  });
+
+  $("messageApplicant").innerHTML=
+    '<option value="">Select an applicant</option>'+
+    messageApplicants.map(applicant=>{
+      const name=[applicant.first_name,applicant.last_name].filter(Boolean).join(" ")||"Applicant";
+      return `<option value="${esc(applicant.user_id)}">${esc(name)} — ${esc(applicant.email||"No email")}</option>`;
+    }).join("");
+
+  if(!messageApplicants.length){
+    $("messageApplicant").innerHTML='<option value="">No registered applicants found</option>';
+  }
+}
+
+async function sendApplicantMessage(userId,message){
+  if(!userId)throw new Error("Please select an applicant.");
+  if(!message.trim())throw new Error("Please enter a message.");
+
+  await verifyAdminDatabaseAccess();
+
+  const {error}=await sb.from("applicant_messages").insert({
+    recipient_user_id:userId,
+    sender_user_id:currentAdmin.id,
+    sender_name:"Administrator",
+    message:message.trim()
+  });
+
+  if(error)throw new Error("Message could not be sent: "+error.message);
+}
+
+async function sendBroadcast(){
+  const message=$("broadcastMessage").value.trim();
+  if(!message)throw new Error("Write an announcement first.");
+
+  await loadMessageApplicants();
+
+  if(!messageApplicants.length)throw new Error("There are no registered applicants with user accounts.");
+
+  if(!confirm("Send this announcement to "+messageApplicants.length+" applicant accounts?"))return;
+
+  const rows=messageApplicants.map(applicant=>({
+    recipient_user_id:applicant.user_id,
+    sender_user_id:currentAdmin.id,
+    sender_name:"Administrator",
+    message
+  }));
+
+  const {error}=await sb.from("applicant_messages").insert(rows);
+  if(error)throw new Error("Announcement could not be sent: "+error.message);
+
+  $("broadcastMessage").value="";
+  notice("Announcement sent to "+rows.length+" applicants.","success");
+}
+
+async function sendPrivateMessage(){
+  const userId=$("messageApplicant").value;
+  const message=$("privateMessage").value;
+
+  await sendApplicantMessage(userId,message);
+  $("privateMessage").value="";
+  notice("Private message sent to the selected applicant.","success");
+}
+
+async function sendMissingDocumentRequest(){
+  const userId=$("messageApplicant").value;
+  const message=$("missingDocumentMessage").value.trim();
+
+  if(!message)throw new Error("Describe the missing documents.");
+
+  const fullMessage="MISSING DOCUMENT REQUEST\n\n"+message;
+  await sendApplicantMessage(userId,fullMessage);
+
+  $("missingDocumentMessage").value="";
+  notice("Missing-document request sent to the applicant's My Messages page.","success");
+}
+
+async function loadReplies(){
+  const userId=$("messageApplicant").value;
+  if(!userId)throw new Error("Select an applicant first.");
+
+  await verifyAdminDatabaseAccess();
+
+  const {data,error}=await sb
+    .from("applicant_message_replies")
+    .select("*")
+    .eq("applicant_user_id",userId)
+    .order("created_at",{ascending:true});
+
+  if(error)throw new Error("Could not load conversation: "+error.message);
+
+  const rows=data||[];
+
+  $("replyThread").innerHTML=rows.map(row=>{
+    const isAdmin=row.sender_role==="admin";
+    return `<div class="message-item ${isAdmin?"admin":"applicant"}">
+      <strong>${isAdmin?"Administrator":"Applicant"}</strong>
+      <div>${esc(row.message)}</div>
+      <small>${esc(date(row.created_at))}</small>
+    </div>`;
+  }).join("")||'<div class="empty">No replies in this conversation yet.</div>';
+}
+
+async function sendAdminReply(){
+  const userId=$("messageApplicant").value;
+  const message=$("adminReply").value.trim();
+
+  if(!userId)throw new Error("Select an applicant first.");
+  if(!message)throw new Error("Write your response first.");
+
+  await verifyAdminDatabaseAccess();
+
+  const {error}=await sb.from("applicant_message_replies").insert({
+    applicant_user_id:userId,
+    sender_user_id:currentAdmin.id,
+    sender_role:"admin",
+    message
+  });
+
+  if(error)throw new Error("Response could not be sent: "+error.message);
+
+  $("adminReply").value="";
+  await loadReplies();
+  notice("Administrator response sent.","success");
+}
+
 async function showDashboard(){
   $("loginPanel").classList.add("hidden");
   $("logout").classList.remove("hidden");
 
   try{
     const {data,error}=await sb.auth.getUser();
-    if(error||!data.user)
-      throw new Error("Please sign in with your administrator account.");
+    if(error||!data.user)throw new Error("Please sign in with your administrator account.");
 
+    currentAdmin=data.user;
     $("adminEmail").textContent=data.user.email||"";
 
-    // V12 backend verifies the administrator role.
+    // Existing V12 backend administrator check.
     await api({action:"admin_applications"});
     await refresh();
+
+    try{
+      await loadMessageApplicants();
+    }catch(messageError){
+      notice("Dashboard loaded. Messaging access needs attention: "+messageError.message,"error");
+    }
 
   }catch(error){
     $("dashboard").classList.add("hidden");
@@ -641,6 +951,7 @@ async function init(){
   }
 }
 
+/* Login */
 $("loginForm").addEventListener("submit",async event=>{
   event.preventDefault();
   $("loginButton").disabled=true;
@@ -665,6 +976,7 @@ $("loginForm").addEventListener("submit",async event=>{
   }
 });
 
+/* Application table actions */
 $("appRows").addEventListener("click",async event=>{
   const button=event.target.closest("button");
   if(!button)return;
@@ -673,14 +985,21 @@ $("appRows").addEventListener("click",async event=>{
     if(button.dataset.details){
       await openApplicantDetails(button.dataset.details);
 
+    }else if(button.dataset.message){
+      const application=apps.find(a=>String(a.id)===String(button.dataset.message));
+      const applicant=primaryApplicant(application||{});
+      const userId=applicant.user_id;
+
+      if(!userId)throw new Error("This applicant record has no linked user account.");
+
+      $("messageApplicant").value=userId;
+      setTab("messages");
+      $("privateMessage").focus();
+
     }else if(button.dataset.update){
       const id=button.dataset.update;
-      const selector=document.querySelector(
-        `[data-status="${CSS.escape(id)}"]`
-      );
-
-      if(!selector)
-        throw new Error("Could not find application status selector.");
+      const selector=document.querySelector(`[data-status="${CSS.escape(id)}"]`);
+      if(!selector)throw new Error("Could not find application status selector.");
 
       await api({
         action:"admin_update_status",
@@ -692,11 +1011,7 @@ $("appRows").addEventListener("click",async event=>{
       await refresh();
 
     }else if(button.dataset.docs){
-      const result=await api({
-        action:"admin_documents",
-        application_id:button.dataset.docs
-      });
-
+      const result=await api({action:"admin_documents",application_id:button.dataset.docs});
       const documents=result.documents||[];
 
       if(!documents.length){
@@ -712,7 +1027,6 @@ $("appRows").addEventListener("click",async event=>{
       if(answer===null)return;
 
       const index=Number(answer)-1;
-
       if(!Number.isInteger(index)||!documents[index]){
         alert("Invalid document number.");
         return;
@@ -721,36 +1035,26 @@ $("appRows").addEventListener("click",async event=>{
       await openDocument(documents[index].id,"download");
 
     }else if(button.dataset.paid){
-      const application=apps.find(
-        item=>String(item.id)===String(button.dataset.paid)
-      );
-
-      if(!application)
-        throw new Error("Application record not found.");
+      const application=apps.find(item=>String(item.id)===String(button.dataset.paid));
+      if(!application)throw new Error("Application record not found.");
 
       const total=totalRange(application);
       let promptText="Enter the actual total amount received in USD.";
 
-      if(total){
-        promptText+="\nAcceptable total range: "+
-          money(total.min)+" – "+money(total.max);
-      }
-
+      if(total)promptText+="\nAcceptable total range: "+money(total.min)+" – "+money(total.max);
       promptText+="\n\nOnly continue after independently verifying the payment.";
 
       const entered=prompt(promptText);
       if(entered===null)return;
 
       const amount=Number(entered);
-
       if(!Number.isFinite(amount)||amount<=0){
         alert("Enter a valid positive payment amount.");
         return;
       }
 
       if(total&&(amount<total.min||amount>total.max)){
-        alert("Amount is outside the V12 total fee range ("+
-          money(total.min)+" – "+money(total.max)+").");
+        alert("Amount is outside the V12 total fee range ("+money(total.min)+" – "+money(total.max)+").");
         return;
       }
 
@@ -771,18 +1075,14 @@ $("appRows").addEventListener("click",async event=>{
   }
 });
 
-// Secure view and download actions inside the applicant details window.
+/* Document actions in details modal */
 $("detailContent").addEventListener("click",async event=>{
   const button=event.target.closest("button[data-document]");
   if(!button)return;
 
   button.disabled=true;
-
   try{
-    await openDocument(
-      button.dataset.document,
-      button.dataset.documentAction
-    );
+    await openDocument(button.dataset.document,button.dataset.documentAction);
   }catch(error){
     notice(error.message,"error");
   }finally{
@@ -790,20 +1090,67 @@ $("detailContent").addEventListener("click",async event=>{
   }
 });
 
+/* Navigation and filters */
 document.querySelectorAll("nav button").forEach(button=>{
   button.addEventListener("click",()=>setTab(button.dataset.tab));
 });
 
 $("refresh").addEventListener("click",refresh);
 $("search").addEventListener("input",renderApps);
-$("statusFilter").addEventListener("change",renderApps);
+["statusFilter","paymentFilter","destinationFilter","visaFilter"].forEach(id=>{
+  $(id).addEventListener("change",renderApps);
+});
 
+$("clearFilters").addEventListener("click",()=>{
+  $("search").value="";
+  $("statusFilter").value="";
+  $("paymentFilter").value="";
+  $("destinationFilter").value="";
+  $("visaFilter").value="";
+  renderApps();
+});
+
+/* Messaging actions */
+$("sendBroadcast").addEventListener("click",async()=>{
+  $("sendBroadcast").disabled=true;
+  try{await sendBroadcast();}
+  catch(error){notice(error.message,"error");}
+  finally{$("sendBroadcast").disabled=false;}
+});
+
+$("sendPrivate").addEventListener("click",async()=>{
+  $("sendPrivate").disabled=true;
+  try{await sendPrivateMessage();}
+  catch(error){notice(error.message,"error");}
+  finally{$("sendPrivate").disabled=false;}
+});
+
+$("sendMissingDocument").addEventListener("click",async()=>{
+  $("sendMissingDocument").disabled=true;
+  try{await sendMissingDocumentRequest();}
+  catch(error){notice(error.message,"error");}
+  finally{$("sendMissingDocument").disabled=false;}
+});
+
+$("loadReplies").addEventListener("click",async()=>{
+  $("loadReplies").disabled=true;
+  try{await loadReplies();}
+  catch(error){notice(error.message,"error");}
+  finally{$("loadReplies").disabled=false;}
+});
+
+$("sendReply").addEventListener("click",async()=>{
+  $("sendReply").disabled=true;
+  try{await sendAdminReply();}
+  catch(error){notice(error.message,"error");}
+  finally{$("sendReply").disabled=false;}
+});
+
+/* Details modal */
 $("closeDetails").addEventListener("click",closeApplicantDetails);
 
 $("detailOverlay").addEventListener("click",event=>{
-  if(event.target===$("detailOverlay")){
-    closeApplicantDetails();
-  }
+  if(event.target===$("detailOverlay"))closeApplicantDetails();
 });
 
 document.addEventListener("keydown",event=>{
@@ -812,6 +1159,7 @@ document.addEventListener("keydown",event=>{
   }
 });
 
+/* Sign out */
 $("logout").addEventListener("click",async()=>{
   try{
     await sb.auth.signOut();
@@ -821,6 +1169,7 @@ $("logout").addEventListener("click",async()=>{
     $("loginPanel").classList.remove("hidden");
     $("logout").classList.add("hidden");
     $("adminEmail").textContent="";
+    currentAdmin=null;
     notice("You have signed out. Please sign in again.");
   }
 });
