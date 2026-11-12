@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="en">
 <head>
@@ -66,6 +67,9 @@ th{background:#f8fafc}
 .message-item.admin{background:#eff6ff}
 .message-item.applicant{background:#f8fafc}
 .message-item small{display:block;color:#64748b;margin-top:7px}
+.read-status{display:inline-block;padding:3px 7px;border-radius:12px;font-size:11px;font-weight:bold;margin-left:5px}
+.read-status.read{background:#dcfce7;color:#166534}
+.read-status.unread{background:#fef3c7;color:#92400e}
 .timeline{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin:14px 0}
 .stage{padding:10px 5px;text-align:center;border-radius:7px;background:#e2e8f0;color:#475569;font-size:12px}
 .stage.done{background:#dcfce7;color:#166534}
@@ -239,7 +243,7 @@ th{background:#f8fafc}
 
       <div class="message-box">
         <h3>Applicant replies and administrator responses</h3>
-        <p class="muted">Choose an applicant to load the conversation.</p>
+        <p class="muted">Choose an applicant to load the conversation. Applicant replies will be marked as read when opened here.</p>
         <button id="loadReplies" class="secondary">Load applicant conversation</button>
         <div id="replyThread" style="margin-top:14px">
           <div class="empty">Select an applicant above and load the conversation.</div>
@@ -535,9 +539,6 @@ function field(label,value){
   return `<div class="detail-field"><label>${esc(label)}</label><strong>${esc(display)}</strong></div>`;
 }
 
-/* Processing estimate and progress timeline.
-   The estimate is shown only if processing_days exists on the application
-   or its visa type record. */
 function processingEstimate(application){
   const visa=visaRecord(application);
   const raw=application.processing_days??visa.processing_days;
@@ -794,7 +795,8 @@ async function sendApplicantMessage(userId,message){
     recipient_user_id:userId,
     sender_user_id:currentAdmin.id,
     sender_name:"Administrator",
-    message:message.trim()
+    message:message.trim(),
+    is_read:false
   });
 
   if(error)throw new Error("Message could not be sent: "+error.message);
@@ -814,7 +816,8 @@ async function sendBroadcast(){
     recipient_user_id:applicant.user_id,
     sender_user_id:currentAdmin.id,
     sender_name:"Administrator",
-    message
+    message,
+    is_read:false
   }));
 
   const {error}=await sb.from("applicant_messages").insert(rows);
@@ -846,30 +849,85 @@ async function sendMissingDocumentRequest(){
   notice("Missing-document request sent to the applicant's My Messages page.","success");
 }
 
+/*
+ * Load both direct administrator messages and conversation replies.
+ * Applicant replies are marked as read when the administrator opens
+ * the conversation. Direct messages show the applicant's read status.
+ */
 async function loadReplies(){
   const userId=$("messageApplicant").value;
   if(!userId)throw new Error("Select an applicant first.");
 
   await verifyAdminDatabaseAccess();
 
-  const {data,error}=await sb
-    .from("applicant_message_replies")
-    .select("*")
-    .eq("applicant_user_id",userId)
-    .order("created_at",{ascending:true});
+  const [messagesResult,repliesResult]=await Promise.all([
+    sb.from("applicant_messages")
+      .select("*")
+      .eq("recipient_user_id",userId)
+      .order("created_at",{ascending:true}),
 
-  if(error)throw new Error("Could not load conversation: "+error.message);
+    sb.from("applicant_message_replies")
+      .select("*")
+      .eq("applicant_user_id",userId)
+      .order("created_at",{ascending:true})
+  ]);
 
-  const rows=data||[];
+  if(messagesResult.error)
+    throw new Error("Could not load applicant messages: "+messagesResult.error.message);
 
-  $("replyThread").innerHTML=rows.map(row=>{
-    const isAdmin=row.sender_role==="admin";
+  if(repliesResult.error)
+    throw new Error("Could not load conversation replies: "+repliesResult.error.message);
+
+  const messages=messagesResult.data||[];
+  const replies=repliesResult.data||[];
+
+  // Mark applicant replies as read when the administrator opens them.
+  const unreadReplies=replies.filter(row=>
+    row.sender_role==="applicant" && row.is_read!==true
+  );
+
+  if(unreadReplies.length){
+    const ids=unreadReplies.map(row=>row.id);
+
+    const {error}=await sb
+      .from("applicant_message_replies")
+      .update({is_read:true})
+      .in("id",ids);
+
+    if(error)
+      throw new Error("Conversation loaded, but applicant read receipts could not be updated: "+error.message);
+
+    unreadReplies.forEach(row=>row.is_read=true);
+  }
+
+  // Combine direct messages and replies into one chronological conversation.
+  const conversation=[
+    ...messages.map(row=>({
+      ...row,
+      message_type:"direct",
+      sender_role:"admin",
+      display_sender:"Administrator"
+    })),
+    ...replies.map(row=>({
+      ...row,
+      message_type:"reply",
+      display_sender:row.sender_role==="admin"?"Administrator":"Applicant"
+    }))
+  ].sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));
+
+  $("replyThread").innerHTML=conversation.map(row=>{
+    const isAdmin=row.display_sender==="Administrator";
+    const readStatus=row.is_read===true?"READ":"UNREAD";
+
     return `<div class="message-item ${isAdmin?"admin":"applicant"}">
-      <strong>${isAdmin?"Administrator":"Applicant"}</strong>
+      <strong>${esc(row.display_sender)}</strong>
       <div>${esc(row.message)}</div>
-      <small>${esc(date(row.created_at))}</small>
+      <small>
+        ${esc(date(row.created_at))}
+        <span class="read-status ${row.is_read===true?"read":"unread"}">${readStatus}</span>
+      </small>
     </div>`;
-  }).join("")||'<div class="empty">No replies in this conversation yet.</div>';
+  }).join("")||'<div class="empty">No messages in this conversation yet.</div>';
 }
 
 async function sendAdminReply(){
@@ -885,7 +943,8 @@ async function sendAdminReply(){
     applicant_user_id:userId,
     sender_user_id:currentAdmin.id,
     sender_role:"admin",
-    message
+    message,
+    is_read:false
   });
 
   if(error)throw new Error("Response could not be sent: "+error.message);
