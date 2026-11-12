@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#12345a">
+<title>My Messages | Global Online Visa Applications</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<style>
+*{box-sizing:border-box}
+body{margin:0;padding:18px 12px;background:#f3f6fa;color:#243247;font-family:Arial,sans-serif;line-height:1.5}
+.container{max-width:850px;margin:auto}
+header,.panel{background:#fff;border-radius:12px;padding:20px;margin-bottom:18px;box-shadow:0 2px 12px #0000000d}
+header{background:#123d68;color:#fff}
+header h1{font-size:23px;margin:0 0 5px}
+nav{display:flex;gap:15px;flex-wrap:wrap;margin-top:12px}
+nav a{color:#fff;font-weight:bold;text-decoration:none}
+h2{color:#123d68;margin-top:0}
+.small{font-size:13px;color:#64748b}
+.notice{display:none;padding:12px;border-radius:8px;margin:12px 0;white-space:pre-wrap}
+.good{display:block;background:#e5f7ec;color:#176334}
+.bad{display:block;background:#ffeded;color:#9b2020}
+.message{border:1px solid #dce4ed;border-radius:9px;padding:15px;margin:13px 0;background:#fff}
+.message.unread{border-left:5px solid #1265a0;background:#f8fbff}
+.message-top{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.sender{font-weight:bold;color:#123d68}
+.tag{display:inline-block;padding:3px 9px;border-radius:20px;background:#e8f2fb;color:#17517e;font-size:12px;font-weight:bold}
+.message-body{white-space:pre-wrap;overflow-wrap:anywhere;margin:12px 0}
+button{border:0;border-radius:7px;padding:10px 15px;background:#1265a0;color:#fff;font-weight:bold;cursor:pointer}
+button:disabled{opacity:.55;cursor:not-allowed}
+.empty{padding:18px;background:#f8fafc;border-radius:8px;color:#64748b}
+@media(max-width:550px){body{padding:10px 7px}header,.panel{padding:15px}}
+</style>
+</head>
+<body>
+<div class="container">
+<header>
+  <h1>My Messages</h1>
+  <div>Global Online Visa Applications</div>
+  <nav aria-label="Applicant navigation">
+    <a href="/">Home</a>
+    <a href="/apply.html">My Applications</a>
+    <a href="/my-messages.html">My Messages</a>
+  </nav>
+</header>
+
+<section class="panel">
+  <h2>Administrator messages</h2>
+  <p class="small">Messages sent by the Administrator to your signed-in account appear here. Open a message to mark it as read.</p>
+  <div id="notice" class="notice" role="status" aria-live="polite"></div>
+  <button id="refreshButton" type="button">Refresh messages</button>
+  <div id="messageList" aria-live="polite"><p class="small">Checking your account...</p></div>
+</section>
+</div>
+
+<script>
+(() => {
+"use strict";
+
+const notice = document.getElementById("notice");
+const list = document.getElementById("messageList");
+const refreshButton = document.getElementById("refreshButton");
+let db = null;
+let signedInUser = null;
+
+function settings() {
+  const url = window.SUPABASE_URL ||
+    window.APP_CONFIG?.supabaseUrl ||
+    window.APP_CONFIG?.SUPABASE_URL ||
+    window.API_CONFIG?.supabaseUrl ||
+    window.API_CONFIG?.SUPABASE_URL;
+
+  const key = window.SUPABASE_ANON_KEY ||
+    window.SUPABASE_PUBLISHABLE_KEY ||
+    window.APP_CONFIG?.supabaseAnonKey ||
+    window.APP_CONFIG?.publishableKey ||
+    window.API_CONFIG?.supabaseAnonKey ||
+    window.API_CONFIG?.publishableKey;
+
+  return {url, key};
+}
+
+function showNotice(text, isError=false) {
+  notice.textContent = text;
+  notice.className = "notice " + (isError ? "bad" : "good");
+}
+
+function displayDate(value) {
+  if (!value) return "Date unavailable";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "Date unavailable" : date.toLocaleString();
+}
+
+async function initialize() {
+  try {
+    const config = settings();
+    if (!window.supabase || !config.url || !config.key) {
+      throw new Error("Supabase configuration is missing. Please check config.js.");
+    }
+
+    db = window.supabase.createClient(config.url, config.key);
+
+    const {data, error} = await db.auth.getUser();
+    if (error) throw error;
+
+    signedInUser = data.user;
+    if (!signedInUser) {
+      showNotice("Please sign in to your applicant account first.", true);
+      list.innerHTML = '<p class="empty">Go to the <a href="/">Home page</a>, sign in, then open My Messages again.</p>';
+      refreshButton.disabled = true;
+      return;
+    }
+
+    await loadMessages();
+  } catch (error) {
+    showNotice("Could not open your messages: " + error.message, true);
+    list.innerHTML = '<p class="empty">Please refresh the page. If the problem continues, contact support.</p>';
+  }
+}
+
+async function loadMessages() {
+  if (!db || !signedInUser) return;
+
+  refreshButton.disabled = true;
+  refreshButton.textContent = "Loading...";
+  list.textContent = "Loading your messages...";
+
+  try {
+    const {data, error} = await db
+      .from("applicant_messages")
+      .select("id,sender_name,message,is_read,created_at")
+      .eq("recipient_user_id", signedInUser.id)
+      .order("created_at", {ascending:false})
+      .limit(100);
+
+    if (error) throw error;
+
+    const messages = data || [];
+    list.innerHTML = "";
+
+    if (messages.length === 0) {
+      list.innerHTML = '<p class="empty">You do not have any messages yet. Messages from the Administrator will appear here.</p>';
+      showNotice("Your inbox is up to date.");
+      return;
+    }
+
+    const unreadCount = messages.filter(item => !item.is_read).length;
+    showNotice(messages.length + " message(s) • " + unreadCount + " unread");
+
+    messages.forEach(item => {
+      const card = document.createElement("article");
+      card.className = "message" + (item.is_read ? "" : " unread");
+
+      const top = document.createElement("div");
+      top.className = "message-top";
+
+      const sender = document.createElement("span");
+      sender.className = "sender";
+      sender.textContent = item.sender_name || "Administrator";
+
+      const tag = document.createElement("span");
+      tag.className = "tag";
+      tag.textContent = item.is_read ? "Read" : "Unread";
+
+      const date = document.createElement("div");
+      date.className = "small";
+      date.textContent = displayDate(item.created_at);
+
+      const body = document.createElement("p");
+      body.className = "message-body";
+      body.textContent = item.message || "";
+
+      top.append(sender, tag);
+      card.append(top, date, body);
+
+      if (!item.is_read) {
+        const markButton = document.createElement("button");
+        markButton.type = "button";
+        markButton.textContent = "Mark as read";
+        markButton.addEventListener("click", async () => {
+          markButton.disabled = true;
+          markButton.textContent = "Updating...";
+          try {
+            const {error:updateError} = await db
+              .from("applicant_messages")
+              .update({is_read:true})
+              .eq("id", item.id)
+              .eq("recipient_user_id", signedInUser.id);
+
+            if (updateError) throw updateError;
+            item.is_read = true;
+            await loadMessages();
+          } catch (error) {
+            showNotice("Could not mark this message as read: " + error.message, true);
+            markButton.disabled = false;
+            markButton.textContent = "Mark as read";
+          }
+        });
+        card.appendChild(markButton);
+      }
+
+      list.appendChild(card);
+    });
+  } catch (error) {
+    list.innerHTML = "";
+    const problem = document.createElement("p");
+    problem.className = "empty";
+    problem.textContent = "Could not load messages: " + error.message;
+    list.appendChild(problem);
+    showNotice("Inbox loading failed. Check your connection or contact support.", true);
+  } finally {
+    refreshButton.disabled = false;
+    refreshButton.textContent = "Refresh messages";
+  }
+}
+
+refreshButton.addEventListener("click", loadMessages);
+initialize();
+})();
+</script>
+</body>
+</html>
