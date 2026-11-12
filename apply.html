@@ -65,7 +65,7 @@ footer{border-top:1px solid var(--border);margin-top:24px;padding-top:16px;color
   <div class="brand">Global Online Visa Applications</div>
   <nav aria-label="Main navigation">
     <a href="/">Home</a>
-    <a href="/apply.html">Apply & Track</a>
+    <a href="/apply.html">Apply &amp; Track</a>
     <a href="/contact.html">Contact</a>
     <a href="/admin.html">Administrator Login</a>
   </nav>
@@ -438,6 +438,10 @@ function getPaymentStatus(application) {
   ], "Pending");
 }
 
+/*
+ * Displays each applicant's application details.
+ * Processing days are populated by loadTracking() below.
+ */
 function renderTracking(applications) {
   trackingResults.innerHTML = "";
 
@@ -456,16 +460,43 @@ function renderTracking(applications) {
     card.appendChild(heading);
 
     addTrackingRow(card, "Reference number",
-      firstDefined(application, ["reference_number","application_reference","reference"], "Pending"));
+      firstDefined(application, [
+        "reference_number",
+        "application_reference",
+        "reference"
+      ], "Pending"));
 
     addTrackingRow(card, "Destination",
-      firstDefined(application, ["destination_country","country_name","country"], "Not provided"));
+      firstDefined(application, [
+        "destination_country",
+        "country_name",
+        "country"
+      ], "Not provided"));
 
     addTrackingRow(card, "Visa type",
-      firstDefined(application, ["visa_type","visa_name","visa_type_name"], "Not provided"));
+      firstDefined(application, [
+        "visa_type",
+        "visa_name",
+        "visa_type_name"
+      ], "Not provided"));
+
+    const processingDays = firstDefined(application, [
+      "processing_days"
+    ], null);
+
+    addTrackingRow(card, "Estimated processing time",
+      processingDays !== null &&
+      processingDays !== "" &&
+      Number.isFinite(Number(processingDays))
+        ? Number(processingDays) + " days"
+        : "Processing time not yet configured");
 
     addTrackingRow(card, "Application date",
-      firstDefined(application, ["created_at","submitted_at","application_date"], "Not provided"));
+      firstDefined(application, [
+        "created_at",
+        "submitted_at",
+        "application_date"
+      ], "Not provided"));
 
     const status = document.createElement("p");
     const statusLabel = document.createElement("strong");
@@ -486,12 +517,18 @@ function renderTracking(applications) {
         "status_message",
         "remarks",
         "message"
-      ], "No additional update at this time."));
+      ], "Your application is being processed. Please check back for further updates."));
 
     trackingResults.appendChild(card);
   });
 }
 
+/*
+ * Loads applications, then asks the existing V12 visa_types action
+ * for processing_days when the application response does not include it.
+ *
+ * This does not add or change any database records.
+ */
 async function loadTracking() {
   if (!currentUser) {
     trackingResults.textContent = "Please sign in to view your applications.";
@@ -510,7 +547,68 @@ async function loadTracking() {
       result.data ||
       [];
 
+    if (!Array.isArray(applications)) {
+      throw new Error("The tracking response was not valid.");
+    }
+
+    const countryGroups = new Map();
+
+    applications.forEach(application => {
+      const visaId = application.visa_type_id;
+      const countryId =
+        application.destination_country_id ||
+        application.country_id;
+
+      if (
+        visaId &&
+        countryId &&
+        (application.processing_days === undefined ||
+         application.processing_days === null)
+      ) {
+        if (!countryGroups.has(String(countryId))) {
+          countryGroups.set(String(countryId), {
+            countryId,
+            applications:[]
+          });
+        }
+
+        countryGroups.get(String(countryId)).applications.push(application);
+      }
+    });
+
+    for (const group of countryGroups.values()) {
+      try {
+        const visaResult = await backendRequest({
+          action:"visa_types",
+          country_id:group.countryId
+        });
+
+        const types = visaResult.visa_types || [];
+
+        group.applications.forEach(application => {
+          const matchingVisa = types.find(visa =>
+            String(visa.id) === String(application.visa_type_id)
+          );
+
+          if (
+            matchingVisa &&
+            matchingVisa.processing_days !== undefined &&
+            matchingVisa.processing_days !== null
+          ) {
+            application.processing_days = matchingVisa.processing_days;
+          }
+        });
+
+      } catch (lookupError) {
+        console.error(
+          "Could not retrieve visa processing time:",
+          lookupError
+        );
+      }
+    }
+
     renderTracking(applications);
+
   } catch(error) {
     console.error("Application tracking error:", error);
     trackingResults.textContent =
