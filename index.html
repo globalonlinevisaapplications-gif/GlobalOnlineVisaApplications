@@ -1,8 +1,10 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#092c50">
 <title>Global Online Visa Applications</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -213,6 +215,46 @@ input {
   border-radius: 5px;
 }
 
+/* Password show/hide controls */
+
+.password-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.password-wrap input {
+  padding-right: 65px;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 42px !important;
+  height: 38px;
+  padding: 7px !important;
+  margin: 0 !important;
+  background: transparent !important;
+  color: #12345a !important;
+  border: none !important;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.password-toggle svg {
+  width: 23px;
+  height: 23px;
+  display: block;
+}
+
+.password-toggle:focus-visible {
+  outline: 2px solid #1265a0;
+  border-radius: 5px;
+}
+
 .account button {
   width: 100%;
   margin: 6px 0;
@@ -228,10 +270,15 @@ input {
   background: #092c50;
 }
 
+.account .password-toggle:hover {
+  background: #e8eef6 !important;
+}
+
 #message {
   margin-top: 12px;
   font-size: 14px;
   line-height: 1.5;
+  overflow-wrap: anywhere;
 }
 
 footer {
@@ -453,16 +500,35 @@ footer a {
         type="email"
         id="registerEmail"
         placeholder="Email address"
+        autocomplete="email"
         required
       >
 
-      <input
-        type="password"
-        id="registerPassword"
-        placeholder="Create password (minimum 6 characters)"
-        required
-        minlength="6"
-      >
+      <div class="password-wrap">
+        <input
+          type="password"
+          id="registerPassword"
+          placeholder="Create password (minimum 6 characters)"
+          required
+          minlength="6"
+          autocomplete="new-password"
+        >
+
+        <button
+          type="button"
+          class="password-toggle"
+          data-password-target="registerPassword"
+          aria-label="Show password"
+          aria-pressed="false"
+        >
+          <svg viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+        </button>
+      </div>
 
       <button type="submit">Register</button>
 
@@ -478,15 +544,34 @@ footer a {
         type="email"
         id="loginEmail"
         placeholder="Email address"
+        autocomplete="username"
         required
       >
 
-      <input
-        type="password"
-        id="loginPassword"
-        placeholder="Password"
-        required
-      >
+      <div class="password-wrap">
+        <input
+          type="password"
+          id="loginPassword"
+          placeholder="Password"
+          required
+          autocomplete="current-password"
+        >
+
+        <button
+          type="button"
+          class="password-toggle"
+          data-password-target="loginPassword"
+          aria-label="Show password"
+          aria-pressed="false"
+        >
+          <svg viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+        </button>
+      </div>
 
       <button type="submit">Login</button>
 
@@ -496,7 +581,7 @@ footer a {
       Reset Password
     </button>
 
-    <p id="message"></p>
+    <p id="message" role="status" aria-live="polite"></p>
 
   </div>
 
@@ -546,9 +631,49 @@ footer a {
 
 const message = document.getElementById("message");
 
+const WEBSITE_URL =
+  "https://globalonlinevisaapplications.netlify.app";
+
+const APPLICATION_URL =
+  WEBSITE_URL + "/apply.html";
+
+/* Show and hide passwords */
+
+document.querySelectorAll("[data-password-target]").forEach(button => {
+
+  button.addEventListener("click", function() {
+
+    const input = document.getElementById(
+      this.dataset.passwordTarget
+    );
+
+    if (!input) return;
+
+    const isHidden = input.type === "password";
+
+    input.type = isHidden ? "text" : "password";
+
+    this.setAttribute(
+      "aria-label",
+      isHidden ? "Hide password" : "Show password"
+    );
+
+    this.setAttribute("aria-pressed", String(isHidden));
+
+    this.innerHTML = isHidden
+      ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18"/><path d="M10.6 10.6a2 2 0 002.8 2.8"/><path d="M9.9 5.2A10.5 10.5 0 0112 5c6.5 0 10 7 10 7a15 15 0 01-4 4.5"/><path d="M6.6 6.6C3.6 8.5 2 12 2 12s3.5 7 10 7c1 0 2-.2 2.9-.5"/></svg>'
+      : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>';
+
+  });
+
+});
+
 function showMessage(text, success = false) {
+
   message.textContent = text;
+
   message.style.color = success ? "green" : "red";
+
 }
 
 function getSupabaseSettings() {
@@ -569,6 +694,7 @@ function getSupabaseSettings() {
     window.API_CONFIG?.publishableKey;
 
   return { url, key };
+
 }
 
 let supabaseClient = null;
@@ -592,6 +718,8 @@ try {
 
 }
 
+/* Applicant registration */
+
 document.getElementById("registerForm").addEventListener(
   "submit",
   async function(e) {
@@ -599,10 +727,13 @@ document.getElementById("registerForm").addEventListener(
     e.preventDefault();
 
     if (!supabaseClient) {
+
       showMessage(
         "Supabase configuration could not be found in config.js."
       );
+
       return;
+
     }
 
     const email =
@@ -611,26 +742,49 @@ document.getElementById("registerForm").addEventListener(
     const password =
       document.getElementById("registerPassword").value;
 
-    const { error } = await supabaseClient.auth.signUp({
-      email,
-      password
-    });
+    const registerButton =
+      this.querySelector('button[type="submit"]');
 
-    if (error) {
+    registerButton.disabled = true;
+    registerButton.textContent = "Registering...";
 
-      showMessage(error.message);
+    try {
 
-    } else {
+      const { error } = await supabaseClient.auth.signUp({
+
+        email,
+        password,
+
+        options: {
+          emailRedirectTo: APPLICATION_URL
+        }
+
+      });
+
+      if (error) throw error;
 
       showMessage(
-        "Registration successful. Check your email if confirmation is required.",
+        "Registration successful. Please check your email and click the confirmation link. You will be returned to our application page.",
         true
       );
+
+      document.getElementById("registerPassword").value = "";
+
+    } catch (error) {
+
+      showMessage(error.message || "Registration failed.");
+
+    } finally {
+
+      registerButton.disabled = false;
+      registerButton.textContent = "Register";
 
     }
 
   }
 );
+
+/* Applicant login */
 
 document.getElementById("loginForm").addEventListener(
   "submit",
@@ -639,10 +793,13 @@ document.getElementById("loginForm").addEventListener(
     e.preventDefault();
 
     if (!supabaseClient) {
+
       showMessage(
         "Supabase configuration could not be found in config.js."
       );
+
       return;
+
     }
 
     const email =
@@ -651,38 +808,62 @@ document.getElementById("loginForm").addEventListener(
     const password =
       document.getElementById("loginPassword").value;
 
-    const { error } =
-      await supabaseClient.auth.signInWithPassword({
-        email,
-        password
-      });
+    const loginButton =
+      this.querySelector('button[type="submit"]');
 
-    if (error) {
+    loginButton.disabled = true;
+    loginButton.textContent = "Signing in...";
 
-      showMessage(error.message);
+    try {
 
-    } else {
+      const { error } =
+        await supabaseClient.auth.signInWithPassword({
+
+          email,
+          password
+
+        });
+
+      if (error) throw error;
 
       showMessage("Login successful. Redirecting...", true);
 
+      document.getElementById("loginPassword").value = "";
+
       setTimeout(function() {
-        window.location.href = "apply.html";
+
+        window.location.href = APPLICATION_URL;
+
       }, 1000);
+
+    } catch (error) {
+
+      showMessage(error.message || "Login failed.");
+
+    } finally {
+
+      loginButton.disabled = false;
+      loginButton.textContent = "Login";
 
     }
 
   }
 );
 
+/* Password reset */
+
 document.getElementById("resetPassword").addEventListener(
   "click",
   async function() {
 
     if (!supabaseClient) {
+
       showMessage(
         "Supabase configuration could not be found in config.js."
       );
+
       return;
+
     }
 
     const email =
@@ -695,23 +876,28 @@ document.getElementById("resetPassword").addEventListener(
       );
 
       return;
+
     }
 
-    const { error } =
-      await supabaseClient.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.origin + "/"
-      });
+    try {
 
-    if (error) {
+      const { error } =
+        await supabaseClient.auth.resetPasswordForEmail(email, {
 
-      showMessage(error.message);
+          redirectTo: APPLICATION_URL
 
-    } else {
+        });
+
+      if (error) throw error;
 
       showMessage(
-        "Password reset instructions have been sent to your email.",
+        "Password reset instructions have been sent to your email. Please check your inbox.",
         true
       );
+
+    } catch (error) {
+
+      showMessage(error.message || "Password reset request failed.");
 
     }
 
