@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Administrator Messages | Global Online Visa Applications</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f3f6fa;color:#243247}
+header{background:#123d68;color:white;padding:20px}
+header h2{margin:0 0 6px}
+main{max-width:950px;margin:25px auto;padding:0 15px}
+.panel{background:white;padding:20px;margin-bottom:20px;border-radius:12px;box-shadow:0 2px 10px #0000000d}
+h3{margin-top:0;color:#174e7d}
+label{display:block;font-weight:bold;margin:14px 0 7px}
+select,textarea{width:100%;padding:12px;border:1px solid #ccd5df;border-radius:7px;font:inherit}
+textarea{min-height:130px;resize:vertical}
+button{background:#1265a0;color:white;border:0;padding:12px 18px;border-radius:7px;font-weight:bold;margin-top:15px;cursor:pointer}
+button.secondary{background:#526477}
+button:disabled{opacity:.6}
+.status{padding:12px;border-radius:7px;margin:12px 0;display:none;white-space:pre-wrap}
+.good{background:#e5f7ec;color:#176334}
+.bad{background:#ffeded;color:#9b2020}
+.message{border:1px solid #e0e6ed;border-radius:8px;padding:14px;margin:12px 0}
+.message p{white-space:pre-wrap;overflow-wrap:anywhere}
+.small{color:#687789;font-size:13px}
+table{width:100%;border-collapse:collapse;margin-top:12px}
+th,td{text-align:left;padding:10px;border-bottom:1px solid #e3e8ee;font-size:14px}
+.table-wrap{overflow-x:auto}
+.tag{display:inline-block;padding:4px 8px;border-radius:20px;background:#e8f2fb;color:#17517e;font-size:12px}
+@media(max-width:600px){.panel{padding:15px}th,td{font-size:12px;padding:8px}}
+</style>
+</head>
+<body>
+<header>
+  <h2>Administrator Messages</h2>
+  <div>Global Online Visa Applications</div>
+</header>
+
+<main>
+  <div id="notice" class="status"></div>
+
+  <section class="panel">
+    <h3>Send a message</h3>
+    <p class="small">Send a private message to one applicant or an announcement to all applicants with an account profile.</p>
+
+    <label for="recipient">Choose recipient</label>
+    <select id="recipient">
+      <option value="all">All applicants</option>
+    </select>
+
+    <label for="messageText">Your message</label>
+    <textarea id="messageText" maxlength="5000" placeholder="Write your message to the applicant..."></textarea>
+
+    <button id="sendButton" onclick="sendMessage()">Send message</button>
+    <button class="secondary" onclick="loadDashboard()">Refresh messages</button>
+  </section>
+
+  <section class="panel">
+    <h3>Sent messages and read receipts</h3>
+    <p class="small">A message marked "Read" has been opened in the applicant's account.</p>
+    <div id="sentMessages">Loading messages...</div>
+  </section>
+</main>
+
+<script>
+const db = window.supabase.createClient(
+  window.SUPABASE_URL,
+  window.SUPABASE_ANON_KEY
+);
+
+let currentAdmin = null;
+let applicants = [];
+
+function showNotice(message, isError=false) {
+  const box = document.getElementById("notice");
+  box.textContent = message;
+  box.className = "status " + (isError ? "bad" : "good");
+  box.style.display = "block";
+}
+
+async function startPage() {
+  try {
+    const { data: sessionData, error: sessionError } =
+      await db.auth.getSession();
+
+    if (sessionError) throw sessionError;
+
+    currentAdmin = sessionData.session?.user;
+
+    if (!currentAdmin) {
+      showNotice("Please sign in through the administrator login page first.", true);
+      document.getElementById("sentMessages").innerHTML =
+        '<p><a href="admin.html">Open administrator login</a>, sign in, then return to this page.</p>';
+      document.getElementById("sendButton").disabled = true;
+      return;
+    }
+
+    const { data: adminCheck, error: adminError } =
+      await db.rpc("is_admin");
+
+    if (adminError) throw adminError;
+
+    if (adminCheck !== true) {
+      showNotice("Access denied. This account is not an administrator.", true);
+      document.getElementById("sendButton").disabled = true;
+      return;
+    }
+
+    await loadDashboard();
+
+  } catch (error) {
+    showNotice("Could not open the administrator messaging page: " + error.message, true);
+  }
+}
+
+async function loadDashboard() {
+  try {
+    const { data, error } = await db
+      .from("applicants")
+      .select("id,user_id,first_name,last_name,email")
+      .not("user_id", "is", null)
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+
+    applicants = data || [];
+
+    const recipient = document.getElementById("recipient");
+    recipient.innerHTML = '<option value="all">All applicants</option>';
+
+    applicants.forEach(applicant => {
+      const option = document.createElement("option");
+      option.value = applicant.user_id;
+      option.textContent =
+        [applicant.first_name, applicant.last_name].filter(Boolean).join(" ") +
+        (applicant.email ? " — " + applicant.email : "");
+      recipient.appendChild(option);
+    });
+
+    await loadSentMessages();
+    showNotice("Administrator messaging is ready.");
+
+  } catch (error) {
+    showNotice("Could not load applicants: " + error.message, true);
+  }
+}
+
+async function sendMessage() {
+  const button = document.getElementById("sendButton");
+  const message = document.getElementById("messageText").value.trim();
+  const selected = document.getElementById("recipient").value;
+
+  if (!message) {
+    showNotice("Please write a message before sending.", true);
+    return;
+  }
+
+  let recipients = selected === "all"
+    ? [...new Set(applicants.map(a => a.user_id).filter(Boolean))]
+    : [selected];
+
+  if (recipients.length === 0) {
+    showNotice("No applicant accounts were found. Applicants must have a profile before receiving messages.", true);
+    return;
+  }
+
+  button.disabled = true;
+  button.textContent = "Sending...";
+
+  try {
+    const rows = recipients.map(userId => ({
+      recipient_user_id: userId,
+      sender_user_id: currentAdmin.id,
+      sender_name: "Administrator",
+      message: message
+    }));
+
+    const { error } = await db
+      .from("applicant_messages")
+      .insert(rows);
+
+    if (error) throw error;
+
+    document.getElementById("messageText").value = "";
+    showNotice("Message successfully saved for " + recipients.length +
+      " applicant account(s).");
+    await loadSentMessages();
+
+  } catch (error) {
+    showNotice("Message was not sent: " + error.message, true);
+  } finally {
+    button.disabled = false;
+    button.textContent = "Send message";
+  }
+}
+
+async function loadSentMessages() {
+  const container = document.getElementById("sentMessages");
+  container.textContent = "Loading messages...";
+
+  try {
+    const { data, error } = await db
+      .from("applicant_messages")
+      .select("id,recipient_user_id,message,is_read,created_at,sender_name")
+      .order("created_at", { ascending: false })
+      .limit(200);
+
+    if (error) throw error;
+
+    if (!data || data.length === 0) {
+      container.innerHTML = "<p>No messages have been sent yet.</p>";
+      return;
+    }
+
+    const names = {};
+    applicants.forEach(a => {
+      names[a.user_id] =
+        [a.first_name, a.last_name].filter(Boolean).join(" ") ||
+        a.email || "Applicant";
+    });
+
+    container.innerHTML = "";
+
+    data.forEach(item => {
+      const card = document.createElement("div");
+      card.className = "message";
+
+      const recipientName = names[item.recipient_user_id] || "Applicant";
+      const date = new Date(item.created_at).toLocaleString();
+
+      const heading = document.createElement("strong");
+      heading.textContent = "To: " + recipientName;
+
+      const meta = document.createElement("div");
+      meta.className = "small";
+      meta.textContent = date + " • " + (item.is_read ? "Read" : "Unread");
+
+      const badge = document.createElement("span");
+      badge.className = "tag";
+      badge.textContent = item.is_read ? "Read" : "Unread";
+
+      const body = document.createElement("p");
+      body.textContent = item.message;
+
+      card.append(heading, meta, badge, body);
+      container.appendChild(card);
+    });
+
+  } catch (error) {
+    container.textContent = "Could not load sent messages: " + error.message;
+  }
+}
+
+startPage();
+</script>
+</body>
+</html>
