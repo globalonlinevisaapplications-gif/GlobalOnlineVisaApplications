@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -48,6 +49,20 @@ button:disabled{opacity:.5;cursor:not-allowed}
 .payment-number{font-size:22px;font-weight:bold;color:var(--navy);letter-spacing:.5px}
 a.contact-link{color:var(--blue);font-weight:bold}
 footer{border-top:1px solid var(--border);margin-top:24px;padding-top:16px;color:var(--muted);font-size:13px}
+
+/* MESSAGING */
+#myMessagesButton{background:#e0f2fe;padding:7px 11px;border-radius:7px}
+.unread-count{display:inline-block;background:#dc2626;color:white;border-radius:20px;padding:1px 7px;font-size:11px;margin-left:4px}
+.message-card{border:1px solid var(--border);border-radius:9px;padding:14px;margin:12px 0;overflow-wrap:anywhere}
+.message-card.admin-message{background:#eff6ff}
+.message-card.applicant-message{background:#f8fafc}
+.message-card small{display:block;color:var(--muted);margin-top:8px}
+.message-status{display:inline-block;font-size:11px;font-weight:bold;padding:3px 8px;border-radius:15px;margin-left:5px}
+.message-status.unread{background:#fef3c7;color:#92400e}
+.message-status.read{background:#dcfce7;color:#166534}
+.message-empty{padding:14px;background:#f8fafc;border-radius:8px;color:var(--muted)}
+.message-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+#replyMessage{min-height:100px}
 @media(max-width:650px){
  body{padding:12px 8px}
  .grid{grid-template-columns:1fr}
@@ -67,6 +82,9 @@ footer{border-top:1px solid var(--border);margin-top:24px;padding-top:16px;color
     <a href="/">Home</a>
     <a href="/apply.html">Apply &amp; Track</a>
     <a href="/contact.html">Contact</a>
+    <a href="#myMessagesSection" id="myMessagesButton">
+      My Messages <span id="unreadCount" class="unread-count hidden">0</span>
+    </a>
     <a href="/admin.html">Administrator Login</a>
   </nav>
 </header>
@@ -84,6 +102,33 @@ footer{border-top:1px solid var(--border);margin-top:24px;padding-top:16px;color
   <button type="button" id="refreshTracking">Refresh Application Status</button>
   <div id="trackingResults">
     <p class="muted">Loading your applications...</p>
+  </div>
+</div>
+
+<!-- APPLICANT MESSAGES -->
+<div class="section" id="myMessagesSection">
+  <h2>My Messages</h2>
+  <p class="muted">
+    Read private messages and announcements from our administrator.
+    You can also reply directly to the administrator here.
+  </p>
+
+  <div class="message-actions">
+    <button type="button" id="refreshMessages">Refresh Messages</button>
+    <span id="messageSummary" class="muted">Your inbox will appear here after signing in.</span>
+  </div>
+
+  <div id="inboxResults">
+    <div class="message-empty">Sign in to view your messages.</div>
+  </div>
+
+  <div class="message-card">
+    <h3>Reply to Administrator</h3>
+    <p class="muted">Write your message or response below.</p>
+    <label for="replyMessage">Your message</label>
+    <textarea id="replyMessage" maxlength="5000" placeholder="Write your message to the administrator..."></textarea>
+    <button type="button" id="sendApplicantReply">Send Message</button>
+    <div id="replyNotice" class="notice" role="status" aria-live="polite"></div>
   </div>
 </div>
 
@@ -271,6 +316,8 @@ let visaTypes = [];
 let applicantNumber = 0;
 let submitting = false;
 let visaRequestNumber = 0;
+let loadingMessages = false;
+let sendingReply = false;
 
 function showMessage(text, type = "info") {
   messageEl.textContent = text;
@@ -281,6 +328,13 @@ function showMessage(text, type = "info") {
 
 function hideMessage() {
   messageEl.style.display = "none";
+}
+
+function showReplyNotice(text,type="info"){
+  const el=document.getElementById("replyNotice");
+  el.textContent=text;
+  el.className="notice "+type;
+  el.style.display="block";
 }
 
 function money(value) {
@@ -438,10 +492,6 @@ function getPaymentStatus(application) {
   ], "Pending");
 }
 
-/*
- * Displays each applicant's application details.
- * Processing days are populated by loadTracking() below.
- */
 function renderTracking(applications) {
   trackingResults.innerHTML = "";
 
@@ -523,12 +573,6 @@ function renderTracking(applications) {
   });
 }
 
-/*
- * Loads applications, then asks the existing V12 visa_types action
- * for processing_days when the application response does not include it.
- *
- * This does not add or change any database records.
- */
 async function loadTracking() {
   if (!currentUser) {
     trackingResults.textContent = "Please sign in to view your applications.";
@@ -600,10 +644,7 @@ async function loadTracking() {
         });
 
       } catch (lookupError) {
-        console.error(
-          "Could not retrieve visa processing time:",
-          lookupError
-        );
+        console.error("Could not retrieve visa processing time:",lookupError);
       }
     }
 
@@ -614,6 +655,258 @@ async function loadTracking() {
     trackingResults.textContent =
       "We could not load your applications. Please try refreshing or contact support. " +
       (error.message || "");
+  }
+}
+
+/* APPLICANT MESSAGING */
+
+function messageDate(value){
+  if(!value)return "Date unavailable";
+  const parsed=new Date(value);
+  return Number.isNaN(parsed.getTime())?"Date unavailable":parsed.toLocaleString();
+}
+
+function updateUnreadCount(count){
+  const badge=document.getElementById("unreadCount");
+  if(count>0){
+    badge.textContent=String(count);
+    badge.classList.remove("hidden");
+  }else{
+    badge.textContent="";
+    badge.classList.add("hidden");
+  }
+}
+
+function renderInbox(messages,replies){
+  const container=document.getElementById("inboxResults");
+  container.innerHTML="";
+
+  const items=[];
+
+  (messages||[]).forEach(item=>{
+    items.push({
+      kind:"message",
+      id:item.id,
+      text:item.message,
+      sender:"Administrator",
+      created_at:item.created_at,
+      is_read:item.is_read,
+      role:"admin"
+    });
+  });
+
+  (replies||[]).forEach(item=>{
+    items.push({
+      kind:"reply",
+      id:item.id,
+      text:item.message,
+      sender:item.sender_role==="admin"?"Administrator":"You",
+      created_at:item.created_at,
+      is_read:item.is_read,
+      role:item.sender_role==="admin"?"admin":"applicant"
+    });
+  });
+
+  items.sort((a,b)=>
+    new Date(a.created_at||0)-new Date(b.created_at||0)
+  );
+
+  if(!items.length){
+    container.innerHTML='<div class="message-empty">Your inbox is empty. Messages from the administrator will appear here.</div>';
+    document.getElementById("messageSummary").textContent="No messages yet.";
+    updateUnreadCount(0);
+    return;
+  }
+
+  let unread=0;
+
+  items.forEach(item=>{
+    if(item.role==="admin"&&item.is_read!==true)unread++;
+
+    const card=document.createElement("div");
+    card.className="message-card "+(
+      item.role==="admin"?"admin-message":"applicant-message"
+    );
+
+    const heading=document.createElement("strong");
+    heading.textContent=item.sender;
+    card.appendChild(heading);
+
+    const status=document.createElement("span");
+    status.className="message-status "+(
+      item.is_read===true?"read":"unread"
+    );
+    status.textContent=item.is_read===true?"Read":"Unread";
+    card.appendChild(status);
+
+    const content=document.createElement("p");
+    content.style.whiteSpace="pre-wrap";
+    content.textContent=item.text||"";
+    card.appendChild(content);
+
+    const time=document.createElement("small");
+    time.textContent=messageDate(item.created_at);
+    card.appendChild(time);
+
+    container.appendChild(card);
+  });
+
+  updateUnreadCount(unread);
+  document.getElementById("messageSummary").textContent=
+    items.length+" conversation message(s) · "+unread+" unread from administrator";
+}
+
+async function markAdministratorMessagesRead(messages,replies){
+  const client=getSupabaseClient();
+
+  const unreadMessages=(messages||[])
+    .filter(item=>item.is_read!==true)
+    .map(item=>item.id);
+
+  const unreadReplies=(replies||[])
+    .filter(item=>item.sender_role==="admin"&&item.is_read!==true)
+    .map(item=>item.id);
+
+  if(unreadMessages.length){
+    const {error}=await client
+      .from("applicant_messages")
+      .update({is_read:true})
+      .in("id",unreadMessages)
+      .eq("recipient_user_id",currentUser.id);
+
+    if(error)throw error;
+  }
+
+  if(unreadReplies.length){
+    const {error}=await client
+      .from("applicant_message_replies")
+      .update({is_read:true})
+      .in("id",unreadReplies)
+      .eq("applicant_user_id",currentUser.id)
+      .eq("sender_role","admin");
+
+    if(error)throw error;
+  }
+}
+
+async function loadMessages(){
+  if(!currentUser){
+    document.getElementById("inboxResults").innerHTML=
+      '<div class="message-empty">Please sign in to view your messages.</div>';
+    return;
+  }
+
+  if(loadingMessages)return;
+  loadingMessages=true;
+
+  const container=document.getElementById("inboxResults");
+  container.innerHTML='<div class="message-empty">Loading your messages...</div>';
+
+  try{
+    const client=getSupabaseClient();
+
+    const [messageResult,replyResult]=await Promise.all([
+      client.from("applicant_messages")
+        .select("id,message,is_read,created_at,sender_name")
+        .eq("recipient_user_id",currentUser.id)
+        .order("created_at",{ascending:true}),
+
+      client.from("applicant_message_replies")
+        .select("id,message,is_read,created_at,sender_role")
+        .eq("applicant_user_id",currentUser.id)
+        .order("created_at",{ascending:true})
+    ]);
+
+    if(messageResult.error)throw messageResult.error;
+    if(replyResult.error)throw replyResult.error;
+
+    const messages=messageResult.data||[];
+    const replies=replyResult.data||[];
+
+    renderInbox(messages,replies);
+
+    /*
+     * Opening the inbox marks administrator messages as read.
+     * Applicant messages are never marked read by this function.
+     */
+    await markAdministratorMessagesRead(messages,replies);
+
+    if(messages.some(item=>item.is_read!==true)||
+       replies.some(item=>item.sender_role==="admin"&&item.is_read!==true)){
+      const refreshedMessages=messages.map(item=>({...item,is_read:true}));
+      const refreshedReplies=replies.map(item=>
+        item.sender_role==="admin"?({...item,is_read:true}):item
+      );
+      renderInbox(refreshedMessages,refreshedReplies);
+    }
+
+  }catch(error){
+    console.error("Applicant inbox error:",error);
+    container.innerHTML=
+      '<div class="message-empty">We could not load your messages. Please try again. '+
+      escapeHtml(error.message||"")+'</div>';
+    showReplyNotice("Could not load messages: "+(error.message||"Unknown error"),"error");
+  }finally{
+    loadingMessages=false;
+  }
+}
+
+function escapeHtml(value){
+  return String(value??"").replace(/[&<>"']/g,char=>({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[char]));
+}
+
+async function sendApplicantReply(){
+  if(sendingReply)return;
+
+  if(!currentUser){
+    showReplyNotice("Please sign in before sending a message.","error");
+    return;
+  }
+
+  const input=document.getElementById("replyMessage");
+  const text=input.value.trim();
+
+  if(!text){
+    showReplyNotice("Please write your message first.","error");
+    return;
+  }
+
+  sendingReply=true;
+  const button=document.getElementById("sendApplicantReply");
+  button.disabled=true;
+  button.textContent="Sending...";
+
+  try{
+    const client=getSupabaseClient();
+
+    const {error}=await client
+      .from("applicant_message_replies")
+      .insert({
+        applicant_user_id:currentUser.id,
+        sender_user_id:currentUser.id,
+        sender_role:"applicant",
+        message:text,
+        is_read:false
+      });
+
+    if(error)throw error;
+
+    input.value="";
+    showReplyNotice("Your message has been sent to the administrator.","success");
+    await loadMessages();
+
+  }catch(error){
+    console.error("Applicant reply error:",error);
+    showReplyNotice(
+      "Your message could not be sent: "+(error.message||"Please try again."),
+      "error"
+    );
+  }finally{
+    sendingReply=false;
+    button.disabled=false;
+    button.textContent="Send Message";
   }
 }
 
@@ -1119,6 +1412,17 @@ submitButton.addEventListener("click",submitApplication);
 document.getElementById("refreshTracking")
   .addEventListener("click",loadTracking);
 
+document.getElementById("refreshMessages")
+  .addEventListener("click",loadMessages);
+
+document.getElementById("sendApplicantReply")
+  .addEventListener("click",sendApplicantReply);
+
+document.getElementById("myMessagesButton")
+  .addEventListener("click",()=>{
+    if(currentUser)loadMessages();
+  });
+
 document.getElementById("copyPaymentNumber")
   .addEventListener("click",async() => {
     try {
@@ -1138,6 +1442,7 @@ async function initialise() {
     await loadCountries();
     updateFees();
     await loadTracking();
+    await loadMessages();
   } catch(error) {
     console.error("Application page initialisation:",error);
 
@@ -1149,6 +1454,12 @@ async function initialise() {
     submitButton.disabled = true;
     trackingResults.textContent =
       "Please sign in to view your application tracking and submit an application.";
+
+    document.getElementById("inboxResults").innerHTML=
+      '<div class="message-empty">Please sign in to view your messages.</div>';
+
+    document.getElementById("messageSummary").textContent=
+      "Sign in to access your inbox.";
   }
 }
 
