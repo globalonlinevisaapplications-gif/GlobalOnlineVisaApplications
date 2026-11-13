@@ -22,7 +22,7 @@
 
   // SUPABASE CONFIGURATION
   window.SUPABASE_URL =
-    "https://iqpnlzufcasse…";
+    "https://iqpnlzufcasseycvmvzs.supabase.co";
 
   window.SUPABASE_ANON_KEY =
     "sb_publishable_W8PD_H5br4lYSFQ1BMMfyA_ywmLOsae";
@@ -40,11 +40,12 @@
     headers: {
       "Content-Type": "application/json",
       "apikey": window.SUPABASE_ANON_KEY,
-      "Authorization": "Bearer " + window.SUPABASE_ANON_KEY
+      "Authorization":
+        "Bearer " + window.SUPABASE_ANON_KEY
     }
   };
 
-  // APPLICATION ROUTES — OFFICIAL WEBSITE
+  // APPLICATION ROUTES
   window.APP_ROUTES = {
     home: window.SITE_URL + "/",
     apply: window.SITE_URL + "/apply.html",
@@ -78,22 +79,29 @@
 
     return required.every(function (value) {
       return typeof value === "string" &&
-        value.length > 0;
-    });
+        value.trim().length > 0;
+    }) &&
+    /^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(
+      window.SUPABASE_URL
+    );
   };
 
   // BACKEND CONNECTION
-  window.submitVisaApplication = async function (applicationData) {
+  window.submitVisaApplication = async function (
+    applicationData
+  ) {
 
     if (!window.validateAppConfig()) {
       throw new Error(
-        "Application configuration is incomplete."
+        "Application configuration is incomplete or invalid."
       );
     }
 
-    if (!applicationData ||
-        typeof applicationData !== "object" ||
-        Array.isArray(applicationData)) {
+    if (
+      !applicationData ||
+      typeof applicationData !== "object" ||
+      Array.isArray(applicationData)
+    ) {
       throw new Error("Invalid application data.");
     }
 
@@ -106,9 +114,11 @@
       }
     );
 
-    const result = await response.json().catch(function () {
-      return {};
-    });
+    const result = await response.json().catch(
+      function () {
+        return {};
+      }
+    );
 
     if (!response.ok || result.ok === false) {
       throw new Error(
@@ -146,6 +156,11 @@
     );
 
     console.info(
+      "Supabase URL:",
+      window.SUPABASE_URL
+    );
+
+    console.info(
       "Backend:",
       window.SUPABASE_FUNCTION_URL
     );
@@ -153,7 +168,7 @@
   } else {
 
     console.error(
-      "Application configuration is incomplete."
+      "Application configuration is incomplete or invalid."
     );
 
   }
