@@ -1,0 +1,382 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#092c50">
+<title>Visa Processing Times | Global Online Visa Applications</title>
+<meta name="description" content="View visitor and tourist visa processing-time information for destinations around the world.">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;font-family:Arial,sans-serif;
+ background:#f3f6fa;color:#172b43;
+ line-height:1.6
+}
+header{
+ background:#092c50;color:white;
+ padding:25px 18px;text-align:center
+}
+header h1{margin:0;font-size:25px}
+header p{margin:8px 0 0;color:#dbeafe}
+nav{
+ background:#fff;padding:13px;
+ text-align:center;border-bottom:1px solid #ddd
+}
+nav a{
+ color:#092c50;text-decoration:none;
+ font-weight:bold;margin:0 10px
+}
+.container{
+ width:94%;max-width:1050px;
+ margin:25px auto
+}
+.panel{
+ background:white;padding:20px;
+ border-radius:12px;margin-bottom:18px;
+ box-shadow:0 2px 10px #0000000c
+}
+h2{color:#092c50;margin-top:0}
+.filters{
+ display:grid;
+ grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+ gap:14px
+}
+label{display:block;font-weight:bold;margin-bottom:5px}
+select,input{
+ width:100%;padding:12px;
+ border:1px solid #ccd5df;border-radius:7px;
+ background:white;font-size:15px
+}
+button{
+ border:0;background:#092c50;color:white;
+ padding:12px 20px;border-radius:7px;
+ cursor:pointer;font-weight:bold
+}
+button:hover{background:#164879}
+.results{
+ display:grid;grid-template-columns:
+ repeat(auto-fit,minmax(260px,1fr));gap:15px
+}
+.result{
+ border:1px solid #dce4ed;
+ border-radius:10px;padding:17px;background:#fff
+}
+.result h3{margin:0 0 10px;color:#092c50}
+.days{font-size:22px;font-weight:bold;color:#12613b}
+.meta{font-size:13px;color:#64748b;margin-top:9px}
+.result a{color:#0759a5;overflow-wrap:anywhere}
+.notice{
+ background:#fff8e7;border-left:5px solid #d69b20;
+ padding:16px;border-radius:6px
+}
+.status{padding:12px;background:#eef4fa;border-radius:7px}
+footer{
+ background:#092c50;color:white;
+ text-align:center;padding:25px;margin-top:35px
+}
+footer a{color:white}
+.hidden{display:none}
+@media(max-width:500px){
+ header h1{font-size:21px}
+ nav a{display:inline-block;margin:5px}
+ .panel{padding:15px}
+}
+</style>
+</head>
+
+<body>
+
+<header>
+ <h1>Global Online Visa Applications</h1>
+ <p>Worldwide Visitor & Tourist Visa Processing Times</p>
+</header>
+
+<nav>
+ <a href="index.html">Home</a>
+ <a href="apply.html">Apply & Track</a>
+ <a href="processing-times.html">Processing Times</a>
+ <a href="https://wa.me/254751896015">WhatsApp Support</a>
+</nav>
+
+<main class="container">
+
+ <section class="panel">
+  <h2>Visa Processing Times</h2>
+  <p>
+   Explore available visitor and tourist visa processing-time
+   information by destination and country of application.
+  </p>
+  <p>
+   Processing estimates depend on the destination, applicant's
+   nationality, application location, visa requirements and
+   immigration authority.
+  </p>
+ </section>
+
+ <section class="panel">
+  <h2>Search Processing Times</h2>
+
+  <div class="filters">
+   <div>
+    <label for="destination">Destination country</label>
+    <select id="destination">
+     <option value="">All destinations</option>
+    </select>
+   </div>
+
+   <div>
+    <label for="origin">Applying from</label>
+    <select id="origin">
+     <option value="">All application locations</option>
+    </select>
+   </div>
+  </div>
+
+  <p style="margin-top:15px">
+   <button onclick="loadProcessingTimes()">Search</button>
+   <button onclick="resetSearch()" style="background:#64748b">
+    Reset
+   </button>
+  </p>
+ </section>
+
+ <section class="panel">
+  <h2>Available Processing Times</h2>
+  <div id="status" class="status">
+   Loading processing-time information...
+  </div>
+  <div id="results" class="results" style="margin-top:15px"></div>
+ </section>
+
+ <section class="panel notice">
+  <h2>Important Notice</h2>
+  <p>
+   Visa processing times displayed on Global Online Visa
+   Applications are provided for general information and guidance
+   only. Processing times may vary depending on the destination
+   country, visa category, applicant's nationality, application
+   completeness, embassy or consulate workload, security checks,
+   public holidays and changes in immigration policies.
+  </p>
+  <p>
+   The processing times are not guaranteed approval or decision
+   dates. Actual processing may be shorter or longer than the
+   published estimates. Immigration authorities and embassies
+   have sole responsibility for visa decisions and official
+   processing timelines.
+  </p>
+  <p>
+   Applicants are advised to verify the latest requirements and
+   processing times through the relevant government immigration
+   website or embassy before making travel arrangements.
+  </p>
+  <p>
+   Global Online Visa Applications is a private visa consultancy
+   and is not a government agency, embassy or consulate.
+  </p>
+ </section>
+
+ <section class="panel">
+  <h2>Need Assistance?</h2>
+  <p>Our support team can help with your application process.</p>
+  <p>
+   <a href="https://wa.me/254751896015">
+    <button>WhatsApp Support</button>
+   </a>
+   <a href="tel:+254751896015">
+    <button style="background:#176b43">Call Customer Helpline</button>
+   </a>
+  </p>
+ </section>
+
+</main>
+
+<footer>
+ <p>Global Online Visa Applications</p>
+ <p>
+  <a href="https://globalonlinevisaapplications.netlify.app/">
+   Visit our website
+  </a>
+ </p>
+ <p>WhatsApp / Phone: +254 751 896 015</p>
+ <p>Private visa consultancy — not a government agency.</p>
+</footer>
+
+<script>
+const supabaseClient = window.supabase.createClient(
+ window.SUPABASE_URL,
+ window.SUPABASE_ANON_KEY
+);
+
+const destination = document.getElementById("destination");
+const origin = document.getElementById("origin");
+const statusBox = document.getElementById("status");
+const resultsBox = document.getElementById("results");
+
+function escapeHTML(value){
+ return String(value ?? "").replace(/[&<>"']/g, char => ({
+  "&":"&amp;",
+  "<":"&lt;",
+  ">":"&gt;",
+  '"':"&quot;",
+  "'":"&#39;"
+ })[char]);
+}
+
+function safeURL(value){
+ try{
+  const url = new URL(value);
+  return url.protocol === "https:" ? url.href : null;
+ }catch(e){
+  return null;
+ }
+}
+
+async function loadCountries(){
+ const {data,error} = await supabaseClient
+  .from("visa_countries")
+  .select("country_name")
+  .eq("is_active",true)
+  .order("country_name");
+
+ if(error){
+  statusBox.textContent =
+   "Countries could not load: " + error.message;
+  return;
+ }
+
+ const countries = [...new Set(
+  (data || []).map(x => x.country_name).filter(Boolean)
+ )];
+
+ countries.forEach(country => {
+  const a = document.createElement("option");
+  a.value = country;
+  a.textContent = country;
+  destination.appendChild(a);
+
+  const b = document.createElement("option");
+  b.value = country;
+  b.textContent = country;
+  origin.appendChild(b);
+ });
+}
+
+function resetSearch(){
+ destination.value = "";
+ origin.value = "";
+ loadProcessingTimes();
+}
+
+function makeCard(item){
+ const source = safeURL(item.source_url);
+ const days = escapeHTML(item.min_days) + "–" +
+              escapeHTML(item.max_days) + " " +
+              escapeHTML(item.time_unit || "working days");
+
+ return `
+ <article class="result">
+  <h3>${escapeHTML(item.destination)}</h3>
+  <div class="days">${days}</div>
+  <p><strong>Visa category:</strong>
+   ${escapeHTML(item.visa_category || "Visitor/Tourist")}
+  </p>
+  <p><strong>Applying from:</strong>
+   ${escapeHTML(item.applying_from || "Not specified")}
+  </p>
+  <p><strong>Region:</strong>
+   ${escapeHTML(item.region || "Other")}
+  </p>
+  <div class="meta">
+   Last verified:
+   ${escapeHTML(item.last_verified_at
+    ? new Date(item.last_verified_at).toLocaleDateString()
+    : "Not verified")}
+  </div>
+  ${source ? `<p><a href="${escapeHTML(source)}"
+   target="_blank" rel="noopener noreferrer">
+   View reference source</a></p>` :
+   `<p class="meta">Reference source not supplied.</p>`}
+ </article>`;
+}
+
+async function loadProcessingTimes(){
+ resultsBox.innerHTML = "";
+ statusBox.textContent = "Loading processing times...";
+
+ let query = supabaseClient
+  .from("visa_processing_times")
+  .select(
+   "destination,region,visa_category,applying_from," +
+   "min_days,max_days,time_unit,source_url,last_verified_at"
+  )
+  .eq("is_active",true)
+  .not("source_url","is",null)
+  .not("last_verified_at","is",null)
+  .order("destination");
+
+ const {data,error} = await query;
+
+ if(error){
+  statusBox.textContent =
+   "Could not load processing times: " + error.message;
+  return;
+ }
+
+ let records = (data || []).filter(item => {
+  const category = (item.visa_category || "").toLowerCase();
+  return [
+   "visitor/tourist",
+   "tourist/visitor",
+   "tourist",
+   "visitor"
+  ].includes(category);
+ });
+
+ if(destination.value){
+  records = records.filter(item =>
+   item.destination === destination.value
+  );
+ }
+
+ if(origin.value){
+  records = records.filter(item =>
+   item.applying_from === origin.value
+  );
+ }
+
+ if(records.length === 0){
+  statusBox.textContent =
+   "No verified Visitor/Tourist processing-time records " +
+   "are currently available for this selection. " +
+   "Please check again later.";
+  return;
+ }
+
+ statusBox.textContent =
+  records.length + " verified record(s) available.";
+
+ resultsBox.innerHTML = records.map(makeCard).join("");
+}
+
+async function initialise(){
+ if(!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY){
+  statusBox.textContent =
+   "Website database configuration is missing. Please contact support.";
+  return;
+ }
+
+ await loadCountries();
+ await loadProcessingTimes();
+}
+
+initialise();
+</script>
+
+</body>
+</html>
