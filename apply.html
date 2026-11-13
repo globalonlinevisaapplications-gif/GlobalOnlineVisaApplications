@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -44,8 +45,6 @@ button:disabled{opacity:.5;cursor:not-allowed}
 .hidden{display:none!important}
 .tracking-card{border:1px solid var(--border);border-radius:9px;padding:15px;margin:12px 0;background:#fff}
 .status{display:inline-block;padding:5px 10px;border-radius:20px;background:#e0f2fe;color:#075985;font-weight:bold;font-size:13px}
-.payment-method{border:1px solid var(--border);border-radius:9px;padding:15px;margin:14px 0}
-.payment-number{font-size:22px;font-weight:bold;color:var(--navy);letter-spacing:.5px}
 a.contact-link{color:var(--blue);font-weight:bold}
 footer{border-top:1px solid var(--border);margin-top:24px;padding-top:16px;color:var(--muted);font-size:13px}
 
@@ -67,7 +66,7 @@ footer{border-top:1px solid var(--border);margin-top:24px;padding-top:16px;color
 .processing-box{background:#eff6ff;border:1px solid #bfdbfe;border-radius:9px;padding:16px;margin-top:15px}
 .processing-result{background:#fff;border:1px solid #bfdbfe;border-radius:8px;padding:14px;margin-top:12px;overflow-wrap:anywhere}
 .processing-result strong{color:var(--navy)}
-.processing-result a{color:var(--blue);font-weight:bold}
+.processing-result a{color:var(--blue);font-weight:bold;display:inline-block;margin-top:5px}
 .processing-notice{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;padding:12px;border-radius:7px;margin-top:12px;font-size:13px}
 
 /* APPLICATION SUPPORT */
@@ -79,6 +78,9 @@ footer{border-top:1px solid var(--border);margin-top:24px;padding-top:16px;color
 .whatsapp-button{background:#25D366}
 .helpline-button{background:#1455a0}
 .assistance-phone{display:inline-block;color:#12345a;font-size:20px;font-weight:bold;text-decoration:none;margin-top:5px}
+
+/* PAYMENT NOT YET ENABLED */
+.payment-pending{background:#f8fafc;border:1px solid var(--border);border-radius:9px;padding:16px;margin-top:15px}
 
 @media(max-width:650px){
  body{padding:12px 8px}
@@ -239,7 +241,7 @@ The final official fee and total must be confirmed before payment.
 I confirm that the information supplied is accurate and that I agree to the application processing terms.
 </label>
 <button type="button" id="submitButton">Submit Visa Application</button>
-<p class="muted">Your application will be submitted with payment status pending.</p>
+<p class="muted">Your application will be submitted with payment status pending. No payment is collected through this form.</p>
 </div>
 
 </div>
@@ -287,74 +289,21 @@ I confirm that the information supplied is accurate and that I agree to the appl
   </p>
 </div>
 
-<!-- PAYMENT INSTRUCTIONS -->
+<!-- PAYMENT NOT YET ENABLED -->
 <div class="section" id="paymentInstructions">
-<h2>Payment Instructions</h2>
-<p>Use one of the methods below to send your payment after receiving your confirmed payment amount.</p>
-
-<div class="payment-method">
-<h3>Payment recipient – Airtel Money Kenya</h3>
-<div class="payment-number">+254 751 896 015</div>
-<button type="button" id="copyPaymentNumber">Copy Payment Number</button>
-<p class="muted">Recipient: Global Online Visa Applications. Please verify the recipient's registered name before sending money.</p>
-</div>
-
-<div class="payment-method">
-<h3>Method 1: M-Pesa to Airtel Money</h3>
-<ol>
-<li>Open M-Pesa on your Safaricom line or dial *334#.</li>
-<li>Choose the option for sending money to another mobile network, if available.</li>
-<li>Select Airtel Money where that option is offered.</li>
-<li>Enter the recipient number: <strong>0751896015</strong>.</li>
-<li>Enter the confirmed payment amount.</li>
-<li>Check the recipient details carefully before confirming with your M-Pesa PIN.</li>
-<li>Keep the M-Pesa confirmation message and transaction code.</li>
-</ol>
-<p class="muted">M-Pesa menu options may change. If the other-network option is unavailable, contact Safaricom or use another supported payment method. Do not send money to an unverified number.</p>
-</div>
-
-<div class="payment-method">
-<h3>Method 2: Bank transfer to Airtel Money</h3>
-<ol>
-<li>Open your bank's mobile banking app, internet banking or visit a branch.</li>
-<li>Look for Mobile Money, Airtel Money or Bank-to-Wallet transfer.</li>
-<li>Select Airtel Money as the receiving network, if supported by your bank.</li>
-<li>Enter the recipient number: <strong>+254 751 896 015</strong>.</li>
-<li>Enter the confirmed payment amount.</li>
-<li>Verify the recipient details and any transaction charges before confirming.</li>
-<li>Keep your bank transaction reference or receipt.</li>
-</ol>
-<p class="muted">Bank transfer options differ between banks. Confirm with your bank that it supports transfers to Airtel Money before making payment. Do not use bank account details that have not been officially provided to you.</p>
-</div>
-
-<div class="payment-method">
-<h3>Method 3: Sending money from outside Kenya</h3>
-<p>Applicants outside Kenya can check international remittance providers that support Airtel Money wallet payouts to Kenya.</p>
-<ul>
-<li><a href="https://www.remitly.com/" target="_blank" rel="noopener noreferrer">Remitly</a></li>
-<li><a href="https://www.worldremit.com/" target="_blank" rel="noopener noreferrer">WorldRemit</a></li>
-<li><a href="https://www.westernunion.com/" target="_blank" rel="noopener noreferrer">Western Union</a></li>
-</ul>
-<ol>
-<li>Choose Kenya as the receiving country.</li>
-<li>Check whether Airtel Money or Airtel mobile wallet payout is available.</li>
-<li>Enter the recipient number: <strong>+254 751 896 015</strong>.</li>
-<li>Enter the recipient name exactly as requested by the provider.</li>
-<li>Review the exchange rate, fees and amount to be received.</li>
-<li>Confirm the transfer only after checking the recipient details.</li>
-<li>Keep the transfer confirmation and reference number.</li>
-</ol>
-<p class="muted">International payout availability depends on your country and the remittance provider. If Airtel Money is not listed as a payout option, do not send the money using an alternative method without first contacting us.</p>
-</div>
-
-<div class="notice info" style="display:block">
-<strong>Important:</strong> Always wait for your confirmed payment amount before paying. Sending money does not automatically mark an application as Paid. Our administrator must verify the payment.
-</div>
-
-<h3>After making payment</h3>
-<p>Keep your transaction reference and contact our support team so your payment can be matched to your application.</p>
-<p><strong>Phone:</strong> <a class="contact-link" href="tel:+254751896015">+254 751 896 015</a></p>
-<p><strong>WhatsApp:</strong> <a class="contact-link" href="https://wa.me/254751896015?text=Hello%20Global%20Online%20Visa%20Applications%2C%20I%20have%20made%20a%20payment%20and%20need%20assistance." target="_blank" rel="noopener noreferrer">Message us on WhatsApp</a></p>
+  <h2>Payment Information</h2>
+  <div class="payment-pending">
+    <strong>Payment instructions are not yet available.</strong>
+    <p>
+      Submit your application first. Please wait for the administrator
+      to confirm your application amount and provide official payment
+      instructions. Do not send money until you receive those instructions.
+    </p>
+    <p class="muted">
+      A submitted application is not automatically marked as paid.
+      Payment status will remain pending until the administrator verifies it.
+    </p>
+  </div>
 </div>
 
 </main>
@@ -402,7 +351,6 @@ const processingResult = document.getElementById("publicProcessingResult");
 let currentUser = null;
 let selectedVisa = null;
 let visaTypes = [];
-let applicantNumber = 0;
 let submitting = false;
 let visaRequestNumber = 0;
 let loadingMessages = false;
@@ -786,6 +734,16 @@ function updateUnreadCount(count){
   }
 }
 
+function escapeHtml(value){
+  return String(value??"").replace(/[&<>"']/g,char=>({
+    "&":"&amp;",
+    "<":"&lt;",
+    ">":"&gt;",
+    '"':"&quot;",
+    "'":"&#39;"
+  }[char]));
+}
+
 function renderInbox(messages,replies){
   const container=document.getElementById("inboxResults");
   container.innerHTML="";
@@ -821,14 +779,16 @@ function renderInbox(messages,replies){
   );
 
   if(!items.length){
-    container.innerHTML='<div class="message-empty">Your inbox is empty. Messages from the administrator will appear here.</div>';
+    container.textContent =
+      "Your inbox is empty. Messages from the administrator will appear here.";
 
+    container.className="message-empty";
     document.getElementById("messageSummary").textContent="No messages yet.";
-
     updateUnreadCount(0);
     return;
   }
 
+  container.className="";
   let unread=0;
 
   items.forEach(item=>{
@@ -906,9 +866,8 @@ async function markAdministratorMessagesRead(messages,replies){
 
 async function loadMessages(){
   if(!currentUser){
-    document.getElementById("inboxResults").innerHTML=
-      '<div class="message-empty">Please sign in to view your messages.</div>';
-
+    document.getElementById("inboxResults").textContent =
+      "Please sign in to view your messages.";
     return;
   }
 
@@ -916,8 +875,7 @@ async function loadMessages(){
   loadingMessages=true;
 
   const container=document.getElementById("inboxResults");
-
-  container.innerHTML='<div class="message-empty">Loading your messages...</div>';
+  container.textContent="Loading your messages...";
 
   try{
     const client=getSupabaseClient();
@@ -959,25 +917,15 @@ async function loadMessages(){
   }catch(error){
     console.error("Applicant inbox error:",error);
 
-    container.innerHTML=
-      '<div class="message-empty">We could not load your messages. Please try again. '+
-      escapeHtml(error.message||"")+'</div>';
+    container.textContent =
+      "We could not load your messages. Please try again. " +
+      (error.message||"");
 
     showReplyNotice("Could not load messages: "+(error.message||"Unknown error"),"error");
 
   }finally{
     loadingMessages=false;
   }
-}
-
-function escapeHtml(value){
-  return String(value??"").replace(/[&<>"']/g,char=>({
-    "&":"&amp;",
-    "<":"&lt;",
-    ">":"&gt;",
-    '"':"&quot;",
-    "'":"&#39;"
-  }[char]));
 }
 
 async function sendApplicantReply(){
@@ -1019,7 +967,6 @@ async function sendApplicantReply(){
     if(error)throw error;
 
     input.value="";
-
     showReplyNotice("Your message has been sent to the administrator.","success");
 
     await loadMessages();
@@ -1126,127 +1073,74 @@ async function loadVisaTypes(countryId) {
 function normaliseCategory(value) {
   const name = String(value || "").toLowerCase().trim();
 
-  if (
-    name.includes("seasonal") ||
-    name.includes("agricultural") ||
-    name.includes("farm worker")
-  ) return "Seasonal/Agricultural Work";
+  if (name.includes("seasonal") || name.includes("agricultural") ||
+      name.includes("farm worker")) return "Seasonal/Agricultural Work";
 
-  if (
-    name.includes("permanent residence") ||
-    name.includes("permanent resident") ||
-    name.includes("immigration") ||
-    name.includes("settlement")
-  ) return "Permanent Residence/Immigration";
+  if (name.includes("permanent residence") ||
+      name.includes("permanent resident") ||
+      name.includes("immigration") || name.includes("settlement"))
+    return "Permanent Residence/Immigration";
 
-  if (
-    name.includes("humanitarian") ||
-    name.includes("refugee") ||
-    name.includes("asylum")
-  ) return "Humanitarian/Refugee";
+  if (name.includes("humanitarian") || name.includes("refugee") ||
+      name.includes("asylum")) return "Humanitarian/Refugee";
 
-  if (
-    name.includes("diplomatic") ||
-    name.includes("official")
-  ) return "Diplomatic/Official";
+  if (name.includes("diplomatic") || name.includes("official"))
+    return "Diplomatic/Official";
 
-  if (
-    name.includes("journalist") ||
-    name.includes("media")
-  ) return "Journalist/Media";
+  if (name.includes("journalist") || name.includes("media"))
+    return "Journalist/Media";
 
-  if (
-    name.includes("religious") ||
-    name.includes("pilgrimage") ||
-    name.includes("pilgrim")
-  ) return "Religious/Pilgrimage";
+  if (name.includes("religious") || name.includes("pilgrimage") ||
+      name.includes("pilgrim")) return "Religious/Pilgrimage";
 
-  if (
-    name.includes("exchange") ||
-    name.includes("research")
-  ) return "Exchange/Research";
+  if (name.includes("exchange") || name.includes("research"))
+    return "Exchange/Research";
 
-  if (
-    name.includes("job seeker") ||
-    name.includes("jobseeker")
-  ) return "Job Seeker";
+  if (name.includes("job seeker") || name.includes("jobseeker"))
+    return "Job Seeker";
 
-  if (
-    name.includes("au pair") ||
-    name.includes("au-pair")
-  ) return "Au Pair";
+  if (name.includes("au pair") || name.includes("au-pair"))
+    return "Au Pair";
 
-  if (
-    name.includes("internship") ||
-    name.includes("training") ||
-    name.includes("trainee")
-  ) return "Internship/Training";
+  if (name.includes("internship") || name.includes("training") ||
+      name.includes("trainee")) return "Internship/Training";
 
-  if (
-    name.includes("sports") ||
-    name.includes("sport") ||
-    name.includes("entertainment") ||
-    name.includes("artist") ||
-    name.includes("performer")
-  ) return "Sports/Arts/Entertainment";
+  if (name.includes("sports") || name.includes("sport") ||
+      name.includes("entertainment") || name.includes("artist") ||
+      name.includes("performer")) return "Sports/Arts/Entertainment";
 
-  if (
-    name.includes("crew") ||
-    name.includes("seafarer") ||
-    name.includes("seaman")
-  ) return "Crew/Seafarer";
+  if (name.includes("crew") || name.includes("seafarer") ||
+      name.includes("seaman")) return "Crew/Seafarer";
 
-  if (
-    name.includes("investor") ||
-    name.includes("entrepreneur")
-  ) return "Investor/Entrepreneur";
+  if (name.includes("investor") || name.includes("entrepreneur"))
+    return "Investor/Entrepreneur";
 
-  if (
-    name.includes("evisa") ||
-    name.includes("e-visa") ||
-    name.includes("eta") ||
-    name.includes("electronic travel")
-  ) return "eVisa/ETA";
+  if (name.includes("evisa") || name.includes("e-visa") ||
+      name.includes("eta") || name.includes("electronic travel"))
+    return "eVisa/ETA";
 
-  if (
-    name.includes("conference") ||
-    name.includes("event")
-  ) return "Conference/Event";
+  if (name.includes("conference") || name.includes("event"))
+    return "Conference/Event";
 
-  if (
-    name.includes("medical") ||
-    name.includes("treatment") ||
-    name.includes("health")
-  ) return "Medical";
+  if (name.includes("medical") || name.includes("treatment") ||
+      name.includes("health")) return "Medical";
 
-  if (
-    name.includes("family") ||
-    name.includes("spouse") ||
-    name.includes("dependent") ||
-    name.includes("reunion")
-  ) return "Family/Spouse";
+  if (name.includes("family") || name.includes("spouse") ||
+      name.includes("dependent") || name.includes("reunion"))
+    return "Family/Spouse";
 
-  if (
-    name.includes("tourist") ||
-    name.includes("visitor") ||
-    name.includes("holiday") ||
-    name.includes("sightseeing")
-  ) return "Tourist/Visitor";
+  if (name.includes("tourist") || name.includes("visitor") ||
+      name.includes("holiday") || name.includes("sightseeing"))
+    return "Tourist/Visitor";
 
-  if (
-    name.includes("student") ||
-    name.includes("study") ||
-    name.includes("education")
-  ) return "Student";
+  if (name.includes("student") || name.includes("study") ||
+      name.includes("education")) return "Student";
 
   if (name.includes("transit")) return "Transit";
   if (name.includes("business")) return "Business";
 
-  if (
-    name.includes("work") ||
-    name.includes("employment") ||
-    name.includes("worker")
-  ) return "Work";
+  if (name.includes("work") || name.includes("employment") ||
+      name.includes("worker")) return "Work";
 
   return "Other";
 }
@@ -1280,11 +1174,7 @@ async function loadPublicProcessingTime() {
     ""
   );
 
-  if (
-    !countryEl.value ||
-    !applyingFromEl.value ||
-    !selectedVisa
-  ) {
+  if (!countryEl.value || !applyingFromEl.value || !selectedVisa) {
     processingResult.textContent =
       "Select your applying-from country, destination country and visa type to view the available processing time.";
     return;
@@ -1299,7 +1189,7 @@ async function loadPublicProcessingTime() {
     const {data,error} = await client
       .from("visa_processing_times")
       .select(
-        "destination,applying_from,region,visa_category,min_days,max_days,time_unit,source_url,last_verified_at"
+        "destination,applying_from,region,visa_category,min_days,max_days,time_unit,source_url,last_verified_at,is_active"
       )
       .eq("destination", destinationName)
       .eq("applying_from", applyingFromName)
@@ -1351,15 +1241,14 @@ async function loadPublicProcessingTime() {
 
     const origin = document.createElement("p");
     origin.className = "muted";
-    origin.textContent =
-      "Applying from: " + item.applying_from;
+    origin.textContent = "Applying from: " + item.applying_from;
     card.appendChild(origin);
 
     const duration = document.createElement("p");
     const strong = document.createElement("strong");
 
     strong.textContent =
-      min + "–" + max + " " + (item.time_unit || "working days");
+      min + "–" + max + " " + (item.time_unit || "days");
 
     duration.appendChild(strong);
     card.appendChild(duration);
@@ -1381,7 +1270,7 @@ async function loadPublicProcessingTime() {
       try {
         const source = new URL(item.source_url);
 
-        if (source.protocol === "https:" || source.protocol === "http:") {
+        if (source.protocol === "https:") {
           const link = document.createElement("a");
           link.href = source.href;
           link.target = "_blank";
@@ -1497,8 +1386,6 @@ function addApplicant(isPrimary=false) {
     );
     return;
   }
-
-  applicantNumber++;
 
   const card = document.createElement("div");
   card.className = "applicant";
@@ -1783,6 +1670,14 @@ async function submitApplication() {
       applicants.push(await collectApplicant(cards[i],i));
     }
 
+    /*
+      V13 SUBMISSION FORMAT:
+      The deployed V13 backend accepts country_id, visa_type_id
+      and applicants. It does not currently accept applying_from.
+      The applying-from country is used above for the processing-time
+      lookup and is not falsely presented as saved in the application.
+    */
+
     const result = await backendRequest({
       action:"submit",
       country_id:countryEl.value,
@@ -1963,19 +1858,6 @@ document.getElementById("myMessagesButton")
     if(currentUser)loadMessages();
   });
 
-document.getElementById("copyPaymentNumber")
-  .addEventListener("click",async() => {
-    try {
-      await navigator.clipboard.writeText("+254751896015");
-      showMessage("Airtel Money number copied.","success");
-    } catch(error) {
-      showMessage(
-        "Please copy the payment number manually: +254 751 896 015",
-        "info"
-      );
-    }
-  });
-
 /* INITIALIZATION */
 
 async function initialise() {
@@ -2002,8 +1884,8 @@ async function initialise() {
     trackingResults.textContent =
       "Please sign in to view your application tracking and submit an application.";
 
-    document.getElementById("inboxResults").innerHTML =
-      '<div class="message-empty">Please sign in to view your messages.</div>';
+    document.getElementById("inboxResults").textContent =
+      "Please sign in to view your messages.";
 
     document.getElementById("messageSummary").textContent =
       "Sign in to access your inbox.";
