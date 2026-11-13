@@ -4,7 +4,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#12345a">
 <title>Admin Dashboard | Global Online Visa Applications</title>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
 
@@ -139,18 +141,10 @@ th{background:#f8fafc}
       <h3>Search and filter applications</h3>
       <input id="search" placeholder="Reference, applicant, email, passport…" style="width:100%">
       <div class="filter-grid">
-        <select id="statusFilter">
-          <option value="">All application statuses</option>
-        </select>
-        <select id="paymentFilter">
-          <option value="">All payment statuses</option>
-        </select>
-        <select id="destinationFilter">
-          <option value="">All destinations</option>
-        </select>
-        <select id="visaFilter">
-          <option value="">All visa types</option>
-        </select>
+        <select id="statusFilter"><option value="">All application statuses</option></select>
+        <select id="paymentFilter"><option value="">All payment statuses</option></select>
+        <select id="destinationFilter"><option value="">All destinations</option></select>
+        <select id="visaFilter"><option value="">All visa types</option></select>
         <button id="clearFilters" class="secondary">Clear filters</button>
       </div>
       <button id="refresh" style="margin-top:12px">Refresh data</button>
@@ -264,12 +258,11 @@ th{background:#f8fafc}
       </div>
     </section>
 
-    <!-- NEW: VISA PROCESSING TIMES MANAGEMENT -->
     <section id="processing-times" class="panel tab hidden">
       <h2>Visa Processing Times Management</h2>
       <p class="muted">
-        Add and maintain country-specific processing-time guidance.
-        Only enter figures supported by a reliable source. Processing times are not guaranteed decision dates.
+        Add and maintain processing-time records by destination, application country and visa category.
+        Only enter estimates supported by reliable sources. Processing times are not guaranteed decision dates.
       </p>
 
       <div class="message-box processing-form">
@@ -287,15 +280,22 @@ th{background:#f8fafc}
             </div>
 
             <div>
+              <label for="processingApplyingFrom">Applying from</label>
+              <select id="processingApplyingFrom" required>
+                <option value="">Loading countries…</option>
+              </select>
+            </div>
+
+            <div>
               <label for="processingCategory">Visa category</label>
               <select id="processingCategory" required>
                 <option value="">Select category</option>
-                <option>Tourist/Visitor</option>
-                <option>Student</option>
-                <option>Work</option>
-                <option>Business</option>
-                <option>Family/Spouse</option>
-                <option>Transit</option>
+                <option value="Tourist/Visitor">Tourist/Visitor</option>
+                <option value="Student">Student</option>
+                <option value="Work">Work</option>
+                <option value="Business">Business</option>
+                <option value="Family/Spouse">Family/Spouse</option>
+                <option value="Transit">Transit</option>
               </select>
             </div>
 
@@ -323,17 +323,14 @@ th{background:#f8fafc}
             </div>
           </div>
 
-          <label for="processingSource">Official source URL</label>
-          <input
-            id="processingSource"
-            type="url"
-            placeholder="https://official-government-website..."
-            required
-          >
+          <label for="processingSource">Official verification source URL</label>
+          <input id="processingSource" type="url"
+            placeholder="https://official-government-or-embassy-website..."
+            required>
 
           <p class="fee-note">
             Use an official immigration authority, embassy or government source wherever possible.
-            The source and verification date are required before saving.
+            Your public website is the place customers view your information; this field is for the reference used to verify the estimate.
           </p>
 
           <button id="saveProcessing" type="submit">Save processing time</button>
@@ -346,7 +343,8 @@ th{background:#f8fafc}
         <table>
           <thead>
             <tr>
-              <th>Country</th>
+              <th>Destination</th>
+              <th>Applying from</th>
               <th>Region</th>
               <th>Visa category</th>
               <th>Processing time</th>
@@ -357,7 +355,7 @@ th{background:#f8fafc}
             </tr>
           </thead>
           <tbody id="processingRows">
-            <tr><td colspan="8">Loading records…</td></tr>
+            <tr><td colspan="9">Loading records…</td></tr>
           </tbody>
         </table>
       </div>
@@ -405,6 +403,15 @@ const STATUS_OPTIONS = [
   "Processing",
   "Approved",
   "Rejected"
+];
+
+const VISA_CATEGORIES = [
+  "Tourist/Visitor",
+  "Student",
+  "Work",
+  "Business",
+  "Family/Spouse",
+  "Transit"
 ];
 
 function notice(text,type="info"){
@@ -509,7 +516,7 @@ function setTab(name){
     button.classList.toggle("active",button.dataset.tab===name)
   );
 
-  if(name==="processing-times" && !processingCountries.length){
+  if(name==="processing-times"){
     loadProcessingTimes().catch(error=>notice(error.message,"error"));
   }
 }
@@ -675,7 +682,6 @@ function processingEstimate(application){
 
 function timelineHTML(application){
   const status=String(application.status||"").toLowerCase();
-
   const stages=[
     "Application Received",
     "Under Review",
@@ -685,7 +691,6 @@ function timelineHTML(application){
   ];
 
   let current=0;
-
   if(status==="under review")current=1;
   else if(status==="documents verified")current=2;
   else if(status==="processing")current=3;
@@ -708,7 +713,6 @@ function timelineHTML(application){
 function showDetailSections(application){
   const applicant=primaryApplicant(application);
   const visa=visaRecord(application);
-
   const applicantName=[applicant.first_name,applicant.last_name].filter(Boolean).join(" ")||"Applicant";
 
   $("detailTitle").textContent=applicantName;
@@ -725,7 +729,6 @@ function showDetailSections(application){
         ${field("Application date",application.application_date||application.created_at)}
       </div>
     </section>
-
     <section class="detail-section">
       <h3>Personal information</h3>
       <div class="detail-grid">
@@ -737,7 +740,6 @@ function showDetailSections(application){
         ${field("Date of birth",applicant.date_of_birth)}
       </div>
     </section>
-
     <section class="detail-section">
       <h3>Passport and immigration information</h3>
       <div class="detail-grid">
@@ -748,7 +750,6 @@ function showDetailSections(application){
         ${field("UN manifest number",applicant.un_manifest_number)}
       </div>
     </section>
-
     <section class="detail-section">
       <h3>Application information</h3>
       <div class="detail-grid">
@@ -763,7 +764,6 @@ function showDetailSections(application){
         ${field("Currency",application.currency||"USD")}
       </div>
     </section>
-
     <section class="detail-section">
       <h3>Uploaded documents</h3>
       <p class="muted">Secure document links expire after 60 seconds.</p>
@@ -776,7 +776,6 @@ function showDetailSections(application){
 
 async function loadApplicantDocuments(applicationId){
   const container=$("applicantDocuments");
-
   try{
     const result=await api({action:"admin_documents",application_id:applicationId});
     const documents=result.documents||[];
@@ -802,7 +801,6 @@ async function loadApplicantDocuments(applicationId){
         </div>
       </div>
     `).join("");
-
   }catch(error){
     container.innerHTML=`<div class="notice error">${esc(error.message)}</div>`;
   }
@@ -833,7 +831,6 @@ async function openDocument(documentId,action){
   link.href=result.signed_url;
   link.target="_blank";
   link.rel="noopener noreferrer";
-
   if(action==="download")link.download=result.file_name||"applicant-document";
 
   document.body.appendChild(link);
@@ -861,7 +858,6 @@ async function refresh(){
     render();
     $("dashboard").classList.remove("hidden");
     notice("V12 dashboard data updated.","success");
-
   }catch(error){
     notice(error.message,"error");
   }finally{
@@ -869,7 +865,7 @@ async function refresh(){
   }
 }
 
-/* VISA PROCESSING TIMES MANAGEMENT */
+/* PROCESSING TIMES */
 
 async function loadProcessingCountries(){
   const {data,error}=await sb
@@ -882,15 +878,18 @@ async function loadProcessingCountries(){
 
   processingCountries=data||[];
 
-  $("processingCountry").innerHTML=
-    '<option value="">Select destination country</option>'+
+  const options=
+    '<option value="">Select country</option>'+
     processingCountries.map(country=>
-      `<option value="${esc(country.country_name)}">${esc(country.country_name)} — ${esc(country.region)}</option>`
+      `<option value="${esc(country.country_name)}">${esc(country.country_name)}</option>`
     ).join("");
 
+  $("processingCountry").innerHTML=options;
+  $("processingApplyingFrom").innerHTML=options;
+
   if(!processingCountries.length){
-    $("processingCountry").innerHTML=
-      '<option value="">No active countries found</option>';
+    $("processingCountry").innerHTML='<option value="">No active countries found</option>';
+    $("processingApplyingFrom").innerHTML='<option value="">No active countries found</option>';
   }
 }
 
@@ -904,15 +903,22 @@ function clearProcessingForm(){
 
 function renderProcessingRecords(){
   $("processingRows").innerHTML=processingRecords.map(record=>{
-    const source=record.source_url
-      ? `<a href="${esc(record.source_url)}" target="_blank" rel="noopener noreferrer">View source</a>`
-      : "Not supplied";
+    let source="Not supplied";
 
-    const time=
-      esc(record.min_days)+"–"+esc(record.max_days)+" "+esc(record.time_unit||"working days");
+    if(record.source_url){
+      try{
+        const parsed=new URL(record.source_url);
+        if(["https:","http:"].includes(parsed.protocol)){
+          source=`<a href="${esc(parsed.href)}" target="_blank" rel="noopener noreferrer">View source</a>`;
+        }
+      }catch(e){}
+    }
+
+    const time=esc(record.min_days)+"–"+esc(record.max_days)+" "+esc(record.time_unit||"working days");
 
     return `<tr>
       <td>${esc(record.destination)}</td>
+      <td>${esc(record.applying_from||"Not specified")}</td>
       <td>${esc(record.region||"Other")}</td>
       <td>${esc(record.visa_category||"Unspecified")}</td>
       <td>${time}</td>
@@ -922,14 +928,13 @@ function renderProcessingRecords(){
       <td>
         <div class="actions">
           <button type="button" data-processing-edit="${esc(record.id)}">Edit</button>
-          <button type="button" class="secondary"
-            data-processing-toggle="${esc(record.id)}">
+          <button type="button" class="secondary" data-processing-toggle="${esc(record.id)}">
             ${record.is_active?"Deactivate":"Activate"}
           </button>
         </div>
       </td>
     </tr>`;
-  }).join("")||'<tr><td colspan="8">No processing-time records found.</td></tr>';
+  }).join("")||'<tr><td colspan="9">No processing-time records found.</td></tr>';
 }
 
 async function loadProcessingTimes(){
@@ -939,6 +944,7 @@ async function loadProcessingTimes(){
     .from("visa_processing_times")
     .select("*")
     .order("destination")
+    .order("applying_from")
     .order("visa_category");
 
   if(error)throw new Error("Could not load processing times: "+error.message);
@@ -951,11 +957,17 @@ async function saveProcessingTime(event){
   event.preventDefault();
 
   const countryName=$("processingCountry").value;
+  const applyingFrom=$("processingApplyingFrom").value;
+
   const country=processingCountries.find(
     item=>item.country_name===countryName
   );
 
   if(!country)throw new Error("Please select a valid destination country.");
+
+  if(!processingCountries.some(item=>item.country_name===applyingFrom)){
+    throw new Error("Please select a valid country where the applicant is applying from.");
+  }
 
   const category=$("processingCategory").value;
   const min=Number($("processingMin").value);
@@ -965,7 +977,9 @@ async function saveProcessingTime(event){
   const verified=$("processingVerified").value;
   const id=$("processingId").value;
 
-  if(!category)throw new Error("Select a visa category.");
+  if(!VISA_CATEGORIES.includes(category)){
+    throw new Error("Select one of the six supported visa categories.");
+  }
 
   if(!Number.isInteger(min)||!Number.isInteger(max)||min<0||max<min){
     throw new Error("Enter valid whole-number processing days. Maximum must not be less than minimum.");
@@ -986,6 +1000,7 @@ async function saveProcessingTime(event){
 
   const payload={
     destination:country.country_name,
+    applying_from:applyingFrom,
     region:country.region,
     visa_category:category,
     min_days:min,
@@ -1022,7 +1037,6 @@ async function saveProcessingTime(event){
       id?"Processing time updated successfully.":"Processing time saved successfully.",
       "success"
     );
-
   }finally{
     $("saveProcessing").disabled=false;
   }
@@ -1036,7 +1050,8 @@ function editProcessingTime(id){
   if(!record)throw new Error("Processing-time record not found.");
 
   $("processingId").value=record.id;
-  $("processingCountry").value=record.destination;
+  $("processingCountry").value=record.destination||"";
+  $("processingApplyingFrom").value=record.applying_from||"";
   $("processingCategory").value=record.visa_category||"";
   $("processingMin").value=record.min_days;
   $("processingMax").value=record.max_days;
@@ -1158,7 +1173,6 @@ async function sendBroadcast(){
 async function sendPrivateMessage(){
   const userId=$("messageApplicant").value;
   const message=$("privateMessage").value;
-
   await sendApplicantMessage(userId,message);
   $("privateMessage").value="";
   notice("Private message sent to the selected applicant.","success");
@@ -1170,9 +1184,7 @@ async function sendMissingDocumentRequest(){
 
   if(!message)throw new Error("Describe the missing documents.");
 
-  const fullMessage="MISSING DOCUMENT REQUEST\n\n"+message;
-  await sendApplicantMessage(userId,fullMessage);
-
+  await sendApplicantMessage(userId,"MISSING DOCUMENT REQUEST\n\n"+message);
   $("missingDocumentMessage").value="";
   notice("Missing-document request sent to the applicant's My Messages page.","success");
 }
@@ -1211,15 +1223,12 @@ async function loadReplies(){
   if(unreadReplies.length){
     const ids=unreadReplies.map(row=>row.id);
 
-    const {error}=await sb
-      .from("applicant_message_replies")
+    const {error}=await sb.from("applicant_message_replies")
       .update({is_read:true})
       .in("id",ids);
 
     if(error)
       throw new Error("Conversation loaded, but applicant read receipts could not be updated: "+error.message);
-
-    unreadReplies.forEach(row=>row.is_read=true);
   }
 
   const conversation=[
@@ -1337,6 +1346,7 @@ async function init(){
 }
 
 /* LOGIN */
+
 $("loginForm").addEventListener("submit",async event=>{
   event.preventDefault();
   $("loginButton").disabled=true;
@@ -1362,6 +1372,7 @@ $("loginForm").addEventListener("submit",async event=>{
 });
 
 /* APPLICATION TABLE ACTIONS */
+
 $("appRows").addEventListener("click",async event=>{
   const button=event.target.closest("button");
   if(!button)return;
@@ -1461,6 +1472,7 @@ $("appRows").addEventListener("click",async event=>{
 });
 
 /* DOCUMENT ACTIONS */
+
 $("detailContent").addEventListener("click",async event=>{
   const button=event.target.closest("button[data-document]");
   if(!button)return;
@@ -1476,12 +1488,14 @@ $("detailContent").addEventListener("click",async event=>{
 });
 
 /* NAVIGATION AND FILTERS */
+
 document.querySelectorAll("nav button").forEach(button=>{
   button.addEventListener("click",()=>setTab(button.dataset.tab));
 });
 
 $("refresh").addEventListener("click",refresh);
 $("search").addEventListener("input",renderApps);
+
 ["statusFilter","paymentFilter","destinationFilter","visaFilter"].forEach(id=>{
   $(id).addEventListener("change",renderApps);
 });
@@ -1496,6 +1510,7 @@ $("clearFilters").addEventListener("click",()=>{
 });
 
 /* PROCESSING TIMES ACTIONS */
+
 $("processingForm").addEventListener("submit",async event=>{
   try{
     await saveProcessingTime(event);
@@ -1524,6 +1539,7 @@ $("processingRows").addEventListener("click",async event=>{
 });
 
 /* MESSAGING ACTIONS */
+
 $("sendBroadcast").addEventListener("click",async()=>{
   $("sendBroadcast").disabled=true;
   try{await sendBroadcast();}
@@ -1560,6 +1576,7 @@ $("sendReply").addEventListener("click",async()=>{
 });
 
 /* DETAILS MODAL */
+
 $("closeDetails").addEventListener("click",closeApplicantDetails);
 
 $("detailOverlay").addEventListener("click",event=>{
@@ -1573,6 +1590,7 @@ document.addEventListener("keydown",event=>{
 });
 
 /* SIGN OUT */
+
 $("logout").addEventListener("click",async()=>{
   try{
     await sb.auth.signOut();
