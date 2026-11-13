@@ -1,6 +1,7 @@
+
 /**
  * GLOBAL ONLINE VISA APPLICATIONS
- * Production Configuration - V12
+ * Production Configuration - V13
  *
  * File: config.js
  * Hosting: Netlify
@@ -10,42 +11,27 @@
 (function () {
   "use strict";
 
-  // =====================================
   // WEBSITE CONFIGURATION
-  // =====================================
-
   window.SITE_NAME = "Global Online Visa Applications";
 
   window.SITE_URL =
-    "https://globalonlinevisaapplications-gif.netlify.app";
+    "https://globalonlinevisaapplications.netlify.app";
 
   window.SITE_ENVIRONMENT = "production";
 
-
-  // =====================================
   // SUPABASE CONFIGURATION
-  // =====================================
-
   window.SUPABASE_URL =
     "https://iqpnlzufcasseycvmvzs.supabase.co";
 
   window.SUPABASE_ANON_KEY =
     "sb_publishable_W8PD_H5br4lYSFQ1BMMfyA_ywmLOsae";
 
-
-  // =====================================
-  // SUPABASE EDGE FUNCTION — V12
-  // =====================================
-
+  // SUPABASE EDGE FUNCTION — V13
   window.SUPABASE_FUNCTION_URL =
     window.SUPABASE_URL +
-    "/functions/v1/visa-backend-v12";
+    "/functions/v1/visa-backend-v13";
 
-
-  // =====================================
   // API CONFIGURATION
-  // =====================================
-
   window.API_CONFIG = {
     baseURL: window.SUPABASE_FUNCTION_URL,
     method: "POST",
@@ -57,11 +43,7 @@
     }
   };
 
-
-  // =====================================
   // APPLICATION ROUTES
-  // =====================================
-
   window.APP_ROUTES = {
     home: "/",
     apply: "/apply.html",
@@ -70,27 +52,19 @@
     admin: "/admin.html"
   };
 
-
-  // =====================================
   // APPLICATION SETTINGS
-  // =====================================
-
   window.APP_CONFIG = {
     applicationName: "Global Online Visa Applications",
     currency: "USD",
     defaultCountry: "",
     allowApplicationSubmission: true,
     productionMode: true,
-    backendVersion: "visa-backend-v12",
+    backendVersion: "visa-backend-v13",
     serviceFeePerApplicant: 285,
     maximumApplicants: 10
   };
 
-
-  // =====================================
   // CONFIGURATION VALIDATION
-  // =====================================
-
   window.validateAppConfig = function () {
     const required = [
       window.SUPABASE_URL,
@@ -103,11 +77,7 @@
     });
   };
 
-
-  // =====================================
   // BACKEND CONNECTION
-  // =====================================
-
   window.submitVisaApplication = async function (applicationData) {
 
     if (!window.validateAppConfig()) {
@@ -139,14 +109,10 @@
     return result;
   };
 
-
-  // =====================================
   // INITIALIZATION
-  // =====================================
-
   if (window.validateAppConfig()) {
     console.info(
-      "Global Online Visa Applications configuration loaded - V12."
+      "Global Online Visa Applications configuration loaded - V13."
     );
   } else {
     console.error("Application configuration is incomplete.");
