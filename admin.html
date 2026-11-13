@@ -21,6 +21,9 @@ main{max-width:1500px;margin:24px auto;padding:0 16px}
 .login-box h2{text-align:center;color:#12345a}
 .login-box input{width:100%;margin:8px 0 16px}
 .login-box button{width:100%;padding:13px}
+.password-wrap{display:flex;align-items:center;gap:6px;margin:8px 0 16px}
+.password-wrap input{flex:1;min-width:0;margin:0}
+.password-toggle{width:48px!important;flex:0 0 48px;padding:10px!important;font-size:20px;line-height:1;background:#475569}
 nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
 button{border:0;border-radius:6px;background:#1557a0;color:#fff;padding:10px 14px;cursor:pointer}
 button.secondary{background:#475569}
@@ -130,8 +133,13 @@ Checking administrator access…
   <form id="loginForm">
     <label for="email">Email address</label>
     <input id="email" type="email" placeholder="Administrator email" autocomplete="username" required>
+
     <label for="password">Password</label>
-    <input id="password" type="password" placeholder="Password" autocomplete="current-password" required>
+    <div class="password-wrap">
+      <input id="password" type="password" placeholder="Password" autocomplete="current-password" required>
+      <button id="togglePassword" class="password-toggle" type="button" aria-label="Show password" aria-pressed="false" title="Show password">👁</button>
+    </div>
+
     <button id="loginButton" type="submit">Sign in</button>
   </form>
 </section>
@@ -352,8 +360,6 @@ Checking administrator access…
 (() => {
 "use strict";
 
-/* V15 CONFIGURATION */
-
 const BACKEND_VERSION = "visa-backend-v15";
 const SERVICE_FEE_PER_APPLICANT = 285;
 const OFFICIAL_SITE = "https://globalonlinevisaapplications.netlify.app";
@@ -416,6 +422,38 @@ function visaRecord(application){
   return relationOne(application.visa_types);
 }
 
+/* Applicant count: uses a count returned by the backend, or the related applicants.
+   It does not assume that one application always contains multiple applicants. */
+
+function applicantCount(application){
+  const explicit=Number(
+    application.applicant_count ??
+    application.applicants_count ??
+    application.number_of_applicants
+  );
+
+  if(Number.isInteger(explicit)&&explicit>0)return explicit;
+
+  if(Array.isArray(application.applicants)&&application.applicants.length>0){
+    return application.applicants.length;
+  }
+
+  return 1;
+}
+
+function serviceFeeTotal(application){
+  const saved=Number(application.service_fee);
+
+  if(application.service_fee!==null&&
+     application.service_fee!==undefined&&
+     application.service_fee!==""&&
+     Number.isFinite(saved)&&saved>=0){
+    return saved;
+  }
+
+  return SERVICE_FEE_PER_APPLICANT*applicantCount(application);
+}
+
 function feeRange(application){
   const visa=visaRecord(application);
   const minValue=visa.visa_fee_min??visa.official_fee_min;
@@ -434,16 +472,18 @@ function feeRange(application){
 function totalRange(application){
   const range=feeRange(application);
   if(!range)return null;
+
+  const service=serviceFeeTotal(application);
+
   return {
-    min:range.min+SERVICE_FEE_PER_APPLICANT,
-    max:range.max+SERVICE_FEE_PER_APPLICANT
+    min:range.min+service,
+    max:range.max+service
   };
 }
 
 /* V15 BACKEND CONNECTION */
 
 async function api(payload){
-
   const {data,error}=await sb.auth.getSession();
   if(error)throw error;
 
@@ -505,7 +545,7 @@ async function verifyAdminDatabaseAccess(){
   }
 
   if(data!==true){
-    throw new Error("Your account is not authorised for administrator messaging.");
+    throw new Error("Your account is not authorised for administrator access.");
   }
 }
 
@@ -591,7 +631,8 @@ function renderApps(){
 
     const applicantName=[applicant.first_name,applicant.last_name].filter(Boolean).join(" ");
     const officialText=range?money(range.min)+" – "+money(range.max):"Range not available";
-    const totalText=totals?money(totals.min)+" – "+money(totals.max):"Estimate: "+money(application.total_amount);
+    const serviceText=money(serviceFeeTotal(application));
+    const totalText=totals?money(totals.min)+" – "+money(totals.max):"Estimate unavailable";
 
     const statusOptions=[...new Set([...STATUS_OPTIONS,application.status].filter(Boolean))];
 
@@ -600,7 +641,7 @@ function renderApps(){
         <td>${esc(application.reference_number||application.id)}</td>
         <td>${esc(applicantName)}<br><span class="muted">${esc(applicant.email)}</span></td>
         <td>${esc(application.destination_country_name||application.destination_country)}<br>${esc(visa.visa_name||application.visa_type)}</td>
-        <td>Official: ${officialText}<br>Service: ${money(SERVICE_FEE_PER_APPLICANT)}<br><b>Total estimate: ${totalText}</b></td>
+        <td>Official: ${officialText}<br>Service: ${serviceText}<br><b>Total estimate: ${totalText}</b><br><span class="fee-note">${applicantCount(application)} applicant(s)</span></td>
         <td>${esc(application.status)}</td>
         <td>${esc(application.payment_status)}</td>
         <td>
@@ -653,23 +694,62 @@ function field(label,value){
   return `<div class="detail-field"><label>${esc(label)}</label><strong>${esc(display)}</strong></div>`;
 }
 
-function processingEstimate(application){
+function categoryMatches(record,visaName){
+  const name=String(visaName||"").toLowerCase();
+  const category=String(record.visa_category||"").toLowerCase();
+
+  if(!name)return false;
+
+  if(category==="tourist/visitor")return /tourist|visitor|visit|holiday/.test(name);
+  if(category==="student")return /student|study|education/.test(name);
+  if(category==="work")return /work|employment|worker/.test(name);
+  if(category==="business")return /business|conference/.test(name);
+  if(category==="family/spouse")return /family|spouse|partner|marriage/.test(name);
+  if(category==="transit")return /transit/.test(name);
+
+  return name.includes(category);
+}
+
+function findProcessingRecord(application){
+  const destination=String(
+    application.destination_country_name||
+    application.destination_country||
+    ""
+  ).trim().toLowerCase();
+
   const visa=visaRecord(application);
-  const raw=application.processing_days??visa.processing_days;
-  const days=Number(raw);
+  const visaName=visa.visa_name||application.visa_type||"";
 
-  if(raw===null||raw===undefined||raw===""||!Number.isInteger(days)||days<0){
-    return "Not configured";
-  }
+  if(!destination)return null;
 
-  const startValue=application.application_date||application.created_at;
-  if(!startValue)return "Application date unavailable";
+  const matching=processingRecords.filter(record=>
+    record.is_active===true&&
+    String(record.destination||"").trim().toLowerCase()===destination
+  );
 
-  const start=new Date(startValue);
-  if(Number.isNaN(start.getTime()))return "Application date unavailable";
+  if(!matching.length)return null;
 
-  start.setDate(start.getDate()+days);
-  return start.toLocaleDateString();
+  const categoryMatch=matching.find(record=>categoryMatches(record,visaName));
+  return categoryMatch||matching[0];
+}
+
+function processingEstimate(application){
+  const record=findProcessingRecord(application);
+
+  if(!record)return "No matching active processing-time record";
+
+  return `${record.min_days}–${record.max_days} ${record.time_unit||"working days"}`;
+}
+
+function processingSourceHTML(application){
+  const record=findProcessingRecord(application);
+  if(!record)return "No matching official source is saved.";
+
+  const source=safeSourceURL(record.source_url);
+
+  if(!source)return "No valid official HTTPS source is saved.";
+
+  return `<a class="source-link" href="${esc(source)}" target="_blank" rel="noopener noreferrer">View official processing-time source</a>`;
 }
 
 function timelineHTML(application){
@@ -698,6 +778,8 @@ function showDetailSections(application){
   const applicant=primaryApplicant(application);
   const visa=visaRecord(application);
   const applicantName=[applicant.first_name,applicant.last_name].filter(Boolean).join(" ")||"Applicant";
+  const range=feeRange(application);
+  const processing=findProcessingRecord(application);
 
   $("detailTitle").textContent=applicantName;
   $("detailReference").textContent="Application reference: "+(application.reference_number||application.id);
@@ -708,10 +790,13 @@ function showDetailSections(application){
       ${timelineHTML(application)}
       <div class="detail-grid">
         ${field("Current status",application.status)}
-        ${field("Estimated completion date",processingEstimate(application))}
-        ${field("Processing days",application.processing_days??visa.processing_days)}
+        ${field("Estimated processing time",processingEstimate(application))}
         ${field("Application date",application.application_date||application.created_at)}
+        ${field("Processing time last verified",processing?.last_verified_at||"Not available")}
+        ${field("Official processing source",processing?"See link below":"Not available")}
       </div>
+      <p>${processingSourceHTML(application)}</p>
+      <p class="fee-note">Processing times are estimates only. They are not guaranteed decision dates.</p>
     </section>
 
     <section class="detail-section">
@@ -746,9 +831,11 @@ function showDetailSections(application){
         ${field("Application status",application.status)}
         ${field("Payment status",application.payment_status)}
         ${field("Official visa fee",money(application.official_visa_fee))}
-        ${field("Service fee",money(application.service_fee??SERVICE_FEE_PER_APPLICANT))}
+        ${field("Service fee",money(serviceFeeTotal(application)))}
         ${field("Total amount",money(application.total_amount))}
         ${field("Currency",application.currency||"USD")}
+        ${field("Number of applicants",applicantCount(application))}
+        ${field("Official fee range",range?money(range.min)+" – "+money(range.max):"Not available")}
       </div>
     </section>
 
@@ -938,6 +1025,7 @@ function renderProcessingRecords(){
 }
 
 async function loadProcessingTimes(){
+  await verifyAdminDatabaseAccess();
   await loadProcessingCountries();
 
   const {data,error}=await sb
@@ -955,6 +1043,7 @@ async function loadProcessingTimes(){
 
 async function saveProcessingTime(event){
   event.preventDefault();
+  await verifyAdminDatabaseAccess();
 
   const countryName=$("processingCountry").value;
   const applyingFrom=$("processingApplyingFrom").value;
@@ -1055,6 +1144,8 @@ function editProcessingTime(id){
 }
 
 async function toggleProcessingTime(id){
+  await verifyAdminDatabaseAccess();
+
   const record=processingRecords.find(item=>String(item.id)===String(id));
   if(!record)throw new Error("Processing-time record not found.");
 
@@ -1252,6 +1343,9 @@ async function showDashboard(){
     currentAdmin=data.user;
     $("adminEmail").textContent=data.user.email||"";
 
+    /* Confirm administrator role before displaying protected dashboard data. */
+    await verifyAdminDatabaseAccess();
+
     await api({action:"admin_applications"});
     await refresh();
 
@@ -1269,6 +1363,8 @@ async function showDashboard(){
 
   }catch(error){
     $("dashboard").classList.add("hidden");
+    $("logout").classList.add("hidden");
+    $("loginPanel").classList.remove("hidden");
     notice(error.message,"error");
   }
 }
@@ -1302,14 +1398,35 @@ async function init(){
     await showDashboard();
 
   }catch(error){
+    $("loginPanel").classList.remove("hidden");
     notice(error.message,"error");
   }
 }
+
+/* PASSWORD SHOW / HIDE BUTTON */
+
+$("togglePassword").addEventListener("click",()=>{
+  const password=$("password");
+  const button=$("togglePassword");
+  const showing=password.type==="password";
+
+  password.type=showing?"text":"password";
+  button.textContent=showing?"🙈":"👁";
+  button.setAttribute("aria-label",showing?"Hide password":"Show password");
+  button.setAttribute("title",showing?"Hide password":"Show password");
+  button.setAttribute("aria-pressed",showing?"true":"false");
+});
 
 /* LOGIN */
 
 $("loginForm").addEventListener("submit",async event=>{
   event.preventDefault();
+
+  if(!sb){
+    notice("Supabase is still loading. Please wait and try again.","error");
+    return;
+  }
+
   $("loginButton").disabled=true;
   notice("Signing in…");
 
@@ -1322,6 +1439,11 @@ $("loginForm").addEventListener("submit",async event=>{
     if(error)throw error;
 
     $("password").value="";
+    $("password").type="password";
+    $("togglePassword").textContent="👁";
+    $("togglePassword").setAttribute("aria-label","Show password");
+    $("togglePassword").setAttribute("aria-pressed","false");
+
     await showDashboard();
 
   }catch(error){
@@ -1399,6 +1521,8 @@ $("appRows").addEventListener("click",async event=>{
 
       if(total){
         promptText+="\nAcceptable total range: "+money(total.min)+" – "+money(total.max);
+      }else{
+        promptText+="\nThe fee estimate is incomplete, so verify the correct amount independently.";
       }
 
       promptText+="\n\nOnly continue after independently verifying the payment.";
@@ -1585,6 +1709,11 @@ $("logout").addEventListener("click",async()=>{
     $("loginPanel").classList.remove("hidden");
     $("logout").classList.add("hidden");
     $("adminEmail").textContent="";
+    $("password").value="";
+    $("password").type="password";
+    $("togglePassword").textContent="👁";
+    $("togglePassword").setAttribute("aria-label","Show password");
+    $("togglePassword").setAttribute("aria-pressed","false");
     currentAdmin=null;
     notice("You have signed out. Please sign in again.");
   }
