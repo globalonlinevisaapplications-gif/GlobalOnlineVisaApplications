@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -373,7 +372,7 @@ I confirm that the information supplied is accurate and that I agree to the appl
 (() => {
 "use strict";
 
-const BACKEND_VERSION = "visa-backend-v12";
+const BACKEND_VERSION = "visa-backend-v13";
 
 const SERVICE_FEE_PER_APPLICANT =
   Number(window.APP_CONFIG?.serviceFeePerApplicant) || 285;
@@ -519,8 +518,8 @@ async function backendRequest(payload) {
   }
 
   if (!window.SUPABASE_FUNCTION_URL ||
-      !window.SUPABASE_FUNCTION_URL.includes("/visa-backend-v12")) {
-    throw new Error("The V12 backend URL is missing. Please check config.js.");
+      !window.SUPABASE_FUNCTION_URL.includes("/visa-backend-v13")) {
+    throw new Error("The V13 backend URL is missing. Please check config.js.");
   }
 
   const response = await fetch(window.SUPABASE_FUNCTION_URL, {
@@ -540,7 +539,7 @@ async function backendRequest(payload) {
   }
 
   if (result.version && result.version !== BACKEND_VERSION) {
-    throw new Error("The response did not come from the expected V12 backend.");
+    throw new Error("The response did not come from the expected V13 backend.");
   }
 
   return result;
@@ -1053,6 +1052,7 @@ async function loadCountries() {
     '<option value="">Loading countries...</option>';
 
   const result = await backendRequest({action:"countries"});
+
   const countries = result.countries || [];
 
   countryEl.innerHTML =
@@ -1080,6 +1080,8 @@ async function loadCountries() {
     showMessage("No countries are currently available.", "info");
   }
 }
+
+/* VISA TYPES */
 
 async function loadVisaTypes(countryId) {
   const requestNumber = ++visaRequestNumber;
@@ -1373,6 +1375,8 @@ async function loadPublicProcessingTime() {
       "Last verified: " + formatVerificationDate(item.last_verified_at);
     card.appendChild(verified);
 
+    /* DISPLAY THE OFFICIAL SOURCE URL SAVED BY THE ADMINISTRATOR */
+
     if (item.source_url) {
       try {
         const source = new URL(item.source_url);
@@ -1382,7 +1386,7 @@ async function loadPublicProcessingTime() {
           link.href = source.href;
           link.target = "_blank";
           link.rel = "noopener noreferrer";
-          link.textContent = "View information source";
+          link.textContent = "View official information source";
           card.appendChild(link);
         }
       } catch(sourceError) {
