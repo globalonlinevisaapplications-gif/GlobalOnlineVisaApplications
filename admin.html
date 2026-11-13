@@ -14,6 +14,7 @@
 *{box-sizing:border-box}
 body{margin:0;background:#f3f6fa;color:#172033;font:15px Arial,sans-serif}
 header{background:#12345a;color:#fff;padding:18px 24px;display:flex;justify-content:space-between;align-items:center;gap:15px}
+header a{color:#fff;text-decoration:underline;margin-right:10px}
 main{max-width:1500px;margin:24px auto;padding:0 16px}
 .toolbar,.panel,.stat,.login-box{background:#fff;border:1px solid #e1e7ef;border-radius:10px;padding:16px;margin-bottom:16px}
 .login-box{max-width:430px;margin:45px auto;padding:28px}
@@ -80,6 +81,8 @@ th{background:#f8fafc}
 .processing-form-grid>div{min-width:0}
 .processing-form-grid input,.processing-form-grid select{width:100%}
 .processing-form input[type=url]{width:100%}
+.source-link{color:#1557a0;font-weight:bold;text-decoration:underline}
+.source-link:hover{color:#0b2747}
 @media(max-width:900px){
  .filter-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
  .message-grid{grid-template-columns:1fr}
@@ -102,280 +105,337 @@ th{background:#f8fafc}
 </head>
 
 <body>
+
 <header>
   <div>
     <strong>Global Online Visa Applications</strong>
-    <div style="color:#dbeafe">Administrator Dashboard · V12</div>
+    <div style="color:#dbeafe">Administrator Dashboard · V13</div>
+    <a id="publicWebsiteLink" href="https://globalonlinevisaapplications.netlify.app/" target="_blank" rel="noopener noreferrer">Visit official website</a>
   </div>
   <div>
     <span id="adminEmail"></span>
-    <button id="logout" class="secondary hidden">Sign out</button>
+    <button id="logout" class="secondary hidden" type="button">Sign out</button>
   </div>
 </header>
 
 <main>
-  <div id="notice" class="notice" role="status" aria-live="polite">Checking administrator access…</div>
 
-  <section id="loginPanel" class="login-box hidden">
-    <h2>Administrator Login</h2>
-    <p class="muted">Sign in using your administrator account.</p>
-    <form id="loginForm">
-      <label for="email">Email address</label>
-      <input id="email" type="email" placeholder="Administrator email" autocomplete="username" required>
-      <label for="password">Password</label>
-      <input id="password" type="password" placeholder="Password" autocomplete="current-password" required>
-      <button id="loginButton" type="submit">Sign in</button>
-    </form>
-  </section>
+<div id="notice" class="notice" role="status" aria-live="polite">
+Checking administrator access…
+</div>
 
-  <div id="dashboard" class="hidden">
+<section id="loginPanel" class="login-box hidden">
+  <h2>Administrator Login</h2>
+  <p class="muted">Sign in using your administrator account.</p>
+  <form id="loginForm">
+    <label for="email">Email address</label>
+    <input id="email" type="email" placeholder="Administrator email" autocomplete="username" required>
 
-    <div class="stats">
-      <div class="stat">Applications<strong id="statApps">—</strong></div>
-      <div class="stat">Pending payments<strong id="statPending">—</strong></div>
-      <div class="stat">Paid applications<strong id="statPaid">—</strong></div>
-      <div class="stat">Enquiries<strong id="statEnquiries">—</strong></div>
-    </div>
+    <label for="password">Password</label>
+    <input id="password" type="password" placeholder="Password" autocomplete="current-password" required>
 
-    <div class="toolbar">
-      <h3>Search and filter applications</h3>
-      <input id="search" placeholder="Reference, applicant, email, passport…" style="width:100%">
-      <div class="filter-grid">
-        <select id="statusFilter"><option value="">All application statuses</option></select>
-        <select id="paymentFilter"><option value="">All payment statuses</option></select>
-        <select id="destinationFilter"><option value="">All destinations</option></select>
-        <select id="visaFilter"><option value="">All visa types</option></select>
-        <button id="clearFilters" class="secondary">Clear filters</button>
-      </div>
-      <button id="refresh" style="margin-top:12px">Refresh data</button>
-    </div>
+    <button id="loginButton" type="submit">Sign in</button>
+  </form>
+</section>
 
-    <nav>
-      <button data-tab="applications" class="active">Applications</button>
-      <button data-tab="payments">Payments</button>
-      <button data-tab="enquiries">Enquiries</button>
-      <button data-tab="notifications">Email queue</button>
-      <button data-tab="messages">Applicant messages</button>
-      <button data-tab="processing-times">Visa Processing Times</button>
-    </nav>
+<div id="dashboard" class="hidden">
 
-    <section id="applications" class="panel tab">
-      <h2>Visa applications</h2>
-      <p class="fee-note">
-        The service fee is $285 per applicant. Government fees are estimates.
-        Verify the actual payment received before confirming payment.
-      </p>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Reference</th><th>Applicant</th><th>Destination / Visa</th>
-              <th>Fee estimate (USD)</th><th>Status</th><th>Payment</th><th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="appRows"></tbody>
-        </table>
-      </div>
-    </section>
+<div class="stats">
+  <div class="stat">Applications<strong id="statApps">—</strong></div>
+  <div class="stat">Pending payments<strong id="statPending">—</strong></div>
+  <div class="stat">Paid applications<strong id="statPaid">—</strong></div>
+  <div class="stat">Enquiries<strong id="statEnquiries">—</strong></div>
+</div>
 
-    <section id="payments" class="panel tab hidden">
-      <h2>Payment records</h2>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Date</th><th>Application</th><th>Amount</th><th>Status</th><th>Record</th></tr></thead>
-          <tbody id="paymentRows"></tbody>
-        </table>
-      </div>
-    </section>
+<div class="toolbar">
+  <h3>Search and filter applications</h3>
+  <input id="search" placeholder="Reference, applicant, email, passport…" style="width:100%">
 
-    <section id="enquiries" class="panel tab hidden">
-      <h2>Customer enquiries</h2>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Date</th><th>Name</th><th>Email</th><th>Destination</th><th>Message</th><th>Status</th></tr></thead>
-          <tbody id="enquiryRows"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <section id="notifications" class="panel tab hidden">
-      <h2>Email notification queue</h2>
-      <p class="muted">Notifications are queued only. Email delivery is not enabled in this version.</p>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Date</th><th>Recipient</th><th>Type</th><th>Status</th><th>Event key</th></tr></thead>
-          <tbody id="notificationRows"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <section id="messages" class="panel tab hidden">
-      <h2>Applicant messaging centre</h2>
-      <p class="muted">
-        Send announcements to registered applicants, private messages, and missing-document requests.
-        Applicants can reply through their My Messages page.
-      </p>
-
-      <div class="message-grid">
-        <div class="message-box">
-          <h3>Announcement to all applicants</h3>
-          <p class="muted">This sends a website message to every applicant account found in the applicants table.</p>
-          <label for="broadcastMessage">Announcement</label>
-          <textarea id="broadcastMessage" placeholder="Write your announcement here…"></textarea>
-          <button id="sendBroadcast">Send announcement to all</button>
-        </div>
-
-        <div class="message-box">
-          <h3>Private message</h3>
-          <label for="messageApplicant">Select applicant</label>
-          <select id="messageApplicant" style="width:100%">
-            <option value="">Load applicants first</option>
-          </select>
-
-          <label for="privateMessage">Message</label>
-          <textarea id="privateMessage" placeholder="Write a private message…"></textarea>
-          <button id="sendPrivate">Send private message</button>
-
-          <hr style="border:0;border-top:1px solid #e2e8f0;margin:18px 0">
-
-          <h3>Request missing documents</h3>
-          <label for="missingDocumentMessage">Documents required</label>
-          <textarea id="missingDocumentMessage" placeholder="Example: Please upload a clear copy of your passport biodata page."></textarea>
-          <button id="sendMissingDocument" class="secondary">Send document request</button>
-        </div>
-      </div>
-
-      <div class="message-box">
-        <h3>Applicant replies and administrator responses</h3>
-        <p class="muted">Choose an applicant to load the conversation. Applicant replies will be marked as read when opened here.</p>
-        <button id="loadReplies" class="secondary">Load applicant conversation</button>
-        <div id="replyThread" style="margin-top:14px">
-          <div class="empty">Select an applicant above and load the conversation.</div>
-        </div>
-        <label for="adminReply">Administrator response</label>
-        <textarea id="adminReply" placeholder="Write your response to the applicant…"></textarea>
-        <button id="sendReply">Send response</button>
-      </div>
-    </section>
-
-    <section id="processing-times" class="panel tab hidden">
-      <h2>Visa Processing Times Management</h2>
-      <p class="muted">
-        Add and maintain processing-time records by destination, application country and visa category.
-        Only enter estimates supported by reliable sources. Processing times are not guaranteed decision dates.
-      </p>
-
-      <div class="message-box processing-form">
-        <h3 id="processingFormTitle">Add processing time</h3>
-
-        <form id="processingForm">
-          <input type="hidden" id="processingId">
-
-          <div class="processing-form-grid">
-            <div>
-              <label for="processingCountry">Destination country</label>
-              <select id="processingCountry" required>
-                <option value="">Loading countries…</option>
-              </select>
-            </div>
-
-            <div>
-              <label for="processingApplyingFrom">Applying from</label>
-              <select id="processingApplyingFrom" required>
-                <option value="">Loading countries…</option>
-              </select>
-            </div>
-
-            <div>
-              <label for="processingCategory">Visa category</label>
-              <select id="processingCategory" required>
-                <option value="">Select category</option>
-                <option value="Tourist/Visitor">Tourist/Visitor</option>
-                <option value="Student">Student</option>
-                <option value="Work">Work</option>
-                <option value="Business">Business</option>
-                <option value="Family/Spouse">Family/Spouse</option>
-                <option value="Transit">Transit</option>
-              </select>
-            </div>
-
-            <div>
-              <label for="processingMin">Minimum days</label>
-              <input id="processingMin" type="number" min="0" step="1" required>
-            </div>
-
-            <div>
-              <label for="processingMax">Maximum days</label>
-              <input id="processingMax" type="number" min="0" step="1" required>
-            </div>
-
-            <div>
-              <label for="processingUnit">Time unit</label>
-              <select id="processingUnit" required>
-                <option value="working days">Working days</option>
-                <option value="calendar days">Calendar days</option>
-              </select>
-            </div>
-
-            <div>
-              <label for="processingVerified">Last verified date</label>
-              <input id="processingVerified" type="date" required>
-            </div>
-          </div>
-
-          <label for="processingSource">Official verification source URL</label>
-          <input id="processingSource" type="url"
-            placeholder="https://official-government-or-embassy-website..."
-            required>
-
-          <p class="fee-note">
-            Use an official immigration authority, embassy or government source wherever possible.
-            Your public website is the place customers view your information; this field is for the reference used to verify the estimate.
-          </p>
-
-          <button id="saveProcessing" type="submit">Save processing time</button>
-          <button id="clearProcessing" type="button" class="secondary">Clear form</button>
-        </form>
-      </div>
-
-      <h3>Saved processing-time records</h3>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Destination</th>
-              <th>Applying from</th>
-              <th>Region</th>
-              <th>Visa category</th>
-              <th>Processing time</th>
-              <th>Source</th>
-              <th>Last verified</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="processingRows">
-            <tr><td colspan="9">Loading records…</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
+  <div class="filter-grid">
+    <select id="statusFilter"><option value="">All application statuses</option></select>
+    <select id="paymentFilter"><option value="">All payment statuses</option></select>
+    <select id="destinationFilter"><option value="">All destinations</option></select>
+    <select id="visaFilter"><option value="">All visa types</option></select>
+    <button id="clearFilters" class="secondary" type="button">Clear filters</button>
   </div>
+
+  <button id="refresh" style="margin-top:12px" type="button">Refresh data</button>
+</div>
+
+<nav>
+  <button data-tab="applications" class="active" type="button">Applications</button>
+  <button data-tab="payments" type="button">Payments</button>
+  <button data-tab="enquiries" type="button">Enquiries</button>
+  <button data-tab="notifications" type="button">Email queue</button>
+  <button data-tab="messages" type="button">Applicant messages</button>
+  <button data-tab="processing-times" type="button">Visa Processing Times</button>
+</nav>
+
+<section id="applications" class="panel tab">
+  <h2>Visa applications</h2>
+  <p class="fee-note">
+    The service fee is $285 per applicant. Government fees are estimates.
+    Verify the actual payment received before confirming payment.
+  </p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Reference</th>
+          <th>Applicant</th>
+          <th>Destination / Visa</th>
+          <th>Fee estimate (USD)</th>
+          <th>Status</th>
+          <th>Payment</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="appRows"></tbody>
+    </table>
+  </div>
+</section>
+
+<section id="payments" class="panel tab hidden">
+  <h2>Payment records</h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Date</th><th>Application</th><th>Amount</th><th>Status</th><th>Record</th></tr>
+      </thead>
+      <tbody id="paymentRows"></tbody>
+    </table>
+  </div>
+</section>
+
+<section id="enquiries" class="panel tab hidden">
+  <h2>Customer enquiries</h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Date</th><th>Name</th><th>Email</th><th>Destination</th><th>Message</th><th>Status</th></tr>
+      </thead>
+      <tbody id="enquiryRows"></tbody>
+    </table>
+  </div>
+</section>
+
+<section id="notifications" class="panel tab hidden">
+  <h2>Email notification queue</h2>
+  <p class="muted">Notifications are queued only. Email delivery is not enabled in this version.</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Date</th><th>Recipient</th><th>Type</th><th>Status</th><th>Event key</th></tr>
+      </thead>
+      <tbody id="notificationRows"></tbody>
+    </table>
+  </div>
+</section>
+
+<section id="messages" class="panel tab hidden">
+  <h2>Applicant messaging centre</h2>
+  <p class="muted">
+    Send announcements to registered applicants, private messages, and missing-document requests.
+    Applicants can reply through their My Messages page.
+  </p>
+
+  <div class="message-grid">
+    <div class="message-box">
+      <h3>Announcement to all applicants</h3>
+      <p class="muted">This sends a website message to every applicant account found in the applicants table.</p>
+
+      <label for="broadcastMessage">Announcement</label>
+      <textarea id="broadcastMessage" placeholder="Write your announcement here…"></textarea>
+
+      <button id="sendBroadcast" type="button">Send announcement to all</button>
+    </div>
+
+    <div class="message-box">
+      <h3>Private message</h3>
+
+      <label for="messageApplicant">Select applicant</label>
+      <select id="messageApplicant" style="width:100%">
+        <option value="">Load applicants first</option>
+      </select>
+
+      <label for="privateMessage">Message</label>
+      <textarea id="privateMessage" placeholder="Write a private message…"></textarea>
+
+      <button id="sendPrivate" type="button">Send private message</button>
+
+      <hr style="border:0;border-top:1px solid #e2e8f0;margin:18px 0">
+
+      <h3>Request missing documents</h3>
+
+      <label for="missingDocumentMessage">Documents required</label>
+      <textarea id="missingDocumentMessage" placeholder="Example: Please upload a clear copy of your passport biodata page."></textarea>
+
+      <button id="sendMissingDocument" class="secondary" type="button">Send document request</button>
+    </div>
+  </div>
+
+  <div class="message-box">
+    <h3>Applicant replies and administrator responses</h3>
+    <p class="muted">Choose an applicant to load the conversation. Applicant replies will be marked as read when opened here.</p>
+
+    <button id="loadReplies" class="secondary" type="button">Load applicant conversation</button>
+
+    <div id="replyThread" style="margin-top:14px">
+      <div class="empty">Select an applicant above and load the conversation.</div>
+    </div>
+
+    <label for="adminReply">Administrator response</label>
+    <textarea id="adminReply" placeholder="Write your response to the applicant…"></textarea>
+
+    <button id="sendReply" type="button">Send response</button>
+  </div>
+</section>
+
+<!-- VISA PROCESSING TIMES -->
+
+<section id="processing-times" class="panel tab hidden">
+
+  <h2>Visa Processing Times Management</h2>
+
+  <p class="muted">
+    Add and maintain processing-time records by destination, application country and visa category.
+    Only enter estimates supported by reliable official sources.
+    Processing times are estimates and are not guaranteed decision dates.
+  </p>
+
+  <div class="message-box processing-form">
+
+    <h3 id="processingFormTitle">Add processing time</h3>
+
+    <form id="processingForm">
+
+      <input type="hidden" id="processingId">
+
+      <div class="processing-form-grid">
+
+        <div>
+          <label for="processingCountry">Destination country</label>
+          <select id="processingCountry" required>
+            <option value="">Loading countries…</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="processingApplyingFrom">Applying from</label>
+          <select id="processingApplyingFrom" required>
+            <option value="">Loading countries…</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="processingCategory">Visa category</label>
+          <select id="processingCategory" required>
+            <option value="">Select category</option>
+            <option value="Tourist/Visitor">Tourist/Visitor</option>
+            <option value="Student">Student</option>
+            <option value="Work">Work</option>
+            <option value="Business">Business</option>
+            <option value="Family/Spouse">Family/Spouse</option>
+            <option value="Transit">Transit</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="processingMin">Minimum days</label>
+          <input id="processingMin" type="number" min="0" step="1" required>
+        </div>
+
+        <div>
+          <label for="processingMax">Maximum days</label>
+          <input id="processingMax" type="number" min="0" step="1" required>
+        </div>
+
+        <div>
+          <label for="processingUnit">Time unit</label>
+          <select id="processingUnit" required>
+            <option value="working days">Working days</option>
+            <option value="calendar days">Calendar days</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="processingVerified">Last verified date</label>
+          <input id="processingVerified" type="date" required>
+        </div>
+
+      </div>
+
+      <label for="processingSource">Official processing-time source URL</label>
+
+      <input
+        id="processingSource"
+        type="url"
+        placeholder="https://www.official-immigration-website.gov"
+        autocomplete="url"
+        required
+      >
+
+      <p class="fee-note">
+        Enter the official government immigration, embassy or visa authority website
+        where the processing-time estimate was verified.
+        HTTPS links are required.
+      </p>
+
+      <button id="saveProcessing" type="submit">Save processing time</button>
+
+      <button id="clearProcessing" type="button" class="secondary">Clear form</button>
+
+    </form>
+  </div>
+
+  <h3>Saved processing-time records</h3>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Destination</th>
+          <th>Applying from</th>
+          <th>Region</th>
+          <th>Visa category</th>
+          <th>Processing time</th>
+          <th>Official source</th>
+          <th>Last verified</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+
+      <tbody id="processingRows">
+        <tr><td colspan="9">Loading records…</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</section>
+
+</div>
 </main>
+
+<!-- APPLICANT DETAILS MODAL -->
 
 <div id="detailOverlay" class="detail-overlay" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
   <div class="detail-modal">
+
     <div class="detail-header">
       <div>
         <h2 id="detailTitle">Applicant details</h2>
         <div id="detailReference" class="muted"></div>
       </div>
+
       <button id="closeDetails" class="close-button" type="button">Close</button>
     </div>
+
     <div id="detailContent">
       <p class="muted">Loading applicant details…</p>
     </div>
+
   </div>
 </div>
 
@@ -383,14 +443,27 @@ th{background:#f8fafc}
 (() => {
 "use strict";
 
-const BACKEND_VERSION = "visa-backend-v12";
+/* =====================================
+   V13 CONFIGURATION
+===================================== */
+
+const BACKEND_VERSION = "visa-backend-v13";
 const SERVICE_FEE_PER_APPLICANT = 285;
 
+const OFFICIAL_SITE =
+  "https://globalonlinevisaapplications.netlify.app";
+
 let sb;
-let apps = [], payments = [], enquiries = [], notifications = [];
+
+let apps = [];
+let payments = [];
+let enquiries = [];
+let notifications = [];
+
 let messageApplicants = [];
 let processingCountries = [];
 let processingRecords = [];
+
 let activeDetailApplication = null;
 let currentAdmin = null;
 
@@ -414,31 +487,54 @@ const VISA_CATEGORIES = [
   "Transit"
 ];
 
+/* =====================================
+   GENERAL FUNCTIONS
+===================================== */
+
 function notice(text,type="info"){
   $("notice").textContent=text;
-  $("notice").className="notice"+(type==="error"?" error":type==="success"?" success":"");
+
+  $("notice").className =
+    "notice" +
+    (type==="error"?" error":
+    type==="success"?" success":"");
 }
 
 function esc(value){
   return String(value??"").replace(/[&<>"']/g,char=>({
-    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+    "&":"&amp;",
+    "<":"&lt;",
+    ">":"&gt;",
+    '"':"&quot;",
+    "'":"&#39;"
   }[char]));
 }
 
 function money(value){
   const number=Number(value);
+
   if(!Number.isFinite(number))return "—";
-  return new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"}).format(number);
+
+  return new Intl.NumberFormat("en-US",{
+    style:"currency",
+    currency:"USD"
+  }).format(number);
 }
 
 function date(value){
   if(!value)return "—";
+
   const parsed=new Date(value);
-  return Number.isNaN(parsed.getTime())?"—":parsed.toLocaleString();
+
+  return Number.isNaN(parsed.getTime())
+    ?"—"
+    :parsed.toLocaleString();
 }
 
 function relationOne(value){
-  return Array.isArray(value)?(value[0]||{}):(value||{});
+  return Array.isArray(value)
+    ?(value[0]||{})
+    :(value||{});
 }
 
 function primaryApplicant(application){
@@ -450,103 +546,234 @@ function visaRecord(application){
 }
 
 function feeRange(application){
+
   const visa=visaRecord(application);
-  const minValue=visa.visa_fee_min ?? visa.official_fee_min;
-  const maxValue=visa.visa_fee_max ?? visa.official_fee_max;
 
-  if(minValue===null||minValue===undefined||minValue===""||
-     maxValue===null||maxValue===undefined||maxValue==="")return null;
+  const minValue=
+    visa.visa_fee_min??visa.official_fee_min;
 
-  const min=Number(minValue),max=Number(maxValue);
-  if(!Number.isFinite(min)||!Number.isFinite(max)||min<0||max<min)return null;
+  const maxValue=
+    visa.visa_fee_max??visa.official_fee_max;
+
+  if(
+    minValue===null||
+    minValue===undefined||
+    minValue===""||
+    maxValue===null||
+    maxValue===undefined||
+    maxValue===""
+  )return null;
+
+  const min=Number(minValue);
+  const max=Number(maxValue);
+
+  if(
+    !Number.isFinite(min)||
+    !Number.isFinite(max)||
+    min<0||
+    max<min
+  )return null;
+
   return {min,max};
 }
 
 function totalRange(application){
+
   const range=feeRange(application);
+
   if(!range)return null;
+
   return {
     min:range.min+SERVICE_FEE_PER_APPLICANT,
     max:range.max+SERVICE_FEE_PER_APPLICANT
   };
 }
 
-async function api(payload){
-  const {data,error}=await sb.auth.getSession();
-  if(error)throw error;
-  if(!data.session)throw new Error("Your session has expired. Sign in again.");
+/* =====================================
+   V13 BACKEND CONNECTION
+===================================== */
 
-  if(!window.SUPABASE_FUNCTION_URL||
-     !window.SUPABASE_FUNCTION_URL.includes("/visa-backend-v12")){
-    throw new Error("The V12 backend URL is missing. Check config.js.");
+async function api(payload){
+
+  const {data,error}=await sb.auth.getSession();
+
+  if(error)throw error;
+
+  if(!data.session){
+    throw new Error(
+      "Your session has expired. Sign in again."
+    );
   }
 
-  const response=await fetch(window.SUPABASE_FUNCTION_URL,{
-    method:"POST",
-    headers:{
-      "Content-Type":"application/json",
-      "apikey":window.SUPABASE_ANON_KEY,
-      "Authorization":"Bearer "+data.session.access_token
-    },
-    body:JSON.stringify(payload)
-  });
+  if(
+    !window.SUPABASE_FUNCTION_URL||
+    !window.SUPABASE_FUNCTION_URL.includes(
+      "/functions/v1/visa-backend-v13"
+    )
+  ){
+    throw new Error(
+      "The V13 backend URL is missing. Check config.js."
+    );
+  }
+
+  const response=await fetch(
+    window.SUPABASE_FUNCTION_URL,
+    {
+      method:"POST",
+
+      headers:{
+        "Content-Type":"application/json",
+
+        "apikey":window.SUPABASE_ANON_KEY,
+
+        "Authorization":
+          "Bearer "+data.session.access_token
+      },
+
+      body:JSON.stringify(payload)
+    }
+  );
 
   const output=await response.json().catch(()=>({}));
 
-  if(!response.ok||output.ok===false)
-    throw new Error(output.error||output.message||"Backend request failed.");
+  if(!response.ok||output.ok===false){
+    throw new Error(
+      output.error||
+      output.message||
+      "Backend request failed."
+    );
+  }
 
-  if(output.version!==BACKEND_VERSION)
-    throw new Error("V12 backend version mismatch. Check the deployed function and config.js.");
+  if(output.version!==BACKEND_VERSION){
+    throw new Error(
+      "V13 backend version mismatch. Check the deployed function and config.js."
+    );
+  }
 
   return output;
 }
 
+/* =====================================
+   ADMIN DATABASE ACCESS
+===================================== */
+
 async function verifyAdminDatabaseAccess(){
+
   const {data,error}=await sb.rpc("is_admin");
-  if(error)throw new Error("Could not verify administrator database access: "+error.message);
-  if(data!==true)throw new Error("Your account is not authorised for administrator messaging.");
+
+  if(error){
+    throw new Error(
+      "Could not verify administrator database access: "+
+      error.message
+    );
+  }
+
+  if(data!==true){
+    throw new Error(
+      "Your account is not authorised for administrator messaging."
+    );
+  }
 }
 
+/* =====================================
+   NAVIGATION
+===================================== */
+
 function setTab(name){
-  document.querySelectorAll(".tab").forEach(section=>
-    section.classList.toggle("hidden",section.id!==name)
-  );
-  document.querySelectorAll("nav button").forEach(button=>
-    button.classList.toggle("active",button.dataset.tab===name)
-  );
+
+  document.querySelectorAll(".tab").forEach(section=>{
+    section.classList.toggle(
+      "hidden",
+      section.id!==name
+    );
+  });
+
+  document.querySelectorAll("nav button").forEach(button=>{
+    button.classList.toggle(
+      "active",
+      button.dataset.tab===name
+    );
+  });
 
   if(name==="processing-times"){
-    loadProcessingTimes().catch(error=>notice(error.message,"error"));
+    loadProcessingTimes().catch(error=>{
+      notice(error.message,"error");
+    });
+  }
+
+  if(name==="messages"){
+    loadMessageApplicants().catch(error=>{
+      notice(error.message,"error");
+    });
   }
 }
 
 function fillSelect(id,values,defaultLabel){
+
   const select=$(id);
   const previous=select.value;
-  const unique=[...new Set(values.filter(v=>v!==null&&v!==undefined&&String(v).trim()!=="").map(String))].sort();
 
-  select.innerHTML=`<option value="">${esc(defaultLabel)}</option>`+
-    unique.map(value=>`<option value="${esc(value)}">${esc(value)}</option>`).join("");
+  const unique=[
+    ...new Set(
+      values
+        .filter(v=>v!==null&&v!==undefined&&String(v).trim()!=="")
+        .map(String)
+    )
+  ].sort();
 
-  if(unique.includes(previous))select.value=previous;
+  select.innerHTML=
+    `<option value="">${esc(defaultLabel)}</option>`+
+    unique.map(value=>
+      `<option value="${esc(value)}">${esc(value)}</option>`
+    ).join("");
+
+  if(unique.includes(previous)){
+    select.value=previous;
+  }
 }
 
 function populateFilters(){
-  fillSelect("statusFilter",apps.map(a=>a.status),"All application statuses");
-  fillSelect("paymentFilter",apps.map(a=>a.payment_status),"All payment statuses");
-  fillSelect("destinationFilter",apps.map(a=>a.destination_country_name||a.destination_country),"All destinations");
-  fillSelect("visaFilter",apps.map(a=>visaRecord(a).visa_name||a.visa_type),"All visa types");
+
+  fillSelect(
+    "statusFilter",
+    apps.map(a=>a.status),
+    "All application statuses"
+  );
+
+  fillSelect(
+    "paymentFilter",
+    apps.map(a=>a.payment_status),
+    "All payment statuses"
+  );
+
+  fillSelect(
+    "destinationFilter",
+    apps.map(a=>a.destination_country_name||a.destination_country),
+    "All destinations"
+  );
+
+  fillSelect(
+    "visaFilter",
+    apps.map(a=>visaRecord(a).visa_name||a.visa_type),
+    "All visa types"
+  );
 }
 
+/* =====================================
+   APPLICATIONS
+===================================== */
+
 function renderApps(){
+
   const query=$("search").value.trim().toLowerCase();
+
   const status=$("statusFilter").value;
   const payment=$("paymentFilter").value;
   const destination=$("destinationFilter").value;
   const visaFilter=$("visaFilter").value;
 
   const filtered=apps.filter(application=>{
+
     const applicant=primaryApplicant(application);
     const visa=visaRecord(application);
 
@@ -564,8 +791,17 @@ function renderApps(){
       application.visa_type
     ].join(" ").toLowerCase();
 
-    const appDestination=String(application.destination_country_name||application.destination_country||"");
-    const appVisa=String(visa.visa_name||application.visa_type||"");
+    const appDestination=String(
+      application.destination_country_name||
+      application.destination_country||
+      ""
+    );
+
+    const appVisa=String(
+      visa.visa_name||
+      application.visa_type||
+      ""
+    );
 
     return (!query||haystack.includes(query))&&
       (!status||String(application.status||"")===status)&&
@@ -575,48 +811,124 @@ function renderApps(){
   });
 
   $("appRows").innerHTML=filtered.map(application=>{
+
     const applicant=primaryApplicant(application);
     const visa=visaRecord(application);
+
     const range=feeRange(application);
     const totals=totalRange(application);
-    const applicantName=[applicant.first_name,applicant.last_name].filter(Boolean).join(" ");
 
-    const officialText=range?money(range.min)+" – "+money(range.max):"Range not available";
-    const totalText=totals?money(totals.min)+" – "+money(totals.max):"Estimate: "+money(application.total_amount);
+    const applicantName=[
+      applicant.first_name,
+      applicant.last_name
+    ].filter(Boolean).join(" ");
 
-    const statusOptions=[...new Set([...STATUS_OPTIONS,application.status].filter(Boolean))];
+    const officialText=range
+      ?money(range.min)+" – "+money(range.max)
+      :"Range not available";
 
-    return `<tr>
-      <td>${esc(application.reference_number||application.id)}</td>
-      <td>${esc(applicantName)}<br><span class="muted">${esc(applicant.email)}</span></td>
-      <td>${esc(application.destination_country_name||application.destination_country)}<br>${esc(visa.visa_name||application.visa_type)}</td>
-      <td>
-        Official: ${officialText}<br>
-        Service: ${money(SERVICE_FEE_PER_APPLICANT)}<br>
-        <b>Total estimate: ${totalText}</b>
-      </td>
-      <td>${esc(application.status)}</td>
-      <td>${esc(application.payment_status)}</td>
-      <td>
-        <div class="actions">
-          <button data-details="${esc(application.id)}">Full details</button>
-          <select data-status="${esc(application.id)}" aria-label="Application status">
-            ${statusOptions.map(s=>`<option value="${esc(s)}" ${application.status===s?"selected":""}>${esc(s)}</option>`).join("")}
-          </select>
-          <button data-update="${esc(application.id)}">Save status</button>
-          <button class="secondary" data-docs="${esc(application.id)}">Documents</button>
-          <button class="secondary" data-message="${esc(application.id)}">Message applicant</button>
-          ${application.payment_status!=="Paid"?`<button data-paid="${esc(application.id)}">Confirm payment</button>`:""}
-        </div>
-      </td>
-    </tr>`;
-  }).join("")||'<tr><td colspan="7">No applications match these filters.</td></tr>';
+    const totalText=totals
+      ?money(totals.min)+" – "+money(totals.max)
+      :"Estimate: "+money(application.total_amount);
+
+    const statusOptions=[
+      ...new Set([
+        ...STATUS_OPTIONS,
+        application.status
+      ].filter(Boolean))
+    ];
+
+    return `
+      <tr>
+
+        <td>${esc(application.reference_number||application.id)}</td>
+
+        <td>
+          ${esc(applicantName)}
+          <br>
+          <span class="muted">${esc(applicant.email)}</span>
+        </td>
+
+        <td>
+          ${esc(application.destination_country_name||application.destination_country)}
+          <br>
+          ${esc(visa.visa_name||application.visa_type)}
+        </td>
+
+        <td>
+          Official: ${officialText}
+          <br>
+          Service: ${money(SERVICE_FEE_PER_APPLICANT)}
+          <br>
+          <b>Total estimate: ${totalText}</b>
+        </td>
+
+        <td>${esc(application.status)}</td>
+
+        <td>${esc(application.payment_status)}</td>
+
+        <td>
+          <div class="actions">
+
+            <button data-details="${esc(application.id)}">
+              Full details
+            </button>
+
+            <select
+              data-status="${esc(application.id)}"
+              aria-label="Application status"
+            >
+              ${statusOptions.map(s=>`
+                <option
+                  value="${esc(s)}"
+                  ${application.status===s?"selected":""}
+                >
+                  ${esc(s)}
+                </option>
+              `).join("")}
+            </select>
+
+            <button data-update="${esc(application.id)}">
+              Save status
+            </button>
+
+            <button class="secondary" data-docs="${esc(application.id)}">
+              Documents
+            </button>
+
+            <button class="secondary" data-message="${esc(application.id)}">
+              Message applicant
+            </button>
+
+            ${application.payment_status!=="Paid"?`
+              <button data-paid="${esc(application.id)}">
+                Confirm payment
+              </button>
+            `:""}
+
+          </div>
+        </td>
+
+      </tr>
+    `;
+  }).join("")||
+    '<tr><td colspan="7">No applications match these filters.</td></tr>';
 }
 
+/* =====================================
+   DASHBOARD RENDERING
+===================================== */
+
 function render(){
+
   $("statApps").textContent=apps.length;
-  $("statPending").textContent=apps.filter(a=>a.payment_status!=="Paid").length;
-  $("statPaid").textContent=apps.filter(a=>a.payment_status==="Paid").length;
+
+  $("statPending").textContent=
+    apps.filter(a=>a.payment_status!=="Paid").length;
+
+  $("statPaid").textContent=
+    apps.filter(a=>a.payment_status==="Paid").length;
+
   $("statEnquiries").textContent=enquiries.length;
 
   populateFilters();
@@ -630,7 +942,8 @@ function render(){
       <td>${esc(p.payment_status)}</td>
       <td>${esc(p.id)}</td>
     </tr>
-  `).join("")||'<tr><td colspan="5">No payment records.</td></tr>';
+  `).join("")||
+    '<tr><td colspan="5">No payment records.</td></tr>';
 
   $("enquiryRows").innerHTML=enquiries.map(e=>`
     <tr>
@@ -641,7 +954,8 @@ function render(){
       <td>${esc(e.message)}</td>
       <td>${esc(e.status)}</td>
     </tr>
-  `).join("")||'<tr><td colspan="6">No enquiries.</td></tr>';
+  `).join("")||
+    '<tr><td colspan="6">No enquiries.</td></tr>';
 
   $("notificationRows").innerHTML=notifications.map(n=>`
     <tr>
@@ -651,37 +965,72 @@ function render(){
       <td>${esc(n.status)}</td>
       <td>${esc(n.event_key)}</td>
     </tr>
-  `).join("")||'<tr><td colspan="5">No notifications queued.</td></tr>';
+  `).join("")||
+    '<tr><td colspan="5">No notifications queued.</td></tr>';
 }
 
-function field(label,value){
-  const display=value===true?"Yes":value===false?"No":
-    (value===null||value===undefined||value==="")?"Not provided":String(value);
+/* =====================================
+   APPLICANT DETAILS
+===================================== */
 
-  return `<div class="detail-field"><label>${esc(label)}</label><strong>${esc(display)}</strong></div>`;
+function field(label,value){
+
+  const display=
+    value===true?"Yes":
+    value===false?"No":
+    (value===null||value===undefined||value==="")
+      ?"Not provided"
+      :String(value);
+
+  return `
+    <div class="detail-field">
+      <label>${esc(label)}</label>
+      <strong>${esc(display)}</strong>
+    </div>
+  `;
 }
 
 function processingEstimate(application){
+
   const visa=visaRecord(application);
-  const raw=application.processing_days??visa.processing_days;
+
+  const raw=
+    application.processing_days??
+    visa.processing_days;
+
   const days=Number(raw);
 
-  if(raw===null||raw===undefined||raw===""||!Number.isInteger(days)||days<0){
+  if(
+    raw===null||
+    raw===undefined||
+    raw===""||
+    !Number.isInteger(days)||
+    days<0
+  ){
     return "Not configured";
   }
 
-  const startValue=application.application_date||application.created_at;
+  const startValue=
+    application.application_date||
+    application.created_at;
+
   if(!startValue)return "Application date unavailable";
 
   const start=new Date(startValue);
-  if(Number.isNaN(start.getTime()))return "Application date unavailable";
+
+  if(Number.isNaN(start.getTime())){
+    return "Application date unavailable";
+  }
 
   start.setDate(start.getDate()+days);
+
   return start.toLocaleDateString();
 }
 
 function timelineHTML(application){
+
   const status=String(application.status||"").toLowerCase();
+
   const stages=[
     "Application Received",
     "Under Review",
@@ -691,6 +1040,7 @@ function timelineHTML(application){
   ];
 
   let current=0;
+
   if(status==="under review")current=1;
   else if(status==="documents verified")current=2;
   else if(status==="processing")current=3;
@@ -699,38 +1049,59 @@ function timelineHTML(application){
   return `
     <div class="timeline">
       ${stages.map((stage,index)=>`
-        <div class="stage ${index<current?"done":index===current?"current":""}">
+        <div class="stage ${
+          index<current?"done":
+          index===current?"current":""
+        }">
           ${index<current?"✓ ":""}${esc(stage)}
         </div>
       `).join("")}
     </div>
+
     <p class="fee-note">
-      This timeline is based on the saved application status. It does not independently verify document checks or earlier milestones.
+      This timeline is based on the saved application status.
+      It does not independently verify document checks or earlier milestones.
     </p>
   `;
 }
 
 function showDetailSections(application){
+
   const applicant=primaryApplicant(application);
   const visa=visaRecord(application);
-  const applicantName=[applicant.first_name,applicant.last_name].filter(Boolean).join(" ")||"Applicant";
+
+  const applicantName=[
+    applicant.first_name,
+    applicant.last_name
+  ].filter(Boolean).join(" ")||"Applicant";
 
   $("detailTitle").textContent=applicantName;
-  $("detailReference").textContent="Application reference: "+(application.reference_number||application.id);
+
+  $("detailReference").textContent=
+    "Application reference: "+
+    (application.reference_number||application.id);
 
   $("detailContent").innerHTML=`
+
     <section class="detail-section">
+
       <h3>Application progress</h3>
+
       ${timelineHTML(application)}
+
       <div class="detail-grid">
         ${field("Current status",application.status)}
         ${field("Estimated completion date",processingEstimate(application))}
         ${field("Processing days",application.processing_days??visa.processing_days)}
         ${field("Application date",application.application_date||application.created_at)}
       </div>
+
     </section>
+
     <section class="detail-section">
+
       <h3>Personal information</h3>
+
       <div class="detail-grid">
         ${field("First name",applicant.first_name)}
         ${field("Last name",applicant.last_name)}
@@ -739,9 +1110,13 @@ function showDetailSections(application){
         ${field("Nationality",applicant.nationality)}
         ${field("Date of birth",applicant.date_of_birth)}
       </div>
+
     </section>
+
     <section class="detail-section">
+
       <h3>Passport and immigration information</h3>
+
       <div class="detail-grid">
         ${field("Passport number",applicant.passport_number)}
         ${field("Has passport",applicant.has_passport)}
@@ -749,9 +1124,13 @@ function showDetailSections(application){
         ${field("Refugee card number",applicant.refugee_card_number)}
         ${field("UN manifest number",applicant.un_manifest_number)}
       </div>
+
     </section>
+
     <section class="detail-section">
+
       <h3>Application information</h3>
+
       <div class="detail-grid">
         ${field("Reference number",application.reference_number)}
         ${field("Destination country",application.destination_country_name||application.destination_country)}
@@ -763,91 +1142,183 @@ function showDetailSections(application){
         ${field("Total amount",money(application.total_amount))}
         ${field("Currency",application.currency||"USD")}
       </div>
+
     </section>
+
     <section class="detail-section">
+
       <h3>Uploaded documents</h3>
-      <p class="muted">Secure document links expire after 60 seconds.</p>
+
+      <p class="muted">
+        Secure document links expire after 60 seconds.
+      </p>
+
       <div id="applicantDocuments" class="document-list">
         <p class="muted">Loading uploaded documents…</p>
       </div>
+
     </section>
   `;
 }
 
 async function loadApplicantDocuments(applicationId){
+
   const container=$("applicantDocuments");
+
   try{
-    const result=await api({action:"admin_documents",application_id:applicationId});
+
+    const result=await api({
+      action:"admin_documents",
+      application_id:applicationId
+    });
+
     const documents=result.documents||[];
 
     if(!documents.length){
-      container.innerHTML='<div class="empty">No documents have been uploaded for this application.</div>';
+      container.innerHTML=
+        '<div class="empty">No documents have been uploaded for this application.</div>';
       return;
     }
 
     container.innerHTML=documents.map(doc=>`
+
       <div class="document-item">
+
         <div>
-          <strong>${esc(doc.original_file_name||"Uploaded document")}</strong>
+
+          <strong>
+            ${esc(doc.original_file_name||"Uploaded document")}
+          </strong>
+
           <small>
             Type: ${esc(doc.document_type||"Not specified")}
             · Format: ${esc(doc.content_type||"Unknown")}
-            · Size: ${doc.file_size?esc((Number(doc.file_size)/1024).toFixed(1)+" KB"):"Unknown"}
+            · Size: ${
+              doc.file_size
+                ?esc((Number(doc.file_size)/1024).toFixed(1)+" KB")
+                :"Unknown"
+            }
           </small>
+
         </div>
+
         <div class="document-actions">
-          <button data-document="${esc(doc.id)}" data-document-action="view">View</button>
-          <button class="secondary" data-document="${esc(doc.id)}" data-document-action="download">Download</button>
+
+          <button
+            data-document="${esc(doc.id)}"
+            data-document-action="view"
+            type="button"
+          >
+            View
+          </button>
+
+          <button
+            class="secondary"
+            data-document="${esc(doc.id)}"
+            data-document-action="download"
+            type="button"
+          >
+            Download
+          </button>
+
         </div>
+
       </div>
+
     `).join("");
+
   }catch(error){
-    container.innerHTML=`<div class="notice error">${esc(error.message)}</div>`;
+
+    container.innerHTML=
+      `<div class="notice error">${esc(error.message)}</div>`;
+
   }
 }
 
 async function openApplicantDetails(applicationId){
-  const application=apps.find(item=>String(item.id)===String(applicationId));
-  if(!application)throw new Error("Application record not found.");
+
+  const application=apps.find(
+    item=>String(item.id)===String(applicationId)
+  );
+
+  if(!application){
+    throw new Error("Application record not found.");
+  }
 
   activeDetailApplication=application;
+
   showDetailSections(application);
+
   $("detailOverlay").classList.add("open");
+
   document.body.style.overflow="hidden";
+
   await loadApplicantDocuments(applicationId);
 }
 
 function closeApplicantDetails(){
+
   $("detailOverlay").classList.remove("open");
+
   document.body.style.overflow="";
+
   activeDetailApplication=null;
 }
 
+/* =====================================
+   SECURE DOCUMENT ACCESS
+===================================== */
+
 async function openDocument(documentId,action){
-  const result=await api({action:"download_document",document_id:documentId});
-  if(!result.signed_url)throw new Error("No secure document link was returned.");
+
+  const result=await api({
+    action:"download_document",
+    document_id:documentId
+  });
+
+  if(!result.signed_url){
+    throw new Error("No secure document link was returned.");
+  }
 
   const link=document.createElement("a");
+
   link.href=result.signed_url;
   link.target="_blank";
   link.rel="noopener noreferrer";
-  if(action==="download")link.download=result.file_name||"applicant-document";
+
+  if(action==="download"){
+    link.download=result.file_name||"applicant-document";
+  }
 
   document.body.appendChild(link);
+
   link.click();
+
   link.remove();
 }
 
+/* =====================================
+   DASHBOARD DATA REFRESH
+===================================== */
+
 async function refresh(){
+
   notice("Loading dashboard data…");
+
   $("refresh").disabled=true;
 
   try{
+
     const [a,p,e,n]=await Promise.all([
+
       api({action:"admin_applications"}),
+
       api({action:"admin_payments"}),
+
       api({action:"admin_enquiries"}),
+
       api({action:"admin_notifications"})
+
     ]);
 
     apps=a.applications||[];
@@ -856,88 +1327,188 @@ async function refresh(){
     notifications=n.notifications||[];
 
     render();
+
     $("dashboard").classList.remove("hidden");
-    notice("V12 dashboard data updated.","success");
+
+    notice("V13 dashboard data updated.","success");
+
   }catch(error){
+
     notice(error.message,"error");
+
   }finally{
+
     $("refresh").disabled=false;
+
   }
 }
 
-/* PROCESSING TIMES */
+/* =====================================
+   VISA PROCESSING TIMES
+===================================== */
 
 async function loadProcessingCountries(){
+
   const {data,error}=await sb
     .from("visa_countries")
     .select("country_name,region")
     .eq("is_active",true)
     .order("country_name");
 
-  if(error)throw new Error("Could not load countries: "+error.message);
+  if(error){
+    throw new Error(
+      "Could not load countries: "+error.message
+    );
+  }
 
   processingCountries=data||[];
 
   const options=
     '<option value="">Select country</option>'+
-    processingCountries.map(country=>
-      `<option value="${esc(country.country_name)}">${esc(country.country_name)}</option>`
-    ).join("");
+
+    processingCountries.map(country=>`
+      <option value="${esc(country.country_name)}">
+        ${esc(country.country_name)}
+      </option>
+    `).join("");
 
   $("processingCountry").innerHTML=options;
+
   $("processingApplyingFrom").innerHTML=options;
 
   if(!processingCountries.length){
-    $("processingCountry").innerHTML='<option value="">No active countries found</option>';
-    $("processingApplyingFrom").innerHTML='<option value="">No active countries found</option>';
+
+    $("processingCountry").innerHTML=
+      '<option value="">No active countries found</option>';
+
+    $("processingApplyingFrom").innerHTML=
+      '<option value="">No active countries found</option>';
+
   }
 }
 
 function clearProcessingForm(){
+
   $("processingForm").reset();
+
   $("processingId").value="";
-  $("processingFormTitle").textContent="Add processing time";
-  $("saveProcessing").textContent="Save processing time";
+
+  $("processingFormTitle").textContent=
+    "Add processing time";
+
+  $("saveProcessing").textContent=
+    "Save processing time";
+
   $("processingUnit").value="working days";
 }
 
-function renderProcessingRecords(){
-  $("processingRows").innerHTML=processingRecords.map(record=>{
-    let source="Not supplied";
+/* SAFE SOURCE LINK */
 
-    if(record.source_url){
-      try{
-        const parsed=new URL(record.source_url);
-        if(["https:","http:"].includes(parsed.protocol)){
-          source=`<a href="${esc(parsed.href)}" target="_blank" rel="noopener noreferrer">View source</a>`;
-        }
-      }catch(e){}
+function safeSourceURL(value){
+
+  if(!value)return null;
+
+  try{
+
+    const parsed=new URL(value);
+
+    if(parsed.protocol!=="https:"){
+      return null;
     }
 
-    const time=esc(record.min_days)+"–"+esc(record.max_days)+" "+esc(record.time_unit||"working days");
+    return parsed.href;
 
-    return `<tr>
-      <td>${esc(record.destination)}</td>
-      <td>${esc(record.applying_from||"Not specified")}</td>
-      <td>${esc(record.region||"Other")}</td>
-      <td>${esc(record.visa_category||"Unspecified")}</td>
-      <td>${time}</td>
-      <td>${source}</td>
-      <td>${esc(record.last_verified_at||"Not verified")}</td>
-      <td>${record.is_active?"Active":"Inactive"}</td>
-      <td>
-        <div class="actions">
-          <button type="button" data-processing-edit="${esc(record.id)}">Edit</button>
-          <button type="button" class="secondary" data-processing-toggle="${esc(record.id)}">
-            ${record.is_active?"Deactivate":"Activate"}
-          </button>
-        </div>
-      </td>
-    </tr>`;
-  }).join("")||'<tr><td colspan="9">No processing-time records found.</td></tr>';
+  }catch(error){
+
+    return null;
+
+  }
 }
 
+/* RENDER PROCESSING RECORDS */
+
+function renderProcessingRecords(){
+
+  $("processingRows").innerHTML=
+
+    processingRecords.map(record=>{
+
+      const sourceURL=safeSourceURL(record.source_url);
+
+      const source=sourceURL
+        ?`<a class="source-link"
+             href="${esc(sourceURL)}"
+             target="_blank"
+             rel="noopener noreferrer">
+             View official source
+           </a>`
+        :'<span class="muted">No valid HTTPS source</span>';
+
+      const time=
+        esc(record.min_days)+
+        "–"+
+        esc(record.max_days)+
+        " "+
+        esc(record.time_unit||"working days");
+
+      return `
+
+        <tr>
+
+          <td>${esc(record.destination)}</td>
+
+          <td>${esc(record.applying_from||"Not specified")}</td>
+
+          <td>${esc(record.region||"Other")}</td>
+
+          <td>${esc(record.visa_category||"Unspecified")}</td>
+
+          <td>${time}</td>
+
+          <td>${source}</td>
+
+          <td>${esc(record.last_verified_at||"Not verified")}</td>
+
+          <td>
+            ${record.is_active?"Active":"Inactive"}
+          </td>
+
+          <td>
+
+            <div class="actions">
+
+              <button
+                type="button"
+                data-processing-edit="${esc(record.id)}"
+              >
+                Edit
+              </button>
+
+              <button
+                type="button"
+                class="secondary"
+                data-processing-toggle="${esc(record.id)}"
+              >
+                ${record.is_active?"Deactivate":"Activate"}
+              </button>
+
+            </div>
+
+          </td>
+
+        </tr>
+
+      `;
+
+    }).join("")||
+
+    '<tr><td colspan="9">No processing-time records found.</td></tr>';
+}
+
+/* LOAD PROCESSING TIMES */
+
 async function loadProcessingTimes(){
+
   await loadProcessingCountries();
 
   const {data,error}=await sb
@@ -947,122 +1518,243 @@ async function loadProcessingTimes(){
     .order("applying_from")
     .order("visa_category");
 
-  if(error)throw new Error("Could not load processing times: "+error.message);
+  if(error){
+
+    throw new Error(
+      "Could not load processing times: "+error.message
+    );
+
+  }
 
   processingRecords=data||[];
+
   renderProcessingRecords();
 }
 
+/* SAVE PROCESSING TIME */
+
 async function saveProcessingTime(event){
+
   event.preventDefault();
 
   const countryName=$("processingCountry").value;
+
   const applyingFrom=$("processingApplyingFrom").value;
 
   const country=processingCountries.find(
     item=>item.country_name===countryName
   );
 
-  if(!country)throw new Error("Please select a valid destination country.");
+  if(!country){
 
-  if(!processingCountries.some(item=>item.country_name===applyingFrom)){
-    throw new Error("Please select a valid country where the applicant is applying from.");
+    throw new Error(
+      "Please select a valid destination country."
+    );
+
+  }
+
+  if(!processingCountries.some(
+    item=>item.country_name===applyingFrom
+  )){
+
+    throw new Error(
+      "Please select a valid country where the applicant is applying from."
+    );
+
   }
 
   const category=$("processingCategory").value;
+
   const min=Number($("processingMin").value);
+
   const max=Number($("processingMax").value);
+
   const unit=$("processingUnit").value;
+
   const source=$("processingSource").value.trim();
+
   const verified=$("processingVerified").value;
+
   const id=$("processingId").value;
 
   if(!VISA_CATEGORIES.includes(category)){
-    throw new Error("Select one of the six supported visa categories.");
+
+    throw new Error(
+      "Select one of the six supported visa categories."
+    );
+
   }
 
-  if(!Number.isInteger(min)||!Number.isInteger(max)||min<0||max<min){
-    throw new Error("Enter valid whole-number processing days. Maximum must not be less than minimum.");
+  if(
+    !Number.isInteger(min)||
+    !Number.isInteger(max)||
+    min<0||
+    max<min
+  ){
+
+    throw new Error(
+      "Enter valid whole-number processing days. Maximum must not be less than minimum."
+    );
+
   }
+
+  /* OFFICIAL SOURCE URL VALIDATION */
 
   let parsedSource;
+
   try{
+
     parsedSource=new URL(source);
-  }catch{
-    throw new Error("Enter a valid official source URL.");
+
+  }catch(error){
+
+    throw new Error(
+      "Enter a valid official processing-time source URL."
+    );
+
   }
 
-  if(!["https:","http:"].includes(parsedSource.protocol)){
-    throw new Error("The source URL must begin with https:// or http://.");
+  if(parsedSource.protocol!=="https:"){
+
+    throw new Error(
+      "The official source URL must use HTTPS."
+    );
+
   }
 
-  if(!verified)throw new Error("Select the date the processing time was last verified.");
+  if(!verified){
+
+    throw new Error(
+      "Select the date the processing time was last verified."
+    );
+
+  }
+
+  const today=new Date().toISOString().slice(0,10);
+
+  if(verified>today){
+
+    throw new Error(
+      "The verification date cannot be in the future."
+    );
+
+  }
 
   const payload={
+
     destination:country.country_name,
+
     applying_from:applyingFrom,
+
     region:country.region,
+
     visa_category:category,
+
     min_days:min,
+
     max_days:max,
+
     time_unit:unit,
-    source_url:source,
+
+    source_url:parsedSource.href,
+
     last_verified_at:verified,
+
     is_active:true,
+
     updated_at:new Date().toISOString()
+
   };
 
   $("saveProcessing").disabled=true;
 
   try{
+
     let result;
 
     if(id){
+
       result=await sb
         .from("visa_processing_times")
         .update(payload)
         .eq("id",id);
+
     }else{
+
       result=await sb
         .from("visa_processing_times")
         .insert(payload);
+
     }
 
-    if(result.error)throw result.error;
+    if(result.error){
+      throw result.error;
+    }
 
     clearProcessingForm();
+
     await loadProcessingTimes();
 
     notice(
-      id?"Processing time updated successfully.":"Processing time saved successfully.",
+      id
+        ?"Processing time updated successfully."
+        :"Processing time saved successfully.",
       "success"
     );
+
   }finally{
+
     $("saveProcessing").disabled=false;
+
   }
 }
 
+/* EDIT PROCESSING TIME */
+
 function editProcessingTime(id){
+
   const record=processingRecords.find(
     item=>String(item.id)===String(id)
   );
 
-  if(!record)throw new Error("Processing-time record not found.");
+  if(!record){
+
+    throw new Error(
+      "Processing-time record not found."
+    );
+
+  }
 
   $("processingId").value=record.id;
-  $("processingCountry").value=record.destination||"";
-  $("processingApplyingFrom").value=record.applying_from||"";
-  $("processingCategory").value=record.visa_category||"";
-  $("processingMin").value=record.min_days;
-  $("processingMax").value=record.max_days;
-  $("processingUnit").value=record.time_unit||"working days";
-  $("processingSource").value=record.source_url||"";
-  $("processingVerified").value=record.last_verified_at
-    ?String(record.last_verified_at).slice(0,10)
-    :"";
 
-  $("processingFormTitle").textContent="Edit processing time";
-  $("saveProcessing").textContent="Update processing time";
+  $("processingCountry").value=record.destination||"";
+
+  $("processingApplyingFrom").value=record.applying_from||"";
+
+  $("processingCategory").value=record.visa_category||"";
+
+  $("processingMin").value=record.min_days;
+
+  $("processingMax").value=record.max_days;
+
+  $("processingUnit").value=
+    record.time_unit||"working days";
+
+  /* RESTORE THE SAVED SOURCE URL */
+
+  $("processingSource").value=
+    record.source_url||"";
+
+  $("processingVerified").value=
+    record.last_verified_at
+      ?String(record.last_verified_at).slice(0,10)
+      :"";
+
+  $("processingFormTitle").textContent=
+    "Edit processing time";
+
+  $("saveProcessing").textContent=
+    "Update processing time";
 
   $("processingForm").scrollIntoView({
     behavior:"smooth",
@@ -1070,16 +1762,32 @@ function editProcessingTime(id){
   });
 }
 
+/* ACTIVATE / DEACTIVATE PROCESSING TIME */
+
 async function toggleProcessingTime(id){
+
   const record=processingRecords.find(
     item=>String(item.id)===String(id)
   );
 
-  if(!record)throw new Error("Processing-time record not found.");
+  if(!record){
 
-  const action=record.is_active?"deactivate":"activate";
+    throw new Error(
+      "Processing-time record not found."
+    );
 
-  if(!confirm("Are you sure you want to "+action+" this processing-time record?")){
+  }
+
+  const action=
+    record.is_active
+      ?"deactivate"
+      :"activate";
+
+  if(!confirm(
+    "Are you sure you want to "+
+    action+
+    " this processing-time record?"
+  )){
     return;
   }
 
@@ -1091,15 +1799,30 @@ async function toggleProcessingTime(id){
     })
     .eq("id",record.id);
 
-  if(error)throw new Error("Could not change record status: "+error.message);
+  if(error){
+
+    throw new Error(
+      "Could not change record status: "+error.message
+    );
+
+  }
 
   await loadProcessingTimes();
-  notice("Processing-time record "+(record.is_active?"deactivated":"activated")+" successfully.","success");
+
+  notice(
+    "Processing-time record "+
+    (record.is_active?"deactivated":"activated")+
+    " successfully.",
+    "success"
+  );
 }
 
-/* APPLICANT MESSAGING */
+/* =====================================
+   APPLICANT MESSAGING
+===================================== */
 
 async function loadMessageApplicants(){
+
   await verifyAdminDatabaseAccess();
 
   const {data,error}=await sb
@@ -1107,95 +1830,223 @@ async function loadMessageApplicants(){
     .select("id,user_id,first_name,last_name,email")
     .not("user_id","is",null);
 
-  if(error)throw new Error("Could not load applicants: "+error.message);
+  if(error){
+
+    throw new Error(
+      "Could not load applicants: "+error.message
+    );
+
+  }
 
   const seen=new Set();
+
   messageApplicants=(data||[]).filter(applicant=>{
-    if(!applicant.user_id||seen.has(applicant.user_id))return false;
+
+    if(!applicant.user_id||seen.has(applicant.user_id)){
+      return false;
+    }
+
     seen.add(applicant.user_id);
+
     return true;
+
   });
 
   $("messageApplicant").innerHTML=
+
     '<option value="">Select an applicant</option>'+
+
     messageApplicants.map(applicant=>{
-      const name=[applicant.first_name,applicant.last_name].filter(Boolean).join(" ")||"Applicant";
-      return `<option value="${esc(applicant.user_id)}">${esc(name)} — ${esc(applicant.email||"No email")}</option>`;
+
+      const name=[
+        applicant.first_name,
+        applicant.last_name
+      ].filter(Boolean).join(" ")||"Applicant";
+
+      return `
+        <option value="${esc(applicant.user_id)}">
+          ${esc(name)} — ${esc(applicant.email||"No email")}
+        </option>
+      `;
+
     }).join("");
 
   if(!messageApplicants.length){
-    $("messageApplicant").innerHTML='<option value="">No registered applicants found</option>';
+
+    $("messageApplicant").innerHTML=
+      '<option value="">No registered applicants found</option>';
+
   }
 }
 
 async function sendApplicantMessage(userId,message){
-  if(!userId)throw new Error("Please select an applicant.");
-  if(!message.trim())throw new Error("Please enter a message.");
+
+  if(!userId){
+
+    throw new Error(
+      "Please select an applicant."
+    );
+
+  }
+
+  if(!message.trim()){
+
+    throw new Error(
+      "Please enter a message."
+    );
+
+  }
 
   await verifyAdminDatabaseAccess();
 
-  const {error}=await sb.from("applicant_messages").insert({
-    recipient_user_id:userId,
-    sender_user_id:currentAdmin.id,
-    sender_name:"Administrator",
-    message:message.trim(),
-    is_read:false
-  });
+  const {error}=await sb
+    .from("applicant_messages")
+    .insert({
 
-  if(error)throw new Error("Message could not be sent: "+error.message);
+      recipient_user_id:userId,
+
+      sender_user_id:currentAdmin.id,
+
+      sender_name:"Administrator",
+
+      message:message.trim(),
+
+      is_read:false
+
+    });
+
+  if(error){
+
+    throw new Error(
+      "Message could not be sent: "+error.message
+    );
+
+  }
 }
 
 async function sendBroadcast(){
+
   const message=$("broadcastMessage").value.trim();
-  if(!message)throw new Error("Write an announcement first.");
+
+  if(!message){
+
+    throw new Error(
+      "Write an announcement first."
+    );
+
+  }
 
   await loadMessageApplicants();
 
-  if(!messageApplicants.length)throw new Error("There are no registered applicants with user accounts.");
+  if(!messageApplicants.length){
 
-  if(!confirm("Send this announcement to "+messageApplicants.length+" applicant accounts?"))return;
+    throw new Error(
+      "There are no registered applicants with user accounts."
+    );
+
+  }
+
+  if(!confirm(
+    "Send this announcement to "+
+    messageApplicants.length+
+    " applicant accounts?"
+  )){
+    return;
+  }
 
   const rows=messageApplicants.map(applicant=>({
+
     recipient_user_id:applicant.user_id,
+
     sender_user_id:currentAdmin.id,
+
     sender_name:"Administrator",
+
     message,
+
     is_read:false
+
   }));
 
-  const {error}=await sb.from("applicant_messages").insert(rows);
-  if(error)throw new Error("Announcement could not be sent: "+error.message);
+  const {error}=await sb
+    .from("applicant_messages")
+    .insert(rows);
+
+  if(error){
+
+    throw new Error(
+      "Announcement could not be sent: "+error.message
+    );
+
+  }
 
   $("broadcastMessage").value="";
-  notice("Announcement sent to "+rows.length+" applicants.","success");
+
+  notice(
+    "Announcement sent to "+rows.length+" applicants.",
+    "success"
+  );
 }
 
 async function sendPrivateMessage(){
+
   const userId=$("messageApplicant").value;
+
   const message=$("privateMessage").value;
+
   await sendApplicantMessage(userId,message);
+
   $("privateMessage").value="";
-  notice("Private message sent to the selected applicant.","success");
+
+  notice(
+    "Private message sent to the selected applicant.",
+    "success"
+  );
 }
 
 async function sendMissingDocumentRequest(){
+
   const userId=$("messageApplicant").value;
+
   const message=$("missingDocumentMessage").value.trim();
 
-  if(!message)throw new Error("Describe the missing documents.");
+  if(!message){
 
-  await sendApplicantMessage(userId,"MISSING DOCUMENT REQUEST\n\n"+message);
+    throw new Error(
+      "Describe the missing documents."
+    );
+
+  }
+
+  await sendApplicantMessage(
+    userId,
+    "MISSING DOCUMENT REQUEST\n\n"+message
+  );
+
   $("missingDocumentMessage").value="";
-  notice("Missing-document request sent to the applicant's My Messages page.","success");
+
+  notice(
+    "Missing-document request sent to the applicant's My Messages page.",
+    "success"
+  );
 }
 
 async function loadReplies(){
+
   const userId=$("messageApplicant").value;
-  if(!userId)throw new Error("Select an applicant first.");
+
+  if(!userId){
+
+    throw new Error(
+      "Select an applicant first."
+    );
+
+  }
 
   await verifyAdminDatabaseAccess();
 
   const [messagesResult,repliesResult]=await Promise.all([
+
     sb.from("applicant_messages")
       .select("*")
       .eq("recipient_user_id",userId)
@@ -1205,122 +2056,277 @@ async function loadReplies(){
       .select("*")
       .eq("applicant_user_id",userId)
       .order("created_at",{ascending:true})
+
   ]);
 
-  if(messagesResult.error)
-    throw new Error("Could not load applicant messages: "+messagesResult.error.message);
+  if(messagesResult.error){
 
-  if(repliesResult.error)
-    throw new Error("Could not load conversation replies: "+repliesResult.error.message);
+    throw new Error(
+      "Could not load applicant messages: "+
+      messagesResult.error.message
+    );
+
+  }
+
+  if(repliesResult.error){
+
+    throw new Error(
+      "Could not load conversation replies: "+
+      repliesResult.error.message
+    );
+
+  }
 
   const messages=messagesResult.data||[];
+
   const replies=repliesResult.data||[];
 
   const unreadReplies=replies.filter(row=>
-    row.sender_role==="applicant" && row.is_read!==true
+    row.sender_role==="applicant"&&
+    row.is_read!==true
   );
 
   if(unreadReplies.length){
+
     const ids=unreadReplies.map(row=>row.id);
 
-    const {error}=await sb.from("applicant_message_replies")
+    const {error}=await sb
+      .from("applicant_message_replies")
       .update({is_read:true})
       .in("id",ids);
 
-    if(error)
-      throw new Error("Conversation loaded, but applicant read receipts could not be updated: "+error.message);
+    if(error){
+
+      throw new Error(
+        "Conversation loaded, but applicant read receipts could not be updated: "+
+        error.message
+      );
+
+    }
   }
 
   const conversation=[
+
     ...messages.map(row=>({
+
       ...row,
+
       message_type:"direct",
+
       sender_role:"admin",
+
       display_sender:"Administrator"
+
     })),
+
     ...replies.map(row=>({
+
       ...row,
+
       message_type:"reply",
-      display_sender:row.sender_role==="admin"?"Administrator":"Applicant"
+
+      display_sender:
+        row.sender_role==="admin"
+          ?"Administrator"
+          :"Applicant"
+
     }))
-  ].sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));
+
+  ].sort((a,b)=>
+    new Date(a.created_at)-new Date(b.created_at)
+  );
 
   $("replyThread").innerHTML=conversation.map(row=>{
-    const isAdmin=row.display_sender==="Administrator";
-    const readStatus=row.is_read===true?"READ":"UNREAD";
 
-    return `<div class="message-item ${isAdmin?"admin":"applicant"}">
-      <strong>${esc(row.display_sender)}</strong>
-      <div>${esc(row.message)}</div>
-      <small>
-        ${esc(date(row.created_at))}
-        <span class="read-status ${row.is_read===true?"read":"unread"}">${readStatus}</span>
-      </small>
-    </div>`;
-  }).join("")||'<div class="empty">No messages in this conversation yet.</div>';
+    const isAdmin=
+      row.display_sender==="Administrator";
+
+    const readStatus=
+      row.is_read===true
+        ?"READ"
+        :"UNREAD";
+
+    return `
+
+      <div class="message-item ${
+        isAdmin?"admin":"applicant"
+      }">
+
+        <strong>${esc(row.display_sender)}</strong>
+
+        <div>${esc(row.message)}</div>
+
+        <small>
+
+          ${esc(date(row.created_at))}
+
+          <span class="read-status ${
+            row.is_read===true?"read":"unread"
+          }">
+            ${readStatus}
+          </span>
+
+        </small>
+
+      </div>
+
+    `;
+
+  }).join("")||
+
+    '<div class="empty">No messages in this conversation yet.</div>';
 }
 
 async function sendAdminReply(){
+
   const userId=$("messageApplicant").value;
+
   const message=$("adminReply").value.trim();
 
-  if(!userId)throw new Error("Select an applicant first.");
-  if(!message)throw new Error("Write your response first.");
+  if(!userId){
+
+    throw new Error(
+      "Select an applicant first."
+    );
+
+  }
+
+  if(!message){
+
+    throw new Error(
+      "Write your response first."
+    );
+
+  }
 
   await verifyAdminDatabaseAccess();
 
-  const {error}=await sb.from("applicant_message_replies").insert({
-    applicant_user_id:userId,
-    sender_user_id:currentAdmin.id,
-    sender_role:"admin",
-    message,
-    is_read:false
-  });
+  const {error}=await sb
+    .from("applicant_message_replies")
+    .insert({
 
-  if(error)throw new Error("Response could not be sent: "+error.message);
+      applicant_user_id:userId,
+
+      sender_user_id:currentAdmin.id,
+
+      sender_role:"admin",
+
+      message,
+
+      is_read:false
+
+    });
+
+  if(error){
+
+    throw new Error(
+      "Response could not be sent: "+error.message
+    );
+
+  }
 
   $("adminReply").value="";
+
   await loadReplies();
-  notice("Administrator response sent.","success");
+
+  notice(
+    "Administrator response sent.",
+    "success"
+  );
 }
 
+/* =====================================
+   ADMIN DASHBOARD
+===================================== */
+
 async function showDashboard(){
+
   $("loginPanel").classList.add("hidden");
+
   $("logout").classList.remove("hidden");
 
   try{
+
     const {data,error}=await sb.auth.getUser();
-    if(error||!data.user)throw new Error("Please sign in with your administrator account.");
+
+    if(error||!data.user){
+
+      throw new Error(
+        "Please sign in with your administrator account."
+      );
+
+    }
 
     currentAdmin=data.user;
-    $("adminEmail").textContent=data.user.email||"";
 
-    await api({action:"admin_applications"});
+    $("adminEmail").textContent=
+      data.user.email||"";
+
+    await api({
+      action:"admin_applications"
+    });
+
     await refresh();
 
     try{
+
       await loadProcessingTimes();
+
     }catch(processingError){
-      notice("Dashboard loaded, but processing times could not load: "+processingError.message,"error");
+
+      notice(
+        "Dashboard loaded, but processing times could not load: "+
+        processingError.message,
+        "error"
+      );
+
     }
 
     try{
+
       await loadMessageApplicants();
+
     }catch(messageError){
-      notice("Dashboard loaded. Messaging access needs attention: "+messageError.message,"error");
+
+      notice(
+        "Dashboard loaded. Messaging access needs attention: "+
+        messageError.message,
+        "error"
+      );
+
     }
 
   }catch(error){
+
     $("dashboard").classList.add("hidden");
+
     notice(error.message,"error");
+
   }
 }
 
+/* =====================================
+   INITIALIZATION
+===================================== */
+
 async function init(){
+
   try{
-    if(!window.supabase||!window.SUPABASE_URL||!window.SUPABASE_ANON_KEY){
-      throw new Error("Supabase configuration is missing. Check config.js.");
+
+    if(
+      !window.supabase||
+      !window.SUPABASE_URL||
+      !window.SUPABASE_ANON_KEY
+    ){
+
+      throw new Error(
+        "Supabase configuration is missing. Check config.js."
+      );
+
     }
+
+    $("publicWebsiteLink").href=
+      window.SITE_URL||OFFICIAL_SITE;
 
     sb=window.supabase.createClient(
       window.SUPABASE_URL,
@@ -1328,285 +2334,596 @@ async function init(){
     );
 
     const {data,error}=await sb.auth.getSession();
+
     if(error)throw error;
 
     if(!data.session){
+
       $("loginPanel").classList.remove("hidden");
+
       $("dashboard").classList.add("hidden");
+
       $("logout").classList.add("hidden");
-      notice("Please sign in with your administrator account.");
+
+      notice(
+        "Please sign in with your administrator account."
+      );
+
       return;
     }
 
     await showDashboard();
 
   }catch(error){
+
     notice(error.message,"error");
+
   }
 }
 
-/* LOGIN */
+/* =====================================
+   LOGIN
+===================================== */
 
 $("loginForm").addEventListener("submit",async event=>{
+
   event.preventDefault();
+
   $("loginButton").disabled=true;
+
   notice("Signing in…");
 
   try{
+
     const {error}=await sb.auth.signInWithPassword({
+
       email:$("email").value.trim(),
+
       password:$("password").value
+
     });
 
     if(error)throw error;
 
     $("password").value="";
+
     await showDashboard();
 
   }catch(error){
+
     notice(error.message,"error");
+
     $("loginPanel").classList.remove("hidden");
+
   }finally{
+
     $("loginButton").disabled=false;
+
   }
+
 });
 
-/* APPLICATION TABLE ACTIONS */
+/* =====================================
+   APPLICATION TABLE ACTIONS
+===================================== */
 
 $("appRows").addEventListener("click",async event=>{
+
   const button=event.target.closest("button");
+
   if(!button)return;
 
   try{
+
     if(button.dataset.details){
-      await openApplicantDetails(button.dataset.details);
+
+      await openApplicantDetails(
+        button.dataset.details
+      );
 
     }else if(button.dataset.message){
-      const application=apps.find(a=>String(a.id)===String(button.dataset.message));
+
+      const application=apps.find(
+        a=>String(a.id)===String(button.dataset.message)
+      );
+
       const applicant=primaryApplicant(application||{});
+
       const userId=applicant.user_id;
 
-      if(!userId)throw new Error("This applicant record has no linked user account.");
+      if(!userId){
+
+        throw new Error(
+          "This applicant record has no linked user account."
+        );
+
+      }
 
       $("messageApplicant").value=userId;
+
       setTab("messages");
+
       $("privateMessage").focus();
 
     }else if(button.dataset.update){
+
       const id=button.dataset.update;
-      const selector=document.querySelector(`[data-status="${CSS.escape(id)}"]`);
-      if(!selector)throw new Error("Could not find application status selector.");
+
+      const selector=document.querySelector(
+        `[data-status="${CSS.escape(id)}"]`
+      );
+
+      if(!selector){
+
+        throw new Error(
+          "Could not find application status selector."
+        );
+
+      }
 
       await api({
+
         action:"admin_update_status",
+
         application_id:id,
+
         status:selector.value
+
       });
 
-      notice("Application status updated.","success");
+      notice(
+        "Application status updated.",
+        "success"
+      );
+
       await refresh();
 
     }else if(button.dataset.docs){
-      const result=await api({action:"admin_documents",application_id:button.dataset.docs});
+
+      const result=await api({
+
+        action:"admin_documents",
+
+        application_id:button.dataset.docs
+
+      });
+
       const documents=result.documents||[];
 
       if(!documents.length){
-        alert("No documents uploaded for this application.");
+
+        alert(
+          "No documents uploaded for this application."
+        );
+
         return;
+
       }
 
       const choices=documents.map((d,i)=>
         `${i+1}. ${d.original_file_name||d.document_type||"Document"}`
       ).join("\n");
 
-      const answer=prompt("Enter document number to download:\n"+choices);
+      const answer=prompt(
+        "Enter document number to download:\n"+choices
+      );
+
       if(answer===null)return;
 
       const index=Number(answer)-1;
-      if(!Number.isInteger(index)||!documents[index]){
+
+      if(
+        !Number.isInteger(index)||
+        !documents[index]
+      ){
+
         alert("Invalid document number.");
+
         return;
+
       }
 
-      await openDocument(documents[index].id,"download");
+      await openDocument(
+        documents[index].id,
+        "download"
+      );
 
     }else if(button.dataset.paid){
-      const application=apps.find(item=>String(item.id)===String(button.dataset.paid));
-      if(!application)throw new Error("Application record not found.");
+
+      const application=apps.find(
+        item=>String(item.id)===String(button.dataset.paid)
+      );
+
+      if(!application){
+
+        throw new Error(
+          "Application record not found."
+        );
+
+      }
 
       const total=totalRange(application);
-      let promptText="Enter the actual total amount received in USD.";
 
-      if(total)promptText+="\nAcceptable total range: "+money(total.min)+" – "+money(total.max);
-      promptText+="\n\nOnly continue after independently verifying the payment.";
+      let promptText=
+        "Enter the actual total amount received in USD.";
+
+      if(total){
+
+        promptText+=
+          "\nAcceptable total range: "+
+          money(total.min)+
+          " – "+
+          money(total.max);
+
+      }
+
+      promptText+=
+        "\n\nOnly continue after independently verifying the payment.";
 
       const entered=prompt(promptText);
+
       if(entered===null)return;
 
       const amount=Number(entered);
+
       if(!Number.isFinite(amount)||amount<=0){
-        alert("Enter a valid positive payment amount.");
+
+        alert(
+          "Enter a valid positive payment amount."
+        );
+
         return;
+
       }
 
       if(total&&(amount<total.min||amount>total.max)){
-        alert("Amount is outside the V12 total fee range ("+money(total.min)+" – "+money(total.max)+").");
+
+        alert(
+          "Amount is outside the V13 total fee range ("+
+          money(total.min)+
+          " – "+
+          money(total.max)+")."
+        );
+
         return;
+
       }
 
-      if(!confirm("Confirm verified receipt of "+money(amount)+"?"))return;
+      if(!confirm(
+        "Confirm verified receipt of "+money(amount)+"?"
+      ))return;
 
       await api({
+
         action:"admin_confirm_payment",
+
         application_id:application.id,
+
         amount
+
       });
 
-      notice("Payment confirmation saved.","success");
+      notice(
+        "Payment confirmation saved.",
+        "success"
+      );
+
       await refresh();
+
     }
 
   }catch(error){
+
     notice(error.message,"error");
+
   }
+
 });
 
-/* DOCUMENT ACTIONS */
+/* =====================================
+   DOCUMENT ACTIONS
+===================================== */
 
 $("detailContent").addEventListener("click",async event=>{
-  const button=event.target.closest("button[data-document]");
+
+  const button=event.target.closest(
+    "button[data-document]"
+  );
+
   if(!button)return;
 
   button.disabled=true;
+
   try{
-    await openDocument(button.dataset.document,button.dataset.documentAction);
+
+    await openDocument(
+      button.dataset.document,
+      button.dataset.documentAction
+    );
+
   }catch(error){
+
     notice(error.message,"error");
+
   }finally{
+
     button.disabled=false;
+
   }
+
 });
 
-/* NAVIGATION AND FILTERS */
+/* =====================================
+   NAVIGATION AND FILTERS
+===================================== */
 
 document.querySelectorAll("nav button").forEach(button=>{
-  button.addEventListener("click",()=>setTab(button.dataset.tab));
+
+  button.addEventListener("click",()=>{
+
+    setTab(button.dataset.tab);
+
+  });
+
 });
 
 $("refresh").addEventListener("click",refresh);
+
 $("search").addEventListener("input",renderApps);
 
-["statusFilter","paymentFilter","destinationFilter","visaFilter"].forEach(id=>{
+[
+  "statusFilter",
+  "paymentFilter",
+  "destinationFilter",
+  "visaFilter"
+].forEach(id=>{
+
   $(id).addEventListener("change",renderApps);
+
 });
 
 $("clearFilters").addEventListener("click",()=>{
+
   $("search").value="";
+
   $("statusFilter").value="";
+
   $("paymentFilter").value="";
+
   $("destinationFilter").value="";
+
   $("visaFilter").value="";
+
   renderApps();
+
 });
 
-/* PROCESSING TIMES ACTIONS */
+/* =====================================
+   PROCESSING TIME ACTIONS
+===================================== */
 
 $("processingForm").addEventListener("submit",async event=>{
+
   try{
+
     await saveProcessingTime(event);
+
   }catch(error){
+
     notice(error.message,"error");
+
   }
+
 });
 
 $("clearProcessing").addEventListener("click",clearProcessingForm);
 
 $("processingRows").addEventListener("click",async event=>{
+
   const button=event.target.closest("button");
+
   if(!button)return;
 
   try{
+
     if(button.dataset.processingEdit){
-      editProcessingTime(button.dataset.processingEdit);
+
+      editProcessingTime(
+        button.dataset.processingEdit
+      );
+
     }
 
     if(button.dataset.processingToggle){
-      await toggleProcessingTime(button.dataset.processingToggle);
+
+      await toggleProcessingTime(
+        button.dataset.processingToggle
+      );
+
     }
+
   }catch(error){
+
     notice(error.message,"error");
+
   }
+
 });
 
-/* MESSAGING ACTIONS */
+/* =====================================
+   MESSAGING ACTIONS
+===================================== */
 
 $("sendBroadcast").addEventListener("click",async()=>{
+
   $("sendBroadcast").disabled=true;
-  try{await sendBroadcast();}
-  catch(error){notice(error.message,"error");}
-  finally{$("sendBroadcast").disabled=false;}
+
+  try{
+
+    await sendBroadcast();
+
+  }catch(error){
+
+    notice(error.message,"error");
+
+  }finally{
+
+    $("sendBroadcast").disabled=false;
+
+  }
+
 });
 
 $("sendPrivate").addEventListener("click",async()=>{
+
   $("sendPrivate").disabled=true;
-  try{await sendPrivateMessage();}
-  catch(error){notice(error.message,"error");}
-  finally{$("sendPrivate").disabled=false;}
+
+  try{
+
+    await sendPrivateMessage();
+
+  }catch(error){
+
+    notice(error.message,"error");
+
+  }finally{
+
+    $("sendPrivate").disabled=false;
+
+  }
+
 });
 
 $("sendMissingDocument").addEventListener("click",async()=>{
+
   $("sendMissingDocument").disabled=true;
-  try{await sendMissingDocumentRequest();}
-  catch(error){notice(error.message,"error");}
-  finally{$("sendMissingDocument").disabled=false;}
+
+  try{
+
+    await sendMissingDocumentRequest();
+
+  }catch(error){
+
+    notice(error.message,"error");
+
+  }finally{
+
+    $("sendMissingDocument").disabled=false;
+
+  }
+
 });
 
 $("loadReplies").addEventListener("click",async()=>{
+
   $("loadReplies").disabled=true;
-  try{await loadReplies();}
-  catch(error){notice(error.message,"error");}
-  finally{$("loadReplies").disabled=false;}
+
+  try{
+
+    await loadReplies();
+
+  }catch(error){
+
+    notice(error.message,"error");
+
+  }finally{
+
+    $("loadReplies").disabled=false;
+
+  }
+
 });
 
 $("sendReply").addEventListener("click",async()=>{
+
   $("sendReply").disabled=true;
-  try{await sendAdminReply();}
-  catch(error){notice(error.message,"error");}
-  finally{$("sendReply").disabled=false;}
+
+  try{
+
+    await sendAdminReply();
+
+  }catch(error){
+
+    notice(error.message,"error");
+
+  }finally{
+
+    $("sendReply").disabled=false;
+
+  }
+
 });
 
-/* DETAILS MODAL */
+/* =====================================
+   DETAILS MODAL
+===================================== */
 
-$("closeDetails").addEventListener("click",closeApplicantDetails);
+$("closeDetails").addEventListener(
+  "click",
+  closeApplicantDetails
+);
 
 $("detailOverlay").addEventListener("click",event=>{
-  if(event.target===$("detailOverlay"))closeApplicantDetails();
+
+  if(event.target===$("detailOverlay")){
+
+    closeApplicantDetails();
+
+  }
+
 });
 
 document.addEventListener("keydown",event=>{
-  if(event.key==="Escape"&&$("detailOverlay").classList.contains("open")){
+
+  if(
+    event.key==="Escape"&&
+    $("detailOverlay").classList.contains("open")
+  ){
+
     closeApplicantDetails();
+
   }
+
 });
 
-/* SIGN OUT */
+/* =====================================
+   SIGN OUT
+===================================== */
 
 $("logout").addEventListener("click",async()=>{
+
   try{
+
     await sb.auth.signOut();
+
   }finally{
+
     closeApplicantDetails();
+
     $("dashboard").classList.add("hidden");
+
     $("loginPanel").classList.remove("hidden");
+
     $("logout").classList.add("hidden");
+
     $("adminEmail").textContent="";
+
     currentAdmin=null;
-    notice("You have signed out. Please sign in again.");
+
+    notice(
+      "You have signed out. Please sign in again."
+    );
+
   }
+
 });
 
+/* START APPLICATION */
+
 init();
+
 })();
 </script>
+
 </body>
 </html>
