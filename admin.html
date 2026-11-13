@@ -74,9 +74,14 @@ th{background:#f8fafc}
 .stage{padding:10px 5px;text-align:center;border-radius:7px;background:#e2e8f0;color:#475569;font-size:12px}
 .stage.done{background:#dcfce7;color:#166534}
 .stage.current{background:#dbeafe;color:#1d4ed8;font-weight:bold}
+.processing-form-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.processing-form-grid>div{min-width:0}
+.processing-form-grid input,.processing-form-grid select{width:100%}
+.processing-form input[type=url]{width:100%}
 @media(max-width:900px){
  .filter-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
  .message-grid{grid-template-columns:1fr}
+ .processing-form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media(max-width:800px){
  .stats{grid-template-columns:repeat(2,1fr)}
@@ -86,6 +91,10 @@ th{background:#f8fafc}
  .detail-overlay{padding:8px}
  .document-item{align-items:flex-start;flex-direction:column}
  .timeline{grid-template-columns:1fr}
+}
+@media(max-width:520px){
+ .processing-form-grid{grid-template-columns:1fr}
+ .filter-grid{grid-template-columns:1fr}
 }
 </style>
 </head>
@@ -153,6 +162,7 @@ th{background:#f8fafc}
       <button data-tab="enquiries">Enquiries</button>
       <button data-tab="notifications">Email queue</button>
       <button data-tab="messages">Applicant messages</button>
+      <button data-tab="processing-times">Visa Processing Times</button>
     </nav>
 
     <section id="applications" class="panel tab">
@@ -254,6 +264,105 @@ th{background:#f8fafc}
       </div>
     </section>
 
+    <!-- NEW: VISA PROCESSING TIMES MANAGEMENT -->
+    <section id="processing-times" class="panel tab hidden">
+      <h2>Visa Processing Times Management</h2>
+      <p class="muted">
+        Add and maintain country-specific processing-time guidance.
+        Only enter figures supported by a reliable source. Processing times are not guaranteed decision dates.
+      </p>
+
+      <div class="message-box processing-form">
+        <h3 id="processingFormTitle">Add processing time</h3>
+
+        <form id="processingForm">
+          <input type="hidden" id="processingId">
+
+          <div class="processing-form-grid">
+            <div>
+              <label for="processingCountry">Destination country</label>
+              <select id="processingCountry" required>
+                <option value="">Loading countries…</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="processingCategory">Visa category</label>
+              <select id="processingCategory" required>
+                <option value="">Select category</option>
+                <option>Tourist/Visitor</option>
+                <option>Student</option>
+                <option>Work</option>
+                <option>Business</option>
+                <option>Family/Spouse</option>
+                <option>Transit</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="processingMin">Minimum days</label>
+              <input id="processingMin" type="number" min="0" step="1" required>
+            </div>
+
+            <div>
+              <label for="processingMax">Maximum days</label>
+              <input id="processingMax" type="number" min="0" step="1" required>
+            </div>
+
+            <div>
+              <label for="processingUnit">Time unit</label>
+              <select id="processingUnit" required>
+                <option value="working days">Working days</option>
+                <option value="calendar days">Calendar days</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="processingVerified">Last verified date</label>
+              <input id="processingVerified" type="date" required>
+            </div>
+          </div>
+
+          <label for="processingSource">Official source URL</label>
+          <input
+            id="processingSource"
+            type="url"
+            placeholder="https://official-government-website..."
+            required
+          >
+
+          <p class="fee-note">
+            Use an official immigration authority, embassy or government source wherever possible.
+            The source and verification date are required before saving.
+          </p>
+
+          <button id="saveProcessing" type="submit">Save processing time</button>
+          <button id="clearProcessing" type="button" class="secondary">Clear form</button>
+        </form>
+      </div>
+
+      <h3>Saved processing-time records</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Country</th>
+              <th>Region</th>
+              <th>Visa category</th>
+              <th>Processing time</th>
+              <th>Source</th>
+              <th>Last verified</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="processingRows">
+            <tr><td colspan="8">Loading records…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
   </div>
 </main>
 
@@ -282,6 +391,8 @@ const SERVICE_FEE_PER_APPLICANT = 285;
 let sb;
 let apps = [], payments = [], enquiries = [], notifications = [];
 let messageApplicants = [];
+let processingCountries = [];
+let processingRecords = [];
 let activeDetailApplication = null;
 let currentAdmin = null;
 
@@ -397,6 +508,10 @@ function setTab(name){
   document.querySelectorAll("nav button").forEach(button=>
     button.classList.toggle("active",button.dataset.tab===name)
   );
+
+  if(name==="processing-times" && !processingCountries.length){
+    loadProcessingTimes().catch(error=>notice(error.message,"error"));
+  }
 }
 
 function fillSelect(id,values,defaultLabel){
@@ -754,7 +869,220 @@ async function refresh(){
   }
 }
 
-/* Applicant messaging */
+/* VISA PROCESSING TIMES MANAGEMENT */
+
+async function loadProcessingCountries(){
+  const {data,error}=await sb
+    .from("visa_countries")
+    .select("country_name,region")
+    .eq("is_active",true)
+    .order("country_name");
+
+  if(error)throw new Error("Could not load countries: "+error.message);
+
+  processingCountries=data||[];
+
+  $("processingCountry").innerHTML=
+    '<option value="">Select destination country</option>'+
+    processingCountries.map(country=>
+      `<option value="${esc(country.country_name)}">${esc(country.country_name)} — ${esc(country.region)}</option>`
+    ).join("");
+
+  if(!processingCountries.length){
+    $("processingCountry").innerHTML=
+      '<option value="">No active countries found</option>';
+  }
+}
+
+function clearProcessingForm(){
+  $("processingForm").reset();
+  $("processingId").value="";
+  $("processingFormTitle").textContent="Add processing time";
+  $("saveProcessing").textContent="Save processing time";
+  $("processingUnit").value="working days";
+}
+
+function renderProcessingRecords(){
+  $("processingRows").innerHTML=processingRecords.map(record=>{
+    const source=record.source_url
+      ? `<a href="${esc(record.source_url)}" target="_blank" rel="noopener noreferrer">View source</a>`
+      : "Not supplied";
+
+    const time=
+      esc(record.min_days)+"–"+esc(record.max_days)+" "+esc(record.time_unit||"working days");
+
+    return `<tr>
+      <td>${esc(record.destination)}</td>
+      <td>${esc(record.region||"Other")}</td>
+      <td>${esc(record.visa_category||"Unspecified")}</td>
+      <td>${time}</td>
+      <td>${source}</td>
+      <td>${esc(record.last_verified_at||"Not verified")}</td>
+      <td>${record.is_active?"Active":"Inactive"}</td>
+      <td>
+        <div class="actions">
+          <button type="button" data-processing-edit="${esc(record.id)}">Edit</button>
+          <button type="button" class="secondary"
+            data-processing-toggle="${esc(record.id)}">
+            ${record.is_active?"Deactivate":"Activate"}
+          </button>
+        </div>
+      </td>
+    </tr>`;
+  }).join("")||'<tr><td colspan="8">No processing-time records found.</td></tr>';
+}
+
+async function loadProcessingTimes(){
+  await loadProcessingCountries();
+
+  const {data,error}=await sb
+    .from("visa_processing_times")
+    .select("*")
+    .order("destination")
+    .order("visa_category");
+
+  if(error)throw new Error("Could not load processing times: "+error.message);
+
+  processingRecords=data||[];
+  renderProcessingRecords();
+}
+
+async function saveProcessingTime(event){
+  event.preventDefault();
+
+  const countryName=$("processingCountry").value;
+  const country=processingCountries.find(
+    item=>item.country_name===countryName
+  );
+
+  if(!country)throw new Error("Please select a valid destination country.");
+
+  const category=$("processingCategory").value;
+  const min=Number($("processingMin").value);
+  const max=Number($("processingMax").value);
+  const unit=$("processingUnit").value;
+  const source=$("processingSource").value.trim();
+  const verified=$("processingVerified").value;
+  const id=$("processingId").value;
+
+  if(!category)throw new Error("Select a visa category.");
+
+  if(!Number.isInteger(min)||!Number.isInteger(max)||min<0||max<min){
+    throw new Error("Enter valid whole-number processing days. Maximum must not be less than minimum.");
+  }
+
+  let parsedSource;
+  try{
+    parsedSource=new URL(source);
+  }catch{
+    throw new Error("Enter a valid official source URL.");
+  }
+
+  if(!["https:","http:"].includes(parsedSource.protocol)){
+    throw new Error("The source URL must begin with https:// or http://.");
+  }
+
+  if(!verified)throw new Error("Select the date the processing time was last verified.");
+
+  const payload={
+    destination:country.country_name,
+    region:country.region,
+    visa_category:category,
+    min_days:min,
+    max_days:max,
+    time_unit:unit,
+    source_url:source,
+    last_verified_at:verified,
+    is_active:true,
+    updated_at:new Date().toISOString()
+  };
+
+  $("saveProcessing").disabled=true;
+
+  try{
+    let result;
+
+    if(id){
+      result=await sb
+        .from("visa_processing_times")
+        .update(payload)
+        .eq("id",id);
+    }else{
+      result=await sb
+        .from("visa_processing_times")
+        .insert(payload);
+    }
+
+    if(result.error)throw result.error;
+
+    clearProcessingForm();
+    await loadProcessingTimes();
+
+    notice(
+      id?"Processing time updated successfully.":"Processing time saved successfully.",
+      "success"
+    );
+
+  }finally{
+    $("saveProcessing").disabled=false;
+  }
+}
+
+function editProcessingTime(id){
+  const record=processingRecords.find(
+    item=>String(item.id)===String(id)
+  );
+
+  if(!record)throw new Error("Processing-time record not found.");
+
+  $("processingId").value=record.id;
+  $("processingCountry").value=record.destination;
+  $("processingCategory").value=record.visa_category||"";
+  $("processingMin").value=record.min_days;
+  $("processingMax").value=record.max_days;
+  $("processingUnit").value=record.time_unit||"working days";
+  $("processingSource").value=record.source_url||"";
+  $("processingVerified").value=record.last_verified_at
+    ?String(record.last_verified_at).slice(0,10)
+    :"";
+
+  $("processingFormTitle").textContent="Edit processing time";
+  $("saveProcessing").textContent="Update processing time";
+
+  $("processingForm").scrollIntoView({
+    behavior:"smooth",
+    block:"start"
+  });
+}
+
+async function toggleProcessingTime(id){
+  const record=processingRecords.find(
+    item=>String(item.id)===String(id)
+  );
+
+  if(!record)throw new Error("Processing-time record not found.");
+
+  const action=record.is_active?"deactivate":"activate";
+
+  if(!confirm("Are you sure you want to "+action+" this processing-time record?")){
+    return;
+  }
+
+  const {error}=await sb
+    .from("visa_processing_times")
+    .update({
+      is_active:!record.is_active,
+      updated_at:new Date().toISOString()
+    })
+    .eq("id",record.id);
+
+  if(error)throw new Error("Could not change record status: "+error.message);
+
+  await loadProcessingTimes();
+  notice("Processing-time record "+(record.is_active?"deactivated":"activated")+" successfully.","success");
+}
+
+/* APPLICANT MESSAGING */
 
 async function loadMessageApplicants(){
   await verifyAdminDatabaseAccess();
@@ -849,11 +1177,6 @@ async function sendMissingDocumentRequest(){
   notice("Missing-document request sent to the applicant's My Messages page.","success");
 }
 
-/*
- * Load both direct administrator messages and conversation replies.
- * Applicant replies are marked as read when the administrator opens
- * the conversation. Direct messages show the applicant's read status.
- */
 async function loadReplies(){
   const userId=$("messageApplicant").value;
   if(!userId)throw new Error("Select an applicant first.");
@@ -881,7 +1204,6 @@ async function loadReplies(){
   const messages=messagesResult.data||[];
   const replies=repliesResult.data||[];
 
-  // Mark applicant replies as read when the administrator opens them.
   const unreadReplies=replies.filter(row=>
     row.sender_role==="applicant" && row.is_read!==true
   );
@@ -900,7 +1222,6 @@ async function loadReplies(){
     unreadReplies.forEach(row=>row.is_read=true);
   }
 
-  // Combine direct messages and replies into one chronological conversation.
   const conversation=[
     ...messages.map(row=>({
       ...row,
@@ -965,9 +1286,14 @@ async function showDashboard(){
     currentAdmin=data.user;
     $("adminEmail").textContent=data.user.email||"";
 
-    // Existing V12 backend administrator check.
     await api({action:"admin_applications"});
     await refresh();
+
+    try{
+      await loadProcessingTimes();
+    }catch(processingError){
+      notice("Dashboard loaded, but processing times could not load: "+processingError.message,"error");
+    }
 
     try{
       await loadMessageApplicants();
@@ -1010,7 +1336,7 @@ async function init(){
   }
 }
 
-/* Login */
+/* LOGIN */
 $("loginForm").addEventListener("submit",async event=>{
   event.preventDefault();
   $("loginButton").disabled=true;
@@ -1035,7 +1361,7 @@ $("loginForm").addEventListener("submit",async event=>{
   }
 });
 
-/* Application table actions */
+/* APPLICATION TABLE ACTIONS */
 $("appRows").addEventListener("click",async event=>{
   const button=event.target.closest("button");
   if(!button)return;
@@ -1134,7 +1460,7 @@ $("appRows").addEventListener("click",async event=>{
   }
 });
 
-/* Document actions in details modal */
+/* DOCUMENT ACTIONS */
 $("detailContent").addEventListener("click",async event=>{
   const button=event.target.closest("button[data-document]");
   if(!button)return;
@@ -1149,7 +1475,7 @@ $("detailContent").addEventListener("click",async event=>{
   }
 });
 
-/* Navigation and filters */
+/* NAVIGATION AND FILTERS */
 document.querySelectorAll("nav button").forEach(button=>{
   button.addEventListener("click",()=>setTab(button.dataset.tab));
 });
@@ -1169,7 +1495,35 @@ $("clearFilters").addEventListener("click",()=>{
   renderApps();
 });
 
-/* Messaging actions */
+/* PROCESSING TIMES ACTIONS */
+$("processingForm").addEventListener("submit",async event=>{
+  try{
+    await saveProcessingTime(event);
+  }catch(error){
+    notice(error.message,"error");
+  }
+});
+
+$("clearProcessing").addEventListener("click",clearProcessingForm);
+
+$("processingRows").addEventListener("click",async event=>{
+  const button=event.target.closest("button");
+  if(!button)return;
+
+  try{
+    if(button.dataset.processingEdit){
+      editProcessingTime(button.dataset.processingEdit);
+    }
+
+    if(button.dataset.processingToggle){
+      await toggleProcessingTime(button.dataset.processingToggle);
+    }
+  }catch(error){
+    notice(error.message,"error");
+  }
+});
+
+/* MESSAGING ACTIONS */
 $("sendBroadcast").addEventListener("click",async()=>{
   $("sendBroadcast").disabled=true;
   try{await sendBroadcast();}
@@ -1205,7 +1559,7 @@ $("sendReply").addEventListener("click",async()=>{
   finally{$("sendReply").disabled=false;}
 });
 
-/* Details modal */
+/* DETAILS MODAL */
 $("closeDetails").addEventListener("click",closeApplicantDetails);
 
 $("detailOverlay").addEventListener("click",event=>{
@@ -1218,7 +1572,7 @@ document.addEventListener("keydown",event=>{
   }
 });
 
-/* Sign out */
+/* SIGN OUT */
 $("logout").addEventListener("click",async()=>{
   try{
     await sb.auth.signOut();
