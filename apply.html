@@ -157,9 +157,15 @@ footer{border-top:1px solid var(--border);margin-top:24px;padding-top:16px;color
 <div class="section">
 <h2>1. Destination and Visa Type</h2>
 
+<label for="applyingFrom">Applying from country *</label>
+<select id="applyingFrom" required disabled>
+  <option value="">Loading countries...</option>
+</select>
+<p class="muted">Choose the country where the applicant or family group will submit the visa application.</p>
+
 <label for="country">Destination country *</label>
-<select id="country" required>
-<option value="">Loading countries...</option>
+<select id="country" required disabled>
+  <option value="">Loading countries...</option>
 </select>
 
 <label for="visaType">Visa type *</label>
@@ -172,13 +178,14 @@ footer{border-top:1px solid var(--border);margin-top:24px;padding-top:16px;color
 <div class="processing-box">
   <h3>Visa Processing Time</h3>
   <p class="muted">
-    Select a destination and visa type to see the processing time
-    published by our administrator.
+    Select your applying-from country, destination country and visa type.
+    Processing times will only be displayed when a verified record exists
+    for that exact combination.
   </p>
 
   <div id="publicProcessingResult" aria-live="polite">
     <p class="muted">
-      Select a destination country and visa type to view the available processing time.
+      Select an applying-from country, destination country and visa type to view the available processing time.
     </p>
   </div>
 
@@ -191,7 +198,7 @@ footer{border-top:1px solid var(--border);margin-top:24px;padding-top:16px;color
 
 <div class="section">
 <h2>2. Applicants</h2>
-<p class="muted">You can submit up to 10 applicants in one family or group application.</p>
+<p class="muted">You can submit up to 10 applicants in one family or group application. Each applicant can have a different nationality.</p>
 <div id="applicants"></div>
 <button type="button" class="secondary" id="addApplicant">+ Add Family Member</button>
 </div>
@@ -246,11 +253,7 @@ I confirm that the information supplied is accurate and that I agree to the appl
 <!-- APPLICATION SUPPORT -->
 <div class="assistance-box" id="customerAssistance">
   <h2>Application Support</h2>
-
-  <p>
-    Get assistance with your application process.
-  </p>
-
+  <p>Get assistance with your application process.</p>
   <p>
     Need help with visa applications, document requirements,
     payments or application tracking? Contact our customer
@@ -258,26 +261,19 @@ I confirm that the information supplied is accurate and that I agree to the appl
   </p>
 
   <div class="assistance-buttons">
-    <a
-      class="whatsapp-button"
+    <a class="whatsapp-button"
       href="https://wa.me/254751896015?text=Hello%20Global%20Online%20Visa%20Applications%2C%20I%20need%20assistance%20with%20a%20visa%20application."
-      target="_blank"
-      rel="noopener noreferrer">
+      target="_blank" rel="noopener noreferrer">
       WhatsApp Customer Support
     </a>
 
-    <a
-      class="helpline-button"
-      href="tel:+254751896015">
+    <a class="helpline-button" href="tel:+254751896015">
       Call Customer Helpline
     </a>
   </div>
 
   <p><strong>Customer Helpline</strong></p>
-
-  <a class="assistance-phone" href="tel:+254751896015">
-    +254 751 896 015
-  </a>
+  <a class="assistance-phone" href="tel:+254751896015">+254 751 896 015</a>
 
   <p>
     <strong>WhatsApp:</strong>
@@ -397,6 +393,7 @@ const ALLOWED_FILE_TYPES = [
 
 const messageEl = document.getElementById("message");
 const countryEl = document.getElementById("country");
+const applyingFromEl = document.getElementById("applyingFrom");
 const visaTypeEl = document.getElementById("visaType");
 const applicantsEl = document.getElementById("applicants");
 const submitButton = document.getElementById("submitButton");
@@ -1047,24 +1044,40 @@ async function sendApplicantReply(){
 
 async function loadCountries() {
   countryEl.disabled = true;
-  countryEl.innerHTML = '<option value="">Loading countries...</option>';
+  applyingFromEl.disabled = true;
+
+  countryEl.innerHTML =
+    '<option value="">Loading countries...</option>';
+
+  applyingFromEl.innerHTML =
+    '<option value="">Loading countries...</option>';
 
   const result = await backendRequest({action:"countries"});
   const countries = result.countries || [];
 
-  countryEl.innerHTML = '<option value="">Select a country</option>';
+  countryEl.innerHTML =
+    '<option value="">Select destination country</option>';
+
+  applyingFromEl.innerHTML =
+    '<option value="">Select applying-from country</option>';
 
   countries.forEach(country => {
-    const option = document.createElement("option");
-    option.value = country.id;
-    option.textContent = country.country_name;
-    countryEl.appendChild(option);
+    const destinationOption = document.createElement("option");
+    destinationOption.value = country.id;
+    destinationOption.textContent = country.country_name;
+    countryEl.appendChild(destinationOption);
+
+    const originOption = document.createElement("option");
+    originOption.value = country.id;
+    originOption.textContent = country.country_name;
+    applyingFromEl.appendChild(originOption);
   });
 
   countryEl.disabled = false;
+  applyingFromEl.disabled = false;
 
   if (!countries.length) {
-    showMessage("No destination countries are currently available.", "info");
+    showMessage("No countries are currently available.", "info");
   }
 }
 
@@ -1078,6 +1091,7 @@ async function loadVisaTypes(countryId) {
   visaTypes = [];
 
   updateFees();
+  loadPublicProcessingTime();
 
   const result = await backendRequest({
     action:"visa_types",
@@ -1110,20 +1124,129 @@ async function loadVisaTypes(countryId) {
 function normaliseCategory(value) {
   const name = String(value || "").toLowerCase().trim();
 
-  if (name.includes("tourist") || name.includes("visitor")) return "Tourist/Visitor";
-  if (name.includes("student") || name.includes("study")) return "Student";
-  if (name.includes("work") || name.includes("employment")) return "Work";
-  if (name.includes("business")) return "Business";
+  if (
+    name.includes("seasonal") ||
+    name.includes("agricultural") ||
+    name.includes("farm worker")
+  ) return "Seasonal/Agricultural Work";
+
+  if (
+    name.includes("permanent residence") ||
+    name.includes("permanent resident") ||
+    name.includes("immigration") ||
+    name.includes("settlement")
+  ) return "Permanent Residence/Immigration";
+
+  if (
+    name.includes("humanitarian") ||
+    name.includes("refugee") ||
+    name.includes("asylum")
+  ) return "Humanitarian/Refugee";
+
+  if (
+    name.includes("diplomatic") ||
+    name.includes("official")
+  ) return "Diplomatic/Official";
+
+  if (
+    name.includes("journalist") ||
+    name.includes("media")
+  ) return "Journalist/Media";
+
+  if (
+    name.includes("religious") ||
+    name.includes("pilgrimage") ||
+    name.includes("pilgrim")
+  ) return "Religious/Pilgrimage";
+
+  if (
+    name.includes("exchange") ||
+    name.includes("research")
+  ) return "Exchange/Research";
+
+  if (
+    name.includes("job seeker") ||
+    name.includes("jobseeker")
+  ) return "Job Seeker";
+
+  if (
+    name.includes("au pair") ||
+    name.includes("au-pair")
+  ) return "Au Pair";
+
+  if (
+    name.includes("internship") ||
+    name.includes("training") ||
+    name.includes("trainee")
+  ) return "Internship/Training";
+
+  if (
+    name.includes("sports") ||
+    name.includes("sport") ||
+    name.includes("entertainment") ||
+    name.includes("artist") ||
+    name.includes("performer")
+  ) return "Sports/Arts/Entertainment";
+
+  if (
+    name.includes("crew") ||
+    name.includes("seafarer") ||
+    name.includes("seaman")
+  ) return "Crew/Seafarer";
+
+  if (
+    name.includes("investor") ||
+    name.includes("entrepreneur")
+  ) return "Investor/Entrepreneur";
+
+  if (
+    name.includes("evisa") ||
+    name.includes("e-visa") ||
+    name.includes("eta") ||
+    name.includes("electronic travel")
+  ) return "eVisa/ETA";
+
+  if (
+    name.includes("conference") ||
+    name.includes("event")
+  ) return "Conference/Event";
+
+  if (
+    name.includes("medical") ||
+    name.includes("treatment") ||
+    name.includes("health")
+  ) return "Medical";
 
   if (
     name.includes("family") ||
     name.includes("spouse") ||
-    name.includes("dependent")
+    name.includes("dependent") ||
+    name.includes("reunion")
   ) return "Family/Spouse";
 
-  if (name.includes("transit")) return "Transit";
+  if (
+    name.includes("tourist") ||
+    name.includes("visitor") ||
+    name.includes("holiday") ||
+    name.includes("sightseeing")
+  ) return "Tourist/Visitor";
 
-  return null;
+  if (
+    name.includes("student") ||
+    name.includes("study") ||
+    name.includes("education")
+  ) return "Student";
+
+  if (name.includes("transit")) return "Transit";
+  if (name.includes("business")) return "Business";
+
+  if (
+    name.includes("work") ||
+    name.includes("employment") ||
+    name.includes("worker")
+  ) return "Work";
+
+  return "Other";
 }
 
 function formatVerificationDate(value) {
@@ -1141,8 +1264,13 @@ async function loadPublicProcessingTime() {
 
   if (!processingResult) return;
 
-  const countryName =
+  const destinationName =
     countryEl.options[countryEl.selectedIndex]?.textContent?.trim();
+
+  const applyingFromName =
+    applyingFromEl.options[
+      applyingFromEl.selectedIndex
+    ]?.textContent?.trim();
 
   const category = normaliseCategory(
     selectedVisa?.visa_name ||
@@ -1150,13 +1278,18 @@ async function loadPublicProcessingTime() {
     ""
   );
 
-  if (!countryEl.value || !selectedVisa || !category) {
+  if (
+    !countryEl.value ||
+    !applyingFromEl.value ||
+    !selectedVisa
+  ) {
     processingResult.textContent =
-      "Select a destination and a supported visa category to view processing times.";
+      "Select your applying-from country, destination country and visa type to view the available processing time.";
     return;
   }
 
-  processingResult.textContent = "Loading processing time...";
+  processingResult.textContent =
+    "Checking the processing time for your selected countries and visa category...";
 
   try {
     const client = getSupabaseClient();
@@ -1164,9 +1297,10 @@ async function loadPublicProcessingTime() {
     const {data,error} = await client
       .from("visa_processing_times")
       .select(
-        "destination,region,visa_category,min_days,max_days,time_unit,source_url,last_verified_at"
+        "destination,applying_from,region,visa_category,min_days,max_days,time_unit,source_url,last_verified_at"
       )
-      .eq("destination", countryName)
+      .eq("destination", destinationName)
+      .eq("applying_from", applyingFromName)
       .eq("visa_category", category)
       .eq("is_active", true)
       .not("source_url","is",null)
@@ -1181,7 +1315,12 @@ async function loadPublicProcessingTime() {
 
     if (!data || !data.length) {
       processingResult.textContent =
-        "No verified processing time has been published for this country and visa category yet. Please contact our support team for assistance.";
+        "No verified processing time has been published for " +
+        category + " applications from " +
+        applyingFromName + " to " +
+        destinationName +
+        ". Please contact our support team for assistance.";
+
       return;
     }
 
@@ -1204,8 +1343,15 @@ async function loadPublicProcessingTime() {
     card.className = "processing-result";
 
     const heading = document.createElement("h3");
-    heading.textContent = item.destination + " — " + item.visa_category;
+    heading.textContent =
+      item.destination + " — " + item.visa_category;
     card.appendChild(heading);
+
+    const origin = document.createElement("p");
+    origin.className = "muted";
+    origin.textContent =
+      "Applying from: " + item.applying_from;
+    card.appendChild(origin);
 
     const duration = document.createElement("p");
     const strong = document.createElement("strong");
@@ -1591,6 +1737,12 @@ async function submitApplication() {
     return;
   }
 
+  if (!applyingFromEl.value) {
+    showMessage("Please select the country from which you are applying.", "error");
+    applyingFromEl.focus();
+    return;
+  }
+
   if (!countryEl.value || !visaTypeEl.value || !selectedVisa) {
     showMessage("Please select a destination country and visa type.", "error");
     return;
@@ -1732,6 +1884,11 @@ async function submitApplication() {
 
 /* EVENTS */
 
+applyingFromEl.addEventListener("change", () => {
+  processingRequestNumber++;
+  loadPublicProcessingTime();
+});
+
 countryEl.addEventListener("change",async() => {
   hideMessage();
 
@@ -1747,7 +1904,7 @@ countryEl.addEventListener("change",async() => {
     visaTypes = [];
 
     processingResult.textContent =
-      "Select a destination and visa type to view the available processing time.";
+      "Select an applying-from country, destination and visa type to view the available processing time.";
 
     updateFees();
     return;
