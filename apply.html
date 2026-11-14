@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -250,8 +249,8 @@ I confirm that the information supplied is accurate and that I agree to the appl
 (() => {
 "use strict";
 
-/* V15 BACKEND CONFIGURATION */
-const BACKEND_VERSION = "visa-backend-v15";
+/* V17 BACKEND CONFIGURATION */
+const BACKEND_VERSION = "visa-backend-v17";
 
 const SERVICE_FEE_PER_APPLICANT =
   Number(window.APP_CONFIG?.serviceFeePerApplicant) || 285;
@@ -378,14 +377,13 @@ function getSupabaseClient() {
   return window.supabaseClient;
 }
 
-/* ALL APPLICATION BACKEND REQUESTS USE V15 */
+/* ALL APPLICATION BACKEND REQUESTS USE V17 */
 
 async function backendRequest(payload) {
   const client = getSupabaseClient();
 
-  if (!window.SUPABASE_FUNCTION_URL ||
-      !window.SUPABASE_FUNCTION_URL.includes("/functions/v1/visa-backend-v15")) {
-    throw new Error("The V15 backend URL is missing. Please check config.js.");
+  if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) {
+    throw new Error("Supabase configuration is missing. Please check config.js.");
   }
 
   const {data:sessionData,error:sessionError} =
@@ -399,31 +397,53 @@ async function backendRequest(payload) {
     throw new Error("Your session has expired. Please sign in again.");
   }
 
-  const response = await fetch(window.SUPABASE_FUNCTION_URL,{
-    method:"POST",
-    headers:{
-      "Content-Type":"application/json",
-      "Authorization":"Bearer " + session.access_token,
-      "apikey":window.SUPABASE_ANON_KEY
-    },
-    body:JSON.stringify(payload)
-  });
+  const backendUrl =
+    window.SUPABASE_URL.replace(/\/$/,"") +
+    "/functions/v1/" + BACKEND_VERSION;
 
-  const result = await response.json().catch(() => ({}));
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(),30000);
 
-  if (!response.ok || result.ok === false || result.success === false) {
-    throw new Error(
-      result.error ||
-      result.message ||
-      "The V15 backend request failed. Please try again."
-    );
+  try {
+    const response = await fetch(backendUrl,{
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json",
+        "Authorization":"Bearer " + session.access_token,
+        "apikey":window.SUPABASE_ANON_KEY
+      },
+      body:JSON.stringify(payload),
+      signal:controller.signal
+    });
+
+    const result = await response.json().catch(() => ({}));
+
+    if (!response.ok || result.ok === false || result.success === false) {
+      throw new Error(
+        result.error ||
+        result.message ||
+        "The V17 backend request failed. Please try again."
+      );
+    }
+
+    if (result.version !== BACKEND_VERSION) {
+      throw new Error(
+        "V17 backend version mismatch. Confirm that visa-backend-v17 is deployed."
+      );
+    }
+
+    return result;
+
+  } catch(error) {
+    if (error.name === "AbortError") {
+      throw new Error("The backend request timed out. Please try again.");
+    }
+
+    throw error;
+
+  } finally {
+    clearTimeout(timeout);
   }
-
-  if (result.version && result.version !== BACKEND_VERSION) {
-    throw new Error("The response did not come from the expected V15 backend.");
-  }
-
-  return result;
 }
 
 async function loadUser() {
@@ -1439,7 +1459,7 @@ function appendResultRow(parent,label,value) {
   parent.appendChild(row);
 }
 
-/* SUBMIT APPLICATION THROUGH V15 */
+/* SUBMIT APPLICATION THROUGH V17 */
 
 async function submitApplication() {
   if (submitting) return;
@@ -1494,11 +1514,10 @@ async function submitApplication() {
     }
 
     /*
-      V15 ROUTE:
-      The V15 endpoint receives the same application action and payload
-      used by the existing application backend. The applying-from country
-      is used for the processing-time lookup. It is not sent as a saved
-      application field unless the backend supports that field.
+      V17 ROUTE:
+      The V17 endpoint receives the application action and payload.
+      The applying-from country is used for the processing-time lookup.
+      It is not sent as a saved application field unless the backend supports it.
     */
 
     const result = await backendRequest({
