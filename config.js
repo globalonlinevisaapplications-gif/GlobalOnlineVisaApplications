@@ -15,7 +15,6 @@
 
   window.SITE_NAME = "Global Online Visa Applications";
 
-  // CORRECT PRODUCTION DOMAIN (SINGULAR)
   window.SITE_URL =
     "https://globalonlinevisaapplication.netlify.app";
 
@@ -28,12 +27,12 @@
   window.SUPABASE_URL =
     "https://iqpnlzufcasseycvmvzs.supabase.co";
 
-  // EXISTING PUBLIC ANON KEY
-  // Do not put the service_role key here.
+  // CURRENT SUPABASE PUBLISHABLE KEY
+  // Never put a secret or service_role key here.
 
   window.SUPABASE_ANON_KEY =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlxcG5senVmY3NzZXljdm12enMiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc5MzcwODMzMCwiZXhwIjoyMTA5Mjg0MzMwfQ.1490KwGowWS74tuRC1B19KWwPqcPwgcP9PwXnzHwDpM";
-  
+    "sb_publishable_W8PD_H5br4lYSFQ1BMMfyA_ywmLOsae";
+
   // ==========================================
   // V17 BACKEND
   // ==========================================
@@ -57,6 +56,10 @@
           window.SUPABASE_ANON_KEY
         );
     }
+  } else {
+    console.error(
+      "Supabase library not loaded. Check script loading order."
+    );
   }
 
   // ==========================================
@@ -124,7 +127,8 @@
       typeof window.SUPABASE_ANON_KEY === "string" &&
       window.SITE_URL ===
         "https://globalonlinevisaapplication.netlify.app" &&
-      window.SUPABASE_URL.startsWith("https://") &&
+      window.SUPABASE_URL ===
+        "https://iqpnlzufcasseycvmvzs.supabase.co" &&
       window.SUPABASE_FUNCTION_URL ===
         window.SUPABASE_URL +
         "/functions/v1/visa-backend-v17" &&
@@ -140,7 +144,7 @@
   window.getAccessToken = async function () {
     if (!window.supabaseClient) {
       throw new Error(
-        "Supabase client is not initialized. Check the Supabase script and config.js loading order."
+        "Supabase client is not initialized."
       );
     }
 
