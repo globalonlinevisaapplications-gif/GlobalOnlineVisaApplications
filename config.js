@@ -13,15 +13,19 @@
   window.SITE_URL = "https://globalonlinevisaapplications.netlify.app";
   window.SITE_ENVIRONMENT = "production";
 
+  // SUPABASE PROJECT
   window.SUPABASE_URL =
     "https://iqpnlzufcasseycvmvzs.supabase.co";
 
+  // LEGACY SUPABASE ANON PUBLIC KEY
   window.SUPABASE_ANON_KEY =
-    "sb_publishable_W8PD-H5br4lYSFQ1BMMfyA_ywmLOsae";
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlxcG5senVmY2Fzc2V5Y3ZtenZzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM3MDgzMzAsImV4cCI6MjEwOTI4NDMzMH0.1490KwGowWS74tuRC1B19KWwPqcPwgcP9PwXnzHwDpM";
 
+  // V17 BACKEND
   window.SUPABASE_FUNCTION_URL =
     window.SUPABASE_URL + "/functions/v1/visa-backend-v17";
 
+  // INITIALIZE SUPABASE
   if (
     window.supabase &&
     typeof window.supabase.createClient === "function"
@@ -32,6 +36,7 @@
     );
   }
 
+  // API CONFIGURATION
   window.API_CONFIG = {
     baseURL: window.SUPABASE_FUNCTION_URL,
     method: "POST",
@@ -42,6 +47,7 @@
     }
   };
 
+  // WEBSITE ROUTES
   window.APP_ROUTES = {
     home: window.SITE_URL + "/",
     apply: window.SITE_URL + "/apply.html",
@@ -50,6 +56,7 @@
     admin: window.SITE_URL + "/admin.html"
   };
 
+  // APPLICATION SETTINGS
   window.APP_CONFIG = {
     applicationName: "Global Online Visa Applications",
     currency: "USD",
@@ -63,6 +70,7 @@
     websiteURL: window.SITE_URL
   };
 
+  // VALIDATE CONFIGURATION
   window.validateAppConfig = function () {
     return (
       typeof window.SITE_URL === "string" &&
@@ -75,6 +83,7 @@
     );
   };
 
+  // GET AUTHENTICATED USER TOKEN
   window.getAccessToken = async function () {
     if (!window.supabaseClient) {
       throw new Error("Supabase client is not initialized.");
@@ -98,6 +107,7 @@
     return token;
   };
 
+  // CALL V17 BACKEND
   window.callVisaBackend = async function (requestData) {
     if (!window.validateAppConfig()) {
       throw new Error("Application configuration is invalid.");
@@ -169,10 +179,12 @@
     }
   };
 
+  // SUBMIT APPLICATION
   window.submitVisaApplication = async function (applicationData) {
     return await window.callVisaBackend(applicationData);
   };
 
+  // WEBSITE NAVIGATION
   window.navigateTo = function (page) {
     const destination = window.APP_ROUTES[page];
 
@@ -183,6 +195,7 @@
     window.location.href = destination;
   };
 
+  // INITIALIZATION MESSAGE
   if (window.validateAppConfig()) {
     console.info(
       "Global Online Visa Applications configuration loaded - V17."
