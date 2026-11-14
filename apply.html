@@ -103,6 +103,12 @@ footer{border-top:1px solid var(--border);margin-top:24px;padding-top:16px;color
 <h1>Visa Application and Tracking</h1>
 <p>Sign in to submit an application and track its progress.</p>
 
+<div id="signInPrompt" class="notice info" style="display:block">
+  You are not signed in.
+  <a href="/#account" class="contact-link">Sign in to your account</a>
+  before submitting an application.
+</div>
+
 <div id="message" class="notice" role="status" aria-live="polite"></div>
 
 <div class="section" id="trackingSection">
@@ -255,9 +261,9 @@ const BACKEND_VERSION = "visa-backend-v17";
 const SERVICE_FEE_PER_APPLICANT =
   Number(window.APP_CONFIG?.serviceFeePerApplicant) || 285;
 
-const MAX_APPLICANTS = Math.min(
-  10,
-  Number(window.APP_CONFIG?.maximumApplicants) || 10
+const MAX_APPLICANTS = Math.max(
+  1,
+  Math.min(10, Number(window.APP_CONFIG?.maximumApplicants) || 10)
 );
 
 const MAX_FILE_SIZE = 8 * 1024 * 1024;
@@ -426,9 +432,12 @@ async function backendRequest(payload) {
       );
     }
 
-    if (result.version !== BACKEND_VERSION) {
+    if (
+      result.version &&
+      result.version !== BACKEND_VERSION
+    ) {
       throw new Error(
-        "V17 backend version mismatch. Confirm that visa-backend-v17 is deployed."
+        "Backend version mismatch. Confirm that visa-backend-v17 is deployed."
       );
     }
 
@@ -643,9 +652,7 @@ async function loadTracking() {
       "We could not load your applications. Please try refreshing or contact support. " +
       (error.message || "");
   }
-}
-
-/* APPLICANT MESSAGING */
+}/* APPLICANT MESSAGING */
 
 function messageDate(value) {
   if (!value) return "Date unavailable";
@@ -1157,9 +1164,7 @@ async function loadPublicProcessingTime() {
         "We could not load the processing time at the moment. Please try again later.";
     }
   }
-}
-
-/* FEES */
+     }/* FEES */
 
 function updateFees() {
   const count = applicantsEl.querySelectorAll(".applicant").length || 1;
@@ -1630,9 +1635,7 @@ async function submitApplication() {
   } finally {
     submitting = false;
   }
-}
-
-/* EVENTS */
+     }/* EVENTS */
 
 applyingFromEl.addEventListener("change",() => {
   processingRequestNumber++;
@@ -1714,6 +1717,9 @@ document.getElementById("myMessagesButton")
 async function initialise() {
   try {
     await loadUser();
+
+    document.getElementById("signInPrompt").style.display = "none";
+
     addApplicant(true);
     await loadCountries();
     updateFees();
@@ -1738,6 +1744,8 @@ async function initialise() {
 
     document.getElementById("messageSummary").textContent =
       "Sign in to access your inbox.";
+
+    document.getElementById("signInPrompt").style.display = "block";
   }
 }
 
