@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -499,124 +498,182 @@ function getPaymentStatus(application) {
 }
 
 /*
-  NEW V17 TRACKING PROCESSING-TIME LOOKUP
+  UPDATED V17 TRACKING PROCESSING-TIME LOOKUP
 
-  V17 does not currently save the applying-from country on
-  the application record. Therefore this lookup deliberately
-  uses general destination records only (applying_from IS NULL).
+  This retrieves the administrator's active general processing-time
+  records from visa_processing_times.
 
-  It prefers a visa-category match, then a general record.
+  V17 applications may contain a destination country ID rather than
+  a country name, so this function resolves IDs through the V17
+  countries action before matching the processing-time record.
+
+  It prefers a matching visa category. If none exists, it uses the
+  general destination record where visa_category is NULL.
+
+  This lookup uses records where applying_from IS NULL because the
+  current V17 submit action does not save the applying-from country.
 */
+
+function normaliseCountryName(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/&/g,"and")
+    .replace(/[^a-z0-9]/g,"");
+}
+
+function countryNamesMatch(first,second) {
+  const a = normaliseCountryName(first);
+  const b = normaliseCountryName(second);
+
+  if (!a || !b) return false;
+  if (a === b) return true;
+
+  const aliases = {
+    usa:["usa","us","unitedstatesofamerica","unitedstates"],
+    uk:["uk","unitedkingdom","greatbritain","britain"],
+    europe:["europe","europeschengen","schengen","schengenarea"]
+  };
+
+  for (const group of Object.values(aliases)) {
+    if (group.includes(a) && group.includes(b)) return true;
+  }
+
+  return false;
+}
 
 async function loadTrackingProcessingTimes(applications) {
   if (!Array.isArray(applications) || !applications.length) return;
 
   const client = getSupabaseClient();
 
-  const destinations = [
-    ...new Set(
-      applications
-        .map(application => firstDefined(application,[
-          "destination_country",
-          "country_name",
-          "country"
-        ],""))
-        .map(value => {
-          if (value && typeof value === "object") {
-            return value.country_name || value.name || value.destination || "";
-          }
-          return String(value || "").trim();
-        })
-        .filter(Boolean)
-    )
-  ];
+  let countries = [];
 
-  for (const destination of destinations) {
-    try {
-      const {data,error} = await client
-        .from("visa_processing_times")
-        .select("destination,applying_from,visa_category,min_days,max_days,time_unit,is_active,updated_at")
-        .ilike("destination",destination)
-        .eq("is_active",true)
-        .is("applying_from",null)
-        .order("updated_at",{ascending:false});
+  try {
+    const countryResult = await backendRequest({
+      action:"countries"
+    });
 
-      if (error) throw error;
+    countries = countryResult.countries || [];
 
-      const records = data || [];
+  } catch(error) {
+    console.error("Could not resolve destination country IDs:",error);
+  }
 
-      applications.forEach(application => {
-        let appDestination = firstDefined(application,[
-          "destination_country",
-          "country_name",
-          "country"
-        ],"");
+  const countryNamesById = new Map();
 
-        if (appDestination && typeof appDestination === "object") {
-          appDestination =
-            appDestination.country_name ||
-            appDestination.name ||
-            appDestination.destination ||
-            "";
-        }
-
-        if (
-          String(appDestination).trim().toLowerCase() !==
-          destination.trim().toLowerCase()
-        ) return;
-
-        const visaName = firstDefined(application,[
-          "visa_type",
-          "visa_name",
-          "visa_type_name"
-        ],"");
-
-        const category = normaliseCategory(visaName);
-
-        const eligible = records.filter(record =>
-          !record.applying_from &&
-          (
-            !record.visa_category ||
-            normaliseCategory(record.visa_category) === category
-          )
-        );
-
-        const selected =
-          eligible.find(record =>
-            record.visa_category &&
-            normaliseCategory(record.visa_category) === category
-          ) ||
-          eligible.find(record => !record.visa_category);
-
-        if (selected) {
-          const min = Number(selected.min_days);
-          const max = Number(selected.max_days);
-
-          if (
-            Number.isInteger(min) &&
-            Number.isInteger(max) &&
-            min >= 0 &&
-            max >= min
-          ) {
-            application.tracking_processing_time = {
-              min_days:min,
-              max_days:max,
-              time_unit:selected.time_unit || "days"
-            };
-          }
-        }
-      });
-
-    } catch(error) {
-      console.error(
-        "Could not load tracking processing times for " + destination,
-        error
+  countries.forEach(country => {
+    if (country && country.id !== undefined && country.country_name) {
+      countryNamesById.set(
+        String(country.id),
+        String(country.country_name).trim()
       );
     }
-  }
-}
+  });
 
-function renderTracking(applications) {
+  applications.forEach(application => {
+    let destination = firstDefined(application,[
+      "destination_country",
+      "country_name",
+      "country"
+    ],"");
+
+    if (destination && typeof destination === "object") {
+      destination =
+        destination.country_name ||
+        destination.name ||
+        destination.destination ||
+        "";
+    }
+
+    destination = String(destination || "").trim();
+
+    if (!destination || /^\d+$/.test(destination)) {
+      const countryId = firstDefined(application,[
+        "destination_country_id",
+        "country_id"
+      ],destination);
+
+      destination = countryNamesById.get(String(countryId)) || "";
+    }
+
+    if (destination) {
+      application.tracking_destination_name = destination;
+    }
+  });
+
+  let records = [];
+
+  try {
+    const {data,error} = await client
+      .from("visa_processing_times")
+      .select("destination,applying_from,visa_category,min_days,max_days,time_unit,is_active,updated_at")
+      .eq("is_active",true)
+      .is("applying_from",null)
+      .order("updated_at",{ascending:false});
+
+    if (error) throw error;
+
+    records = data || [];
+
+  } catch(error) {
+    console.error("Could not load administrator processing-time records:",error);
+
+    applications.forEach(application => {
+      application.tracking_processing_time_error = true;
+    });
+
+    return;
+  }
+
+  applications.forEach(application => {
+    const destination = application.tracking_destination_name;
+
+    if (!destination) return;
+
+    const destinationRecords = records.filter(record =>
+      !record.applying_from &&
+      countryNamesMatch(record.destination,destination)
+    );
+
+    const visaName = firstDefined(application,[
+      "visa_type",
+      "visa_name",
+      "visa_type_name"
+    ],"");
+
+    const category = normaliseCategory(visaName);
+
+    const categoryRecord = destinationRecords.find(record =>
+      record.visa_category &&
+      normaliseCategory(record.visa_category) === category
+    );
+
+    const generalRecord = destinationRecords.find(record =>
+      !record.visa_category
+    );
+
+    const selected = categoryRecord || generalRecord;
+
+    if (!selected) return;
+
+    const min = Number(selected.min_days);
+    const max = Number(selected.max_days);
+
+    if (
+      Number.isInteger(min) &&
+      Number.isInteger(max) &&
+      min >= 0 &&
+      max >= min
+    ) {
+      application.tracking_processing_time = {
+        min_days:min,
+        max_days:max,
+        time_unit:selected.time_unit || "days"
+      };
+    }
+  });
+}function renderTracking(applications) {
   trackingResults.innerHTML = "";
 
   if (!Array.isArray(applications) || applications.length === 0) {
@@ -641,6 +698,7 @@ function renderTracking(applications) {
       ],"Pending"));
 
     addTrackingRow(card,"Destination",
+      application.tracking_destination_name ||
       firstDefined(application,[
         "destination_country",
         "country_name",
@@ -654,53 +712,19 @@ function renderTracking(applications) {
         "visa_type_name"
       ],"Not provided"));
 
-    /* UPDATED: DISPLAY ADMIN MINIMUM AND MAXIMUM PROCESSING TIME */
+    /* DISPLAY ADMINISTRATOR'S MINIMUM AND MAXIMUM PROCESSING TIME */
 
     const savedTime = application.tracking_processing_time;
 
-    const processingMin = firstDefined(application,[
-      "processing_min_days",
-      "min_days"
-    ],savedTime?.min_days);
-
-    const processingMax = firstDefined(application,[
-      "processing_max_days",
-      "max_days"
-    ],savedTime?.max_days);
-
-    const processingUnit = firstDefined(application,[
-      "processing_time_unit",
-      "time_unit"
-    ],savedTime?.time_unit || "days");
-
     let processingLabel = "Processing time not yet configured";
 
-    if (
-      processingMin !== null &&
-      processingMin !== undefined &&
-      processingMax !== null &&
-      processingMax !== undefined &&
-      Number.isFinite(Number(processingMin)) &&
-      Number.isFinite(Number(processingMax)) &&
-      Number(processingMin) >= 0 &&
-      Number(processingMax) >= Number(processingMin)
-    ) {
+    if (application.tracking_processing_time_error) {
+      processingLabel = "Processing time temporarily unavailable";
+    } else if (savedTime) {
       processingLabel =
-        Number(processingMin) + "–" +
-        Number(processingMax) + " " +
-        processingUnit;
-    } else {
-      const processingDays = firstDefined(application,[
-        "processing_days"
-      ],null);
-
-      if (
-        processingDays !== null &&
-        processingDays !== "" &&
-        Number.isFinite(Number(processingDays))
-      ) {
-        processingLabel = processingDays + " days";
-      }
+        savedTime.min_days + "–" +
+        savedTime.max_days + " " +
+        (savedTime.time_unit || "days");
     }
 
     addTrackingRow(
@@ -761,54 +785,11 @@ async function loadTracking() {
       throw new Error("The tracking response was not valid.");
     }
 
-    const countryGroups = new Map();
+    /*
+      Retrieve the V17 countries and administrator processing-time
+      records before displaying the applicant's tracking cards.
+    */
 
-    applications.forEach(application => {
-      const visaId = application.visa_type_id;
-      const countryId =
-        application.destination_country_id ||
-        application.country_id;
-
-      if (visaId && countryId &&
-          (application.processing_days === undefined ||
-           application.processing_days === null)) {
-        if (!countryGroups.has(String(countryId))) {
-          countryGroups.set(String(countryId),{
-            countryId,
-            applications:[]
-          });
-        }
-
-        countryGroups.get(String(countryId)).applications.push(application);
-      }
-    });
-
-    for (const group of countryGroups.values()) {
-      try {
-        const visaResult = await backendRequest({
-          action:"visa_types",
-          country_id:group.countryId
-        });
-
-        const types = visaResult.visa_types || [];
-
-        group.applications.forEach(application => {
-          const matchingVisa = types.find(visa =>
-            String(visa.id) === String(application.visa_type_id)
-          );
-
-          if (matchingVisa &&
-              matchingVisa.processing_days !== undefined &&
-              matchingVisa.processing_days !== null) {
-            application.processing_days = matchingVisa.processing_days;
-          }
-        });
-      } catch(lookupError) {
-        console.error("Could not retrieve visa processing time:",lookupError);
-      }
-    }
-
-    /* NEW: LOAD ADMIN-SAVED MINIMUM AND MAXIMUM TIMES BEFORE DISPLAY */
     await loadTrackingProcessingTimes(applications);
 
     renderTracking(applications);
@@ -1211,9 +1192,7 @@ function formatVerificationDate(value) {
   return Number.isNaN(date.getTime())
     ? "Not provided"
     : date.toLocaleDateString();
-}
-
-async function loadPublicProcessingTime() {
+ }async function loadPublicProcessingTime() {
   const requestNumber = ++processingRequestNumber;
   if (!processingResult) return;
 
@@ -1231,7 +1210,7 @@ async function loadPublicProcessingTime() {
 
   if (!countryEl.value || !applyingFromEl.value || !selectedVisa) {
     processingResult.textContent =
-      "Select your applying-from country, destination country and visa type to view the available processing time.";
+      "Select an applying-from country, destination country and visa type to view the available processing time.";
     return;
   }
 
