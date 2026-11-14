@@ -112,7 +112,7 @@ th{background:#f8fafc}
 <header>
   <div>
     <strong>Global Online Visa Applications</strong>
-    <div style="color:#dbeafe">Administrator Dashboard · V15</div>
+    <div style="color:#dbeafe">Administrator Dashboard · V17</div>
     <a id="publicWebsiteLink" href="https://globalonlinevisaapplications.netlify.app/" target="_blank" rel="noopener noreferrer">Visit official website</a>
   </div>
   <div>
@@ -360,7 +360,7 @@ Checking administrator access…
 (() => {
 "use strict";
 
-const BACKEND_VERSION = "visa-backend-v15";
+const BACKEND_VERSION = "visa-backend-v17";
 const SERVICE_FEE_PER_APPLICANT = 285;
 const OFFICIAL_SITE = "https://globalonlinevisaapplications.netlify.app";
 
@@ -422,9 +422,6 @@ function visaRecord(application){
   return relationOne(application.visa_types);
 }
 
-/* Applicant count: uses a count returned by the backend, or the related applicants.
-   It does not assume that one application always contains multiple applicants. */
-
 function applicantCount(application){
   const explicit=Number(
     application.applicant_count ??
@@ -481,7 +478,7 @@ function totalRange(application){
   };
 }
 
-/* V15 BACKEND CONNECTION */
+/* V17 BACKEND CONNECTION */
 
 async function api(payload){
   const {data,error}=await sb.auth.getSession();
@@ -491,18 +488,18 @@ async function api(payload){
     throw new Error("Your session has expired. Sign in again.");
   }
 
-  if(
-    !window.SUPABASE_FUNCTION_URL||
-    !window.SUPABASE_FUNCTION_URL.includes("/functions/v1/visa-backend-v15")
-  ){
-    throw new Error("The V15 backend URL is missing. Check config.js.");
+  if(!window.SUPABASE_URL||!window.SUPABASE_ANON_KEY){
+    throw new Error("Supabase configuration is missing. Check config.js.");
   }
+
+  const backendUrl=window.SUPABASE_URL.replace(/\/$/,"")+
+    "/functions/v1/"+BACKEND_VERSION;
 
   const controller=new AbortController();
   const timeout=setTimeout(()=>controller.abort(),30000);
 
   try{
-    const response=await fetch(window.SUPABASE_FUNCTION_URL,{
+    const response=await fetch(backendUrl,{
       method:"POST",
       headers:{
         "Content-Type":"application/json",
@@ -520,7 +517,7 @@ async function api(payload){
     }
 
     if(output.version!==BACKEND_VERSION){
-      throw new Error("V15 backend version mismatch. Check the deployed function and config.js.");
+      throw new Error("V17 backend version mismatch. Check that visa-backend-v17 is deployed.");
     }
 
     return output;
@@ -939,7 +936,7 @@ async function refresh(){
 
     render();
     $("dashboard").classList.remove("hidden");
-    notice("V15 dashboard data updated.","success");
+    notice("V17 dashboard data updated.","success");
 
   }catch(error){
     notice(error.message,"error");
@@ -1343,7 +1340,6 @@ async function showDashboard(){
     currentAdmin=data.user;
     $("adminEmail").textContent=data.user.email||"";
 
-    /* Confirm administrator role before displaying protected dashboard data. */
     await verifyAdminDatabaseAccess();
 
     await api({action:"admin_applications"});
@@ -1537,7 +1533,7 @@ $("appRows").addEventListener("click",async event=>{
       }
 
       if(total&&(amount<total.min||amount>total.max)){
-        alert("Amount is outside the V15 total fee range ("+money(total.min)+" – "+money(total.max)+").");
+        alert("Amount is outside the V17 total fee range ("+money(total.min)+" – "+money(total.max)+").");
         return;
       }
 
