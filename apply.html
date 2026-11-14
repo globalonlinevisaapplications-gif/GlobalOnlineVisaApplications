@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -497,6 +498,124 @@ function getPaymentStatus(application) {
   ],"Pending");
 }
 
+/*
+  NEW V17 TRACKING PROCESSING-TIME LOOKUP
+
+  V17 does not currently save the applying-from country on
+  the application record. Therefore this lookup deliberately
+  uses general destination records only (applying_from IS NULL).
+
+  It prefers a visa-category match, then a general record.
+*/
+
+async function loadTrackingProcessingTimes(applications) {
+  if (!Array.isArray(applications) || !applications.length) return;
+
+  const client = getSupabaseClient();
+
+  const destinations = [
+    ...new Set(
+      applications
+        .map(application => firstDefined(application,[
+          "destination_country",
+          "country_name",
+          "country"
+        ],""))
+        .map(value => {
+          if (value && typeof value === "object") {
+            return value.country_name || value.name || value.destination || "";
+          }
+          return String(value || "").trim();
+        })
+        .filter(Boolean)
+    )
+  ];
+
+  for (const destination of destinations) {
+    try {
+      const {data,error} = await client
+        .from("visa_processing_times")
+        .select("destination,applying_from,visa_category,min_days,max_days,time_unit,is_active,updated_at")
+        .ilike("destination",destination)
+        .eq("is_active",true)
+        .is("applying_from",null)
+        .order("updated_at",{ascending:false});
+
+      if (error) throw error;
+
+      const records = data || [];
+
+      applications.forEach(application => {
+        let appDestination = firstDefined(application,[
+          "destination_country",
+          "country_name",
+          "country"
+        ],"");
+
+        if (appDestination && typeof appDestination === "object") {
+          appDestination =
+            appDestination.country_name ||
+            appDestination.name ||
+            appDestination.destination ||
+            "";
+        }
+
+        if (
+          String(appDestination).trim().toLowerCase() !==
+          destination.trim().toLowerCase()
+        ) return;
+
+        const visaName = firstDefined(application,[
+          "visa_type",
+          "visa_name",
+          "visa_type_name"
+        ],"");
+
+        const category = normaliseCategory(visaName);
+
+        const eligible = records.filter(record =>
+          !record.applying_from &&
+          (
+            !record.visa_category ||
+            normaliseCategory(record.visa_category) === category
+          )
+        );
+
+        const selected =
+          eligible.find(record =>
+            record.visa_category &&
+            normaliseCategory(record.visa_category) === category
+          ) ||
+          eligible.find(record => !record.visa_category);
+
+        if (selected) {
+          const min = Number(selected.min_days);
+          const max = Number(selected.max_days);
+
+          if (
+            Number.isInteger(min) &&
+            Number.isInteger(max) &&
+            min >= 0 &&
+            max >= min
+          ) {
+            application.tracking_processing_time = {
+              min_days:min,
+              max_days:max,
+              time_unit:selected.time_unit || "days"
+            };
+          }
+        }
+      });
+
+    } catch(error) {
+      console.error(
+        "Could not load tracking processing times for " + destination,
+        error
+      );
+    }
+  }
+}
+
 function renderTracking(applications) {
   trackingResults.innerHTML = "";
 
@@ -535,15 +654,60 @@ function renderTracking(applications) {
         "visa_type_name"
       ],"Not provided"));
 
-    const processingDays = firstDefined(application,[
-      "processing_days"
-    ],null);
+    /* UPDATED: DISPLAY ADMIN MINIMUM AND MAXIMUM PROCESSING TIME */
 
-    addTrackingRow(card,"Estimated processing time",
-      processingDays !== null && processingDays !== "" &&
-      Number.isFinite(Number(processingDays))
-        ? Number(processingDays) + " days"
-        : "Processing time not yet configured");
+    const savedTime = application.tracking_processing_time;
+
+    const processingMin = firstDefined(application,[
+      "processing_min_days",
+      "min_days"
+    ],savedTime?.min_days);
+
+    const processingMax = firstDefined(application,[
+      "processing_max_days",
+      "max_days"
+    ],savedTime?.max_days);
+
+    const processingUnit = firstDefined(application,[
+      "processing_time_unit",
+      "time_unit"
+    ],savedTime?.time_unit || "days");
+
+    let processingLabel = "Processing time not yet configured";
+
+    if (
+      processingMin !== null &&
+      processingMin !== undefined &&
+      processingMax !== null &&
+      processingMax !== undefined &&
+      Number.isFinite(Number(processingMin)) &&
+      Number.isFinite(Number(processingMax)) &&
+      Number(processingMin) >= 0 &&
+      Number(processingMax) >= Number(processingMin)
+    ) {
+      processingLabel =
+        Number(processingMin) + "–" +
+        Number(processingMax) + " " +
+        processingUnit;
+    } else {
+      const processingDays = firstDefined(application,[
+        "processing_days"
+      ],null);
+
+      if (
+        processingDays !== null &&
+        processingDays !== "" &&
+        Number.isFinite(Number(processingDays))
+      ) {
+        processingLabel = processingDays + " days";
+      }
+    }
+
+    addTrackingRow(
+      card,
+      "Estimated processing time",
+      processingLabel
+    );
 
     addTrackingRow(card,"Application date",
       firstDefined(application,[
@@ -644,6 +808,9 @@ async function loadTracking() {
       }
     }
 
+    /* NEW: LOAD ADMIN-SAVED MINIMUM AND MAXIMUM TIMES BEFORE DISPLAY */
+    await loadTrackingProcessingTimes(applications);
+
     renderTracking(applications);
 
   } catch(error) {
@@ -652,7 +819,9 @@ async function loadTracking() {
       "We could not load your applications. Please try refreshing or contact support. " +
       (error.message || "");
   }
-}/* APPLICANT MESSAGING */
+}
+
+/* APPLICANT MESSAGING */
 
 function messageDate(value) {
   if (!value) return "Date unavailable";
@@ -1164,7 +1333,9 @@ async function loadPublicProcessingTime() {
         "We could not load the processing time at the moment. Please try again later.";
     }
   }
-     }/* FEES */
+}
+
+/* FEES */
 
 function updateFees() {
   const count = applicantsEl.querySelectorAll(".applicant").length || 1;
@@ -1520,7 +1691,6 @@ async function submitApplication() {
 
     /*
       V17 ROUTE:
-      The V17 endpoint receives the application action and payload.
       The applying-from country is used for the processing-time lookup.
       It is not sent as a saved application field unless the backend supports it.
     */
@@ -1635,7 +1805,9 @@ async function submitApplication() {
   } finally {
     submitting = false;
   }
-     }/* EVENTS */
+}
+
+/* EVENTS */
 
 applyingFromEl.addEventListener("change",() => {
   processingRequestNumber++;
