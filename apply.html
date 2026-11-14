@@ -1,100 +1,71 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#12345a">
 <title>Apply and Track Your Visa | Global Online Visa Applications</title>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
-
 <style>
 *{box-sizing:border-box}
 :root{--navy:#12345a;--blue:#1455a0;--light:#eff6ff;--border:#e2e8f0;--muted:#64748b}
 body{margin:0;padding:24px 14px;background:#f4f7fb;color:#1e293b;font-family:Arial,sans-serif;line-height:1.5}
-.container{max-width:940px;margin:auto;background:#fff;padding:28px;border-radius:14px;box-shadow:0 4px 20px rgba(0,0,0,.07)}
+.container{max-width:940px;margin:auto;background:#fff;padding:28px;border-radius:14px;box-shadow:0 4px 20px #00000012}
 header{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;border-bottom:1px solid var(--border);padding-bottom:16px;margin-bottom:22px}
 .brand{font-weight:700;color:var(--navy);font-size:18px}
 nav{display:flex;gap:14px;flex-wrap:wrap}
 nav a{color:var(--blue);font-weight:600;text-decoration:none}
-nav a:hover{text-decoration:underline}
 h1,h2,h3{color:var(--navy)}
 h1{margin:0 0 8px}
 .section{border:1px solid var(--border);border-radius:10px;padding:20px;margin:20px 0}
 label{display:block;font-weight:600;margin:14px 0 6px}
 input,select,textarea{width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:7px;font-size:15px;background:#fff;color:#1e293b}
-input:focus,select:focus,button:focus-visible,a:focus-visible{outline:3px solid #93c5fd;outline-offset:2px}
 input[type=checkbox]{width:auto;margin-right:8px}
 input[type=file]{padding:8px}
-.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-.applicant{border:1px solid #cbd5e1;padding:16px;border-radius:9px;margin:16px 0}
 button{border:0;border-radius:7px;padding:12px 18px;background:var(--blue);color:#fff;font-weight:600;cursor:pointer;margin:8px 5px 8px 0}
 button.secondary{background:#475569}
 button:disabled{opacity:.5;cursor:not-allowed}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.applicant,.tracking-card,.message-card{border:1px solid var(--border);border-radius:9px;padding:15px;margin:12px 0}
 .fee-box{background:var(--light);padding:18px;border-radius:9px;margin-top:16px}
 .fee-row{display:flex;justify-content:space-between;gap:15px;margin:9px 0}
 .fee-row strong{text-align:right}
-.total{border-top:1px solid #bfdbfe;padding-top:12px;font-size:20px;font-weight:bold}
 .notice{padding:12px;border-radius:7px;margin:14px 0;display:none}
 .error{background:#fee2e2;color:#991b1b}
 .success{background:#dcfce7;color:#166534}
 .info{background:#e0f2fe;color:#075985}
-.muted{color:var(--muted);font-size:13px;line-height:1.5}
+.muted{color:var(--muted);font-size:13px}
 .hidden{display:none!important}
-.tracking-card{border:1px solid var(--border);border-radius:9px;padding:15px;margin:12px 0;background:#fff}
 .status{display:inline-block;padding:5px 10px;border-radius:20px;background:#e0f2fe;color:#075985;font-weight:bold;font-size:13px}
-a.contact-link{color:var(--blue);font-weight:bold}
-footer{border-top:1px solid var(--border);margin-top:24px;padding-top:16px;color:var(--muted);font-size:13px}
-#myMessagesButton{background:#e0f2fe;padding:7px 11px;border-radius:7px}
-.unread-count{display:inline-block;background:#dc2626;color:white;border-radius:20px;padding:1px 7px;font-size:11px;margin-left:4px}
-.message-card{border:1px solid var(--border);border-radius:9px;padding:14px;margin:12px 0;overflow-wrap:anywhere}
+.processing-box,.assistance-box,.payment-pending{background:#eff6ff;border:1px solid #bfdbfe;border-radius:9px;padding:16px;margin-top:15px}
+.assistance-box{text-align:center;padding:22px}
+.assistance-buttons{display:flex;flex-wrap:wrap;justify-content:center;gap:12px}
+.assistance-buttons a{display:inline-block;padding:13px 22px;border-radius:8px;color:white;font-weight:bold;text-decoration:none}
+.whatsapp-button{background:#25D366}
+.helpline-button{background:#1455a0}
 .message-card.admin-message{background:#eff6ff}
 .message-card.applicant-message{background:#f8fafc}
 .message-card small{display:block;color:var(--muted);margin-top:8px}
-.message-status{display:inline-block;font-size:11px;font-weight:bold;padding:3px 8px;border-radius:15px;margin-left:5px}
+.message-status{font-size:11px;font-weight:bold;padding:3px 8px;border-radius:15px;margin-left:5px}
 .message-status.unread{background:#fef3c7;color:#92400e}
 .message-status.read{background:#dcfce7;color:#166534}
-.message-empty{padding:14px;background:#f8fafc;border-radius:8px;color:var(--muted)}
-.message-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-#replyMessage{min-height:100px}
-.processing-box{background:#eff6ff;border:1px solid #bfdbfe;border-radius:9px;padding:16px;margin-top:15px}
-.processing-result{background:#fff;border:1px solid #bfdbfe;border-radius:8px;padding:14px;margin-top:12px;overflow-wrap:anywhere}
-.processing-result strong{color:var(--navy)}
-.processing-result a{color:var(--blue);font-weight:bold;display:inline-block;margin-top:5px}
-.processing-notice{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;padding:12px;border-radius:7px;margin-top:12px;font-size:13px}
-.assistance-box{background:#f0f6fc;border:1px solid #d5e3f0;border-radius:12px;padding:22px;margin:20px 0;text-align:center}
-.assistance-box h2{margin-top:0}
-.assistance-box p{color:#444;line-height:1.6}
-.assistance-buttons{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-top:15px}
-.assistance-buttons a{display:inline-block;padding:13px 22px;border-radius:8px;color:white;font-weight:bold;text-decoration:none;text-align:center}
-.whatsapp-button{background:#25D366}
-.helpline-button{background:#1455a0}
-.assistance-phone{display:inline-block;color:#12345a;font-size:20px;font-weight:bold;text-decoration:none;margin-top:5px}
-.payment-pending{background:#f8fafc;border:1px solid var(--border);border-radius:9px;padding:16px;margin-top:15px}
-@media(max-width:650px){
- body{padding:12px 8px}
- .grid{grid-template-columns:1fr}
- .container{padding:17px}
- .fee-row{align-items:flex-start}
- .fee-row span{max-width:58%}
- .assistance-buttons a{width:100%}
-}
+.unread-count{background:#dc2626;color:white;border-radius:20px;padding:1px 7px;font-size:11px}
+footer{border-top:1px solid var(--border);margin-top:24px;padding-top:16px;color:var(--muted);font-size:13px}
+a.contact-link{color:var(--blue);font-weight:bold}
+@media(max-width:650px){body{padding:12px 8px}.grid{grid-template-columns:1fr}.container{padding:17px}.fee-row{align-items:flex-start}.assistance-buttons a{width:100%}}
 </style>
 </head>
-
 <body>
 <div class="container">
-
 <header>
   <div class="brand">Global Online Visa Applications</div>
   <nav aria-label="Main navigation">
     <a href="/">Home</a>
     <a href="/apply.html">Apply &amp; Track</a>
     <a href="/contact.html">Contact</a>
-    <a href="#myMessagesSection" id="myMessagesButton">
-      My Messages <span id="unreadCount" class="unread-count hidden">0</span>
-    </a>
+    <a href="#myMessagesSection">My Messages <span id="unreadCount" class="unread-count hidden">0</span></a>
     <a href="/admin.html">Administrator Login</a>
   </nav>
 </header>
@@ -108,170 +79,122 @@ footer{border-top:1px solid var(--border);margin-top:24px;padding-top:16px;color
   <a href="/#account" class="contact-link">Sign in to your account</a>
   before submitting an application.
 </div>
-
 <div id="message" class="notice" role="status" aria-live="polite"></div>
 
-<div class="section" id="trackingSection">
-  <h2>Your Application Tracking</h2>
-  <p class="muted">Your applications and their latest status will appear here after you sign in.</p>
-  <button type="button" id="refreshTracking">Refresh Application Status</button>
-  <div id="trackingResults">
-    <p class="muted">Loading your applications...</p>
-  </div>
+<section class="section">
+<h2>Your Application Tracking</h2>
+<p class="muted">Your submitted applications and latest updates appear here.</p>
+<button type="button" id="refreshTracking">Refresh Application Status</button>
+<div id="trackingResults">Please sign in to view your applications.</div>
+</section>
+
+<section class="section" id="myMessagesSection">
+<h2>My Messages</h2>
+<p class="muted">Read private messages and replies from the administrator.</p>
+<button type="button" id="refreshMessages">Refresh Messages</button>
+<span id="messageSummary" class="muted">Sign in to view your inbox.</span>
+<div id="inboxResults">Sign in to view your messages.</div>
+<div class="message-card">
+<h3>Reply to Administrator</h3>
+<label for="replyMessage">Your message</label>
+<textarea id="replyMessage" maxlength="5000" rows="4" placeholder="Write your message..."></textarea>
+<button type="button" id="sendApplicantReply">Send Message</button>
+<div id="replyNotice" class="notice" role="status"></div>
 </div>
-
-<div class="section" id="myMessagesSection">
-  <h2>My Messages</h2>
-  <p class="muted">Read private messages and announcements from our administrator. You can also reply directly to the administrator here.</p>
-
-  <div class="message-actions">
-    <button type="button" id="refreshMessages">Refresh Messages</button>
-    <span id="messageSummary" class="muted">Your inbox will appear here after signing in.</span>
-  </div>
-
-  <div id="inboxResults">
-    <div class="message-empty">Sign in to view your messages.</div>
-  </div>
-
-  <div class="message-card">
-    <h3>Reply to Administrator</h3>
-    <p class="muted">Write your message or response below.</p>
-    <label for="replyMessage">Your message</label>
-    <textarea id="replyMessage" maxlength="5000" placeholder="Write your message to the administrator..."></textarea>
-    <button type="button" id="sendApplicantReply">Send Message</button>
-    <div id="replyNotice" class="notice" role="status" aria-live="polite"></div>
-  </div>
-</div>
+</section>
 
 <div id="applicationForm">
-
-<div class="section">
+<section class="section">
 <h2>1. Destination and Visa Type</h2>
-
 <label for="applyingFrom">Applying from country *</label>
-<select id="applyingFrom" required disabled>
-  <option value="">Loading countries...</option>
-</select>
-<p class="muted">Choose the country where the applicant or family group will submit the visa application.</p>
+<select id="applyingFrom" required disabled><option value="">Loading countries...</option></select>
+<p class="muted">Choose the country from which the applicant or family group is applying.</p>
 
 <label for="country">Destination country *</label>
-<select id="country" required disabled>
-  <option value="">Loading countries...</option>
-</select>
+<select id="country" required disabled><option value="">Loading countries...</option></select>
 
 <label for="visaType">Visa type *</label>
-<select id="visaType" required disabled>
-<option value="">Select a destination country first</option>
-</select>
-
-<p class="muted">Official visa fees are estimates and must be confirmed before payment.</p>
+<select id="visaType" required disabled><option value="">Select a destination country first</option></select>
 
 <div class="processing-box">
-  <h3>Visa Processing Time</h3>
-  <p class="muted">Select your applying-from country, destination country and visa type. Processing times will only be displayed when a verified record exists for that exact combination.</p>
-
-  <div id="publicProcessingResult" aria-live="polite">
-    <p class="muted">Select an applying-from country, destination country and visa type to view the available processing time.</p>
-  </div>
-
-  <div class="processing-notice">
-    <strong>IMPORTANT NOTICE:</strong>
-    Visa processing times displayed on Global Online Visa Applications are provided for general information and guidance only. Processing times may vary depending on the destination country, visa category, applicant's nationality, application completeness, embassy or consulate workload, security checks, public holidays and changes in immigration policies. The processing times are not guaranteed approval or decision dates. Actual processing may be shorter or longer than the published estimates. Immigration authorities and embassies have sole responsibility for visa decisions and official processing timelines. Applicants are advised to verify the latest requirements and processing times through the relevant government immigration website or embassy before making travel arrangements. Global Online Visa Applications is a private visa consultancy and is not a government agency, embassy or consulate.
-  </div>
+<h3>Visa Processing Time</h3>
+<div id="publicProcessingResult" aria-live="polite">
+<p class="muted">Select a destination and visa type to view the available processing time.</p>
 </div>
+<p class="muted">Processing times are estimates, not guaranteed decision dates. Actual processing depends on the relevant immigration authority, application completeness, checks and other circumstances. Global Online Visa Applications is a private visa consultancy, not a government agency, embassy or consulate.</p>
 </div>
+</section>
 
-<div class="section">
+<section class="section">
 <h2>2. Applicants</h2>
-<p class="muted">You can submit up to 10 applicants in one family or group application. Each applicant can have a different nationality.</p>
+<p class="muted">Submit up to 10 applicants in one family or group application. Each applicant can have a different nationality.</p>
 <div id="applicants"></div>
 <button type="button" class="secondary" id="addApplicant">+ Add Family Member</button>
-</div>
+</section>
 
-<div class="section">
+<section class="section">
 <h2>3. Application Fees</h2>
 <div class="fee-box">
-  <div class="fee-row"><span>Official visa fee per applicant</span><strong id="officialFee">Select a visa type</strong></div>
-  <div class="fee-row"><span>Service fee per applicant</span><strong id="serviceFee">$285.00</strong></div>
+  <div class="fee-row"><span>Official government visa fee per applicant</span><strong id="officialFee">Select a visa type</strong></div>
+  <div class="fee-row"><span>Consultancy service fee per applicant</span><strong id="serviceFee">$285.00</strong></div>
   <div class="fee-row"><span>Number of applicants</span><strong id="applicantCount">1</strong></div>
-  <div class="fee-row"><span>Total service fees</span><strong id="serviceTotal">$285.00</strong></div>
-  <div class="fee-row total"><span>Estimated total</span><strong id="grandTotal">—</strong></div>
+  <div class="fee-row"><span>Total consultancy service fees</span><strong id="serviceTotal">$285.00</strong></div>
 </div>
-<p class="muted">The service fee is USD 285 per applicant. Official visa fees are estimates. The final official fee and total must be confirmed before payment.</p>
-</div>
+<p class="muted">The consultancy service fee is USD 285 per applicant. The official government visa fee is separate, is determined by the relevant government authority, and may change. No payment is collected through this form.</p>
+</section>
 
-<div class="section">
+<section class="section">
 <h2>4. Confirmation</h2>
-<label>
-<input type="checkbox" id="confirm" required>
-I confirm that the information supplied is accurate and that I agree to the application processing terms.
-</label>
+<label><input type="checkbox" id="confirm" required>
+I confirm that the information supplied is accurate and that I agree to the application processing terms.</label>
 <button type="button" id="submitButton">Submit Visa Application</button>
-<p class="muted">Your application will be submitted with payment status pending. No payment is collected through this form.</p>
+<p class="muted">Your application will be submitted with payment pending. Do not send payment until the administrator provides verified payment instructions.</p>
+</section>
 </div>
 
-</div>
-
-<div id="results" class="section hidden">
-<h2>Application submission results</h2>
+<section id="results" class="section hidden">
+<h2>Application Submission Results</h2>
 <div id="resultDetails"></div>
-</div>
+</section>
 
-<div class="assistance-box" id="customerAssistance">
-  <h2>Application Support</h2>
-  <p>Get assistance with your application process.</p>
-  <p>Need help with visa applications, document requirements, payments or application tracking? Contact our customer support team by phone or WhatsApp.</p>
-  <div class="assistance-buttons">
-    <a class="whatsapp-button" href="https://wa.me/254751896015?text=Hello%20Global%20Online%20Visa%20Applications%2C%20I%20need%20assistance%20with%20a%20visa%20application." target="_blank" rel="noopener noreferrer">WhatsApp Customer Support</a>
-    <a class="helpline-button" href="tel:+254751896015">Call Customer Helpline</a>
-  </div>
-  <p><strong>Customer Helpline</strong></p>
-  <a class="assistance-phone" href="tel:+254751896015">+254 751 896 015</a>
-  <p><strong>WhatsApp:</strong> <a href="https://wa.me/254751896015" target="_blank" rel="noopener noreferrer">+254 751 896 015</a></p>
-  <p class="muted">Contact us for assistance with visa applications, required documents, application tracking and general enquiries.</p>
+<section class="assistance-box">
+<h2>Application Support</h2>
+<p>Need help with visa applications, documents, payments or tracking?</p>
+<div class="assistance-buttons">
+<a class="whatsapp-button" href="https://wa.me/254751896015?text=Hello%20Global%20Online%20Visa%20Applications%2C%20I%20need%20assistance." target="_blank" rel="noopener noreferrer">WhatsApp Customer Support</a>
+<a class="helpline-button" href="tel:+254751896015">Call Customer Helpline</a>
 </div>
+<p><strong>+254 751 896 015</strong></p>
+</section>
 
-<div class="section" id="paymentInstructions">
-  <h2>Payment Information</h2>
-  <div class="payment-pending">
-    <strong>Payment instructions are not yet available.</strong>
-    <p>Submit your application first. Please wait for the administrator to confirm your application amount and provide official payment instructions. Do not send money until you receive those instructions.</p>
-    <p class="muted">A submitted application is not automatically marked as paid. Payment status will remain pending until the administrator verifies it.</p>
-  </div>
+<section class="section">
+<h2>Payment Information</h2>
+<div class="payment-pending">
+<strong>Payment instructions are not yet available.</strong>
+<p>Submit your application first. Wait for the administrator to verify the application and provide official payment instructions. Do not send money until you receive those instructions.</p>
+<p class="muted">Payment remains pending until verified by the administrator. Consultancy service fees and government visa fees are handled separately.</p>
 </div>
-
+</section>
 </main>
 
 <footer>
 <p>Global Online Visa Applications.</p>
 <p>Phone: <a href="tel:+254751896015">+254 751 896 015</a></p>
-<p>WhatsApp: <a href="https://wa.me/254751896015" target="_blank" rel="noopener noreferrer">Contact customer support</a></p>
-<p>Official visa fees are determined by the relevant government authorities. Verify the final amount before payment.</p>
+<p>WhatsApp: <a href="https://wa.me/254751896015">Contact customer support</a></p>
+<p>Official visa fees are determined by the relevant government authorities.</p>
 </footer>
-
 </div>
 
 <script>
 (() => {
 "use strict";
 
-/* V17 BACKEND CONFIGURATION */
-const BACKEND_VERSION = "visa-backend-v17";
-
-const SERVICE_FEE_PER_APPLICANT =
-  Number(window.APP_CONFIG?.serviceFeePerApplicant) || 285;
-
-const MAX_APPLICANTS = Math.max(
-  1,
-  Math.min(10, Number(window.APP_CONFIG?.maximumApplicants) || 10)
-);
-
+/* V18 BACKEND */
+const BACKEND_VERSION = "visa-backend-v18";
+const SERVICE_FEE_PER_APPLICANT = 285;
+const MAX_APPLICANTS = Math.min(10,Math.max(1,Number(window.APP_CONFIG?.maximumApplicants)||10));
 const MAX_FILE_SIZE = 8 * 1024 * 1024;
-const ALLOWED_FILE_TYPES = [
-  "application/pdf",
-  "image/jpeg",
-  "image/png"
-];
+const ALLOWED_FILE_TYPES = ["application/pdf","image/jpeg","image/png"];
 
 const messageEl = document.getElementById("message");
 const countryEl = document.getElementById("country");
@@ -287,1124 +210,231 @@ let selectedVisa = null;
 let visaTypes = [];
 let submitting = false;
 let visaRequestNumber = 0;
+let processingRequestNumber = 0;
 let loadingMessages = false;
 let sendingReply = false;
-let processingRequestNumber = 0;
 
-function showMessage(text,type="info") {
-  messageEl.textContent = text;
-  messageEl.className = "notice " + type;
-  messageEl.style.display = "block";
+function showMessage(text,type="info"){
+  messageEl.textContent=text;
+  messageEl.className="notice "+type;
+  messageEl.style.display="block";
   messageEl.scrollIntoView({behavior:"smooth",block:"center"});
 }
-
-function hideMessage() {
-  messageEl.style.display = "none";
+function hideMessage(){messageEl.style.display="none";}
+function showReplyNotice(text,type="info"){
+  const el=document.getElementById("replyNotice");
+  el.textContent=text;
+  el.className="notice "+type;
+  el.style.display="block";
 }
-
-function showReplyNotice(text,type="info") {
-  const el = document.getElementById("replyNotice");
-  el.textContent = text;
-  el.className = "notice " + type;
-  el.style.display = "block";
+function money(value){
+  const n=Number(value);
+  if(!Number.isFinite(n)||n<0)return "Not available";
+  return new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"}).format(n);
 }
-
-function money(value) {
-  const n = Number(value);
-  if (!Number.isFinite(n) || n < 0) return "—";
-  return new Intl.NumberFormat("en-US",{
-    style:"currency",
-    currency:"USD"
-  }).format(n);
-}
-
-function firstDefined(object,keys,fallback) {
-  for (const key of keys) {
-    if (object && object[key] !== undefined && object[key] !== null) {
-      return object[key];
-    }
+function firstDefined(obj,keys,fallback=null){
+  for(const key of keys){
+    if(obj && obj[key]!==undefined && obj[key]!==null && obj[key]!=="")return obj[key];
   }
   return fallback;
 }
-
-function getFeeBounds(visa) {
-  if (!visa) return null;
-
-  const minValue = firstDefined(visa,[
-    "official_fee_min",
-    "visa_fee_min",
-    "official_visa_fee_min",
-    "fee_min"
-  ],null);
-
-  const maxValue = firstDefined(visa,[
-    "official_fee_max",
-    "visa_fee_max",
-    "official_visa_fee_max",
-    "fee_max"
-  ],null);
-
-  if (minValue === null || maxValue === null ||
-      minValue === "" || maxValue === "") return null;
-
-  const min = Number(minValue);
-  const max = Number(maxValue);
-
-  if (!Number.isFinite(min) || !Number.isFinite(max) ||
-      min < 0 || max < min) return null;
-
+function getFeeBounds(visa){
+  if(!visa)return null;
+  const min=Number(firstDefined(visa,["official_fee_min","visa_fee_min"],NaN));
+  const max=Number(firstDefined(visa,["official_fee_max","visa_fee_max"],NaN));
+  if(!Number.isFinite(min)||!Number.isFinite(max)||min<0||max<min)return null;
   return {min,max};
 }
-
-function validFeeRange(visa) {
-  return getFeeBounds(visa) !== null;
+function feeRangeText(visa){
+  const b=getFeeBounds(visa);
+  return b?money(b.min)+" – "+money(b.max):"Fee range unavailable";
 }
-
-function feeRangeText(visa) {
-  const bounds = getFeeBounds(visa);
-  return bounds
-    ? money(bounds.min) + " – " + money(bounds.max)
-    : "Fee range unavailable";
-}
-
-function getSupabaseClient() {
-  if (!window.supabase || !window.SUPABASE_URL ||
-      !window.SUPABASE_ANON_KEY) {
-    throw new Error("Supabase configuration is missing. Please check config.js.");
+function getClient(){
+  if(!window.supabase||!window.SUPABASE_URL||!window.SUPABASE_ANON_KEY)
+    throw new Error("Supabase configuration is missing. Check config.js.");
+  if(!window.supabaseClient){
+    window.supabaseClient=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
   }
-
-  if (!window.supabaseClient) {
-    window.supabaseClient = window.supabase.createClient(
-      window.SUPABASE_URL,
-      window.SUPABASE_ANON_KEY
-    );
-  }
-
   return window.supabaseClient;
 }
 
-/* ALL APPLICATION BACKEND REQUESTS USE V17 */
+/* AUTHENTICATED V18 REQUEST */
+async function backendRequest(payload){
+  const client=getClient();
+  const {data,error}=await client.auth.getSession();
+  if(error)throw error;
+  const session=data.session;
+  if(!session?.access_token)throw new Error("Your session has expired. Please sign in again.");
 
-async function backendRequest(payload) {
-  const client = getSupabaseClient();
+  const url=window.SUPABASE_URL.replace(/\/$/,"")+"/functions/v1/"+BACKEND_VERSION;
+  const controller=new AbortController();
+  const timeout=setTimeout(()=>controller.abort(),30000);
 
-  if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) {
-    throw new Error("Supabase configuration is missing. Please check config.js.");
-  }
-
-  const {data:sessionData,error:sessionError} =
-    await client.auth.getSession();
-
-  if (sessionError) throw sessionError;
-
-  const session = sessionData.session;
-
-  if (!session || !session.access_token) {
-    throw new Error("Your session has expired. Please sign in again.");
-  }
-
-  const backendUrl =
-    window.SUPABASE_URL.replace(/\/$/,"") +
-    "/functions/v1/" + BACKEND_VERSION;
-
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(),30000);
-
-  try {
-    const response = await fetch(backendUrl,{
+  try{
+    const response=await fetch(url,{
       method:"POST",
       headers:{
         "Content-Type":"application/json",
-        "Authorization":"Bearer " + session.access_token,
+        "Authorization":"Bearer "+session.access_token,
         "apikey":window.SUPABASE_ANON_KEY
       },
       body:JSON.stringify(payload),
       signal:controller.signal
     });
-
-    const result = await response.json().catch(() => ({}));
-
-    if (!response.ok || result.ok === false || result.success === false) {
-      throw new Error(
-        result.error ||
-        result.message ||
-        "The V17 backend request failed. Please try again."
-      );
+    const result=await response.json().catch(()=>({}));
+    if(!response.ok||result.ok===false||result.success===false){
+      throw new Error(result.error||result.message||"The V18 backend request failed.");
     }
-
-    if (
-      result.version &&
-      result.version !== BACKEND_VERSION
-    ) {
-      throw new Error(
-        "Backend version mismatch. Confirm that visa-backend-v17 is deployed."
-      );
+    if(result.version&&result.version!==BACKEND_VERSION){
+      throw new Error("Backend version mismatch. Confirm visa-backend-v18 is deployed.");
     }
-
     return result;
-
-  } catch(error) {
-    if (error.name === "AbortError") {
-      throw new Error("The backend request timed out. Please try again.");
-    }
-
+  }catch(error){
+    if(error.name==="AbortError")throw new Error("The request timed out. Please try again.");
     throw error;
-
-  } finally {
-    clearTimeout(timeout);
-  }
+  }finally{clearTimeout(timeout);}
 }
 
-async function loadUser() {
-  const {data,error} = await getSupabaseClient().auth.getUser();
-
-  if (error || !data.user) {
-    throw new Error("Please sign in before submitting a visa application.");
-  }
-
-  currentUser = data.user;
+async function loadUser(){
+  const {data,error}=await getClient().auth.getUser();
+  if(error||!data.user)throw new Error("Please sign in before using the application page.");
+  currentUser=data.user;
 }
 
-/* APPLICATION TRACKING */
+/* COUNTRY AND VISA DATA */
+async function loadCountries(){
+  countryEl.disabled=true;
+  applyingFromEl.disabled=true;
+  countryEl.innerHTML='<option value="">Loading countries...</option>';
+  applyingFromEl.innerHTML='<option value="">Loading countries...</option>';
 
-function displayValue(value) {
-  return value === null || value === undefined || value === ""
-    ? "Not provided"
-    : String(value);
-}
+  const result=await backendRequest({action:"countries"});
+  const countries=result.countries||[];
 
-function addTrackingRow(parent,label,value) {
-  const p = document.createElement("p");
-  const strong = document.createElement("strong");
-  strong.textContent = label + ": ";
-  p.appendChild(strong);
-  p.appendChild(document.createTextNode(displayValue(value)));
-  parent.appendChild(p);
-}
+  countryEl.innerHTML='<option value="">Select destination country</option>';
+  applyingFromEl.innerHTML='<option value="">Select applying-from country</option>';
 
-function getApplicationStatus(application) {
-  return firstDefined(application,[
-    "status",
-    "application_status",
-    "current_status"
-  ],"Submitted");
-}
+  countries.forEach(country=>{
+    if(!country.id||!country.country_name)return;
+    const a=document.createElement("option");
+    a.value=country.id;
+    a.textContent=country.country_name;
+    countryEl.appendChild(a);
 
-function getPaymentStatus(application) {
-  return firstDefined(application,[
-    "payment_status",
-    "paymentStatus"
-  ],"Pending");
-}
-
-/*
-  UPDATED V17 TRACKING PROCESSING-TIME LOOKUP
-
-  This retrieves the administrator's active general processing-time
-  records from visa_processing_times.
-
-  V17 applications may contain a destination country ID rather than
-  a country name, so this function resolves IDs through the V17
-  countries action before matching the processing-time record.
-
-  It prefers a matching visa category. If none exists, it uses the
-  general destination record where visa_category is NULL.
-
-  This lookup uses records where applying_from IS NULL because the
-  current V17 submit action does not save the applying-from country.
-*/
-
-function normaliseCountryName(value) {
-  return String(value || "")
-    .trim()
-    .toLowerCase()
-    .replace(/&/g,"and")
-    .replace(/[^a-z0-9]/g,"");
-}
-
-function countryNamesMatch(first,second) {
-  const a = normaliseCountryName(first);
-  const b = normaliseCountryName(second);
-
-  if (!a || !b) return false;
-  if (a === b) return true;
-
-  const aliases = {
-    usa:["usa","us","unitedstatesofamerica","unitedstates"],
-    uk:["uk","unitedkingdom","greatbritain","britain"],
-    europe:["europe","europeschengen","schengen","schengenarea"]
-  };
-
-  for (const group of Object.values(aliases)) {
-    if (group.includes(a) && group.includes(b)) return true;
-  }
-
-  return false;
-}
-
-async function loadTrackingProcessingTimes(applications) {
-  if (!Array.isArray(applications) || !applications.length) return;
-
-  const client = getSupabaseClient();
-
-  let countries = [];
-
-  try {
-    const countryResult = await backendRequest({
-      action:"countries"
-    });
-
-    countries = countryResult.countries || [];
-
-  } catch(error) {
-    console.error("Could not resolve destination country IDs:",error);
-  }
-
-  const countryNamesById = new Map();
-
-  countries.forEach(country => {
-    if (country && country.id !== undefined && country.country_name) {
-      countryNamesById.set(
-        String(country.id),
-        String(country.country_name).trim()
-      );
-    }
+    const b=document.createElement("option");
+    b.value=country.id;
+    b.textContent=country.country_name;
+    applyingFromEl.appendChild(b);
   });
-
-  applications.forEach(application => {
-    let destination = firstDefined(application,[
-      "destination_country",
-      "country_name",
-      "country"
-    ],"");
-
-    if (destination && typeof destination === "object") {
-      destination =
-        destination.country_name ||
-        destination.name ||
-        destination.destination ||
-        "";
-    }
-
-    destination = String(destination || "").trim();
-
-    if (!destination || /^\d+$/.test(destination)) {
-      const countryId = firstDefined(application,[
-        "destination_country_id",
-        "country_id"
-      ],destination);
-
-      destination = countryNamesById.get(String(countryId)) || "";
-    }
-
-    if (destination) {
-      application.tracking_destination_name = destination;
-    }
-  });
-
-  let records = [];
-
-  try {
-    const {data,error} = await client
-      .from("visa_processing_times")
-      .select("destination,applying_from,visa_category,min_days,max_days,time_unit,is_active,updated_at")
-      .eq("is_active",true)
-      .is("applying_from",null)
-      .order("updated_at",{ascending:false});
-
-    if (error) throw error;
-
-    records = data || [];
-
-  } catch(error) {
-    console.error("Could not load administrator processing-time records:",error);
-
-    applications.forEach(application => {
-      application.tracking_processing_time_error = true;
-    });
-
-    return;
-  }
-
-  applications.forEach(application => {
-    const destination = application.tracking_destination_name;
-
-    if (!destination) return;
-
-    const destinationRecords = records.filter(record =>
-      !record.applying_from &&
-      countryNamesMatch(record.destination,destination)
-    );
-
-    const visaName = firstDefined(application,[
-      "visa_type",
-      "visa_name",
-      "visa_type_name"
-    ],"");
-
-    const category = normaliseCategory(visaName);
-
-    const categoryRecord = destinationRecords.find(record =>
-      record.visa_category &&
-      normaliseCategory(record.visa_category) === category
-    );
-
-    const generalRecord = destinationRecords.find(record =>
-      !record.visa_category
-    );
-
-    const selected = categoryRecord || generalRecord;
-
-    if (!selected) return;
-
-    const min = Number(selected.min_days);
-    const max = Number(selected.max_days);
-
-    if (
-      Number.isInteger(min) &&
-      Number.isInteger(max) &&
-      min >= 0 &&
-      max >= min
-    ) {
-      application.tracking_processing_time = {
-        min_days:min,
-        max_days:max,
-        time_unit:selected.time_unit || "days"
-      };
-    }
-  });
-}function renderTracking(applications) {
-  trackingResults.innerHTML = "";
-
-  if (!Array.isArray(applications) || applications.length === 0) {
-    trackingResults.textContent =
-      "You do not have any applications yet. Your submitted applications will appear here.";
-    return;
-  }
-
-  applications.forEach(application => {
-    const card = document.createElement("div");
-    card.className = "tracking-card";
-
-    const heading = document.createElement("h3");
-    heading.textContent = "Visa Application";
-    card.appendChild(heading);
-
-    addTrackingRow(card,"Reference number",
-      firstDefined(application,[
-        "reference_number",
-        "application_reference",
-        "reference"
-      ],"Pending"));
-
-    addTrackingRow(card,"Destination",
-      application.tracking_destination_name ||
-      firstDefined(application,[
-        "destination_country",
-        "country_name",
-        "country"
-      ],"Not provided"));
-
-    addTrackingRow(card,"Visa type",
-      firstDefined(application,[
-        "visa_type",
-        "visa_name",
-        "visa_type_name"
-      ],"Not provided"));
-
-    /* DISPLAY ADMINISTRATOR'S MINIMUM AND MAXIMUM PROCESSING TIME */
-
-    const savedTime = application.tracking_processing_time;
-
-    let processingLabel = "Processing time not yet configured";
-
-    if (application.tracking_processing_time_error) {
-      processingLabel = "Processing time temporarily unavailable";
-    } else if (savedTime) {
-      processingLabel =
-        savedTime.min_days + "–" +
-        savedTime.max_days + " " +
-        (savedTime.time_unit || "days");
-    }
-
-    addTrackingRow(
-      card,
-      "Estimated processing time",
-      processingLabel
-    );
-
-    addTrackingRow(card,"Application date",
-      firstDefined(application,[
-        "created_at",
-        "submitted_at",
-        "application_date"
-      ],"Not provided"));
-
-    const status = document.createElement("p");
-    const statusLabel = document.createElement("strong");
-    statusLabel.textContent = "Application status: ";
-    status.appendChild(statusLabel);
-
-    const statusBadge = document.createElement("span");
-    statusBadge.className = "status";
-    statusBadge.textContent = getApplicationStatus(application);
-    status.appendChild(statusBadge);
-    card.appendChild(status);
-
-    addTrackingRow(card,"Payment status",getPaymentStatus(application));
-
-    addTrackingRow(card,"Administrator update",
-      firstDefined(application,[
-        "admin_notes",
-        "status_message",
-        "remarks",
-        "message"
-      ],"Your application is being processed. Please check back for further updates."));
-
-    trackingResults.appendChild(card);
-  });
+  countryEl.disabled=false;
+  applyingFromEl.disabled=false;
+  if(!countries.length)showMessage("No countries are currently available.","info");
 }
 
-async function loadTracking() {
-  if (!currentUser) {
-    trackingResults.textContent = "Please sign in to view your applications.";
-    return;
-  }
-
-  trackingResults.textContent = "Loading your applications...";
-
-  try {
-    const result = await backendRequest({action:"my_applications"});
-
-    const applications = result.applications ||
-      result.my_applications ||
-      result.data ||
-      [];
-
-    if (!Array.isArray(applications)) {
-      throw new Error("The tracking response was not valid.");
-    }
-
-    /*
-      Retrieve the V17 countries and administrator processing-time
-      records before displaying the applicant's tracking cards.
-    */
-
-    await loadTrackingProcessingTimes(applications);
-
-    renderTracking(applications);
-
-  } catch(error) {
-    console.error("Application tracking error:",error);
-    trackingResults.textContent =
-      "We could not load your applications. Please try refreshing or contact support. " +
-      (error.message || "");
-  }
-}
-
-/* APPLICANT MESSAGING */
-
-function messageDate(value) {
-  if (!value) return "Date unavailable";
-  const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime())
-    ? "Date unavailable"
-    : parsed.toLocaleString();
-}
-
-function updateUnreadCount(count) {
-  const badge = document.getElementById("unreadCount");
-
-  if (count > 0) {
-    badge.textContent = String(count);
-    badge.classList.remove("hidden");
-  } else {
-    badge.textContent = "";
-    badge.classList.add("hidden");
-  }
-}
-
-function renderInbox(messages,replies) {
-  const container = document.getElementById("inboxResults");
-  container.innerHTML = "";
-
-  const items = [];
-
-  (messages || []).forEach(item => {
-    items.push({
-      id:item.id,
-      text:item.message,
-      sender:"Administrator",
-      created_at:item.created_at,
-      is_read:item.is_read,
-      role:"admin"
-    });
-  });
-
-  (replies || []).forEach(item => {
-    items.push({
-      id:item.id,
-      text:item.message,
-      sender:item.sender_role === "admin" ? "Administrator" : "You",
-      created_at:item.created_at,
-      is_read:item.is_read,
-      role:item.sender_role === "admin" ? "admin" : "applicant"
-    });
-  });
-
-  items.sort((a,b) =>
-    new Date(a.created_at || 0) - new Date(b.created_at || 0)
-  );
-
-  if (!items.length) {
-    container.textContent =
-      "Your inbox is empty. Messages from the administrator will appear here.";
-    container.className = "message-empty";
-    document.getElementById("messageSummary").textContent = "No messages yet.";
-    updateUnreadCount(0);
-    return;
-  }
-
-  container.className = "";
-  let unread = 0;
-
-  items.forEach(item => {
-    if (item.role === "admin" && item.is_read !== true) unread++;
-
-    const card = document.createElement("div");
-    card.className = "message-card " +
-      (item.role === "admin" ? "admin-message" : "applicant-message");
-
-    const heading = document.createElement("strong");
-    heading.textContent = item.sender;
-    card.appendChild(heading);
-
-    const status = document.createElement("span");
-    status.className = "message-status " +
-      (item.is_read === true ? "read" : "unread");
-    status.textContent = item.is_read === true ? "Read" : "Unread";
-    card.appendChild(status);
-
-    const content = document.createElement("p");
-    content.style.whiteSpace = "pre-wrap";
-    content.textContent = item.text || "";
-    card.appendChild(content);
-
-    const time = document.createElement("small");
-    time.textContent = messageDate(item.created_at);
-    card.appendChild(time);
-
-    container.appendChild(card);
-  });
-
-  updateUnreadCount(unread);
-  document.getElementById("messageSummary").textContent =
-    items.length + " conversation message(s) · " +
-    unread + " unread from administrator";
-}
-
-async function markAdministratorMessagesRead(messages,replies) {
-  const client = getSupabaseClient();
-
-  const unreadMessages = (messages || [])
-    .filter(item => item.is_read !== true)
-    .map(item => item.id);
-
-  const unreadReplies = (replies || [])
-    .filter(item => item.sender_role === "admin" && item.is_read !== true)
-    .map(item => item.id);
-
-  if (unreadMessages.length) {
-    const {error} = await client
-      .from("applicant_messages")
-      .update({is_read:true})
-      .in("id",unreadMessages)
-      .eq("recipient_user_id",currentUser.id);
-
-    if (error) throw error;
-  }
-
-  if (unreadReplies.length) {
-    const {error} = await client
-      .from("applicant_message_replies")
-      .update({is_read:true})
-      .in("id",unreadReplies)
-      .eq("applicant_user_id",currentUser.id)
-      .eq("sender_role","admin");
-
-    if (error) throw error;
-  }
-}
-
-async function loadMessages() {
-  if (!currentUser) {
-    document.getElementById("inboxResults").textContent =
-      "Please sign in to view your messages.";
-    return;
-  }
-
-  if (loadingMessages) return;
-  loadingMessages = true;
-
-  const container = document.getElementById("inboxResults");
-  container.textContent = "Loading your messages...";
-
-  try {
-    const client = getSupabaseClient();
-
-    const [messageResult,replyResult] = await Promise.all([
-      client.from("applicant_messages")
-        .select("id,message,is_read,created_at,sender_name")
-        .eq("recipient_user_id",currentUser.id)
-        .order("created_at",{ascending:true}),
-
-      client.from("applicant_message_replies")
-        .select("id,message,is_read,created_at,sender_role")
-        .eq("applicant_user_id",currentUser.id)
-        .order("created_at",{ascending:true})
-    ]);
-
-    if (messageResult.error) throw messageResult.error;
-    if (replyResult.error) throw replyResult.error;
-
-    const messages = messageResult.data || [];
-    const replies = replyResult.data || [];
-
-    renderInbox(messages,replies);
-    await markAdministratorMessagesRead(messages,replies);
-
-    if (messages.some(item => item.is_read !== true) ||
-        replies.some(item => item.sender_role === "admin" &&
-          item.is_read !== true)) {
-      const refreshedMessages = messages.map(item => ({
-        ...item,
-        is_read:true
-      }));
-
-      const refreshedReplies = replies.map(item =>
-        item.sender_role === "admin"
-          ? {...item,is_read:true}
-          : item
-      );
-
-      renderInbox(refreshedMessages,refreshedReplies);
-    }
-
-  } catch(error) {
-    console.error("Applicant inbox error:",error);
-    container.textContent =
-      "We could not load your messages. Please try again. " +
-      (error.message || "");
-    showReplyNotice(
-      "Could not load messages: " + (error.message || "Unknown error"),
-      "error"
-    );
-  } finally {
-    loadingMessages = false;
-  }
-}
-
-async function sendApplicantReply() {
-  if (sendingReply) return;
-
-  if (!currentUser) {
-    showReplyNotice("Please sign in before sending a message.","error");
-    return;
-  }
-
-  const input = document.getElementById("replyMessage");
-  const text = input.value.trim();
-
-  if (!text) {
-    showReplyNotice("Please write your message first.","error");
-    return;
-  }
-
-  sendingReply = true;
-  const button = document.getElementById("sendApplicantReply");
-  button.disabled = true;
-  button.textContent = "Sending...";
-
-  try {
-    const client = getSupabaseClient();
-
-    const {error} = await client
-      .from("applicant_message_replies")
-      .insert({
-        applicant_user_id:currentUser.id,
-        sender_user_id:currentUser.id,
-        sender_role:"applicant",
-        message:text,
-        is_read:false
-      });
-
-    if (error) throw error;
-
-    input.value = "";
-    showReplyNotice("Your message has been sent to the administrator.","success");
-    await loadMessages();
-
-  } catch(error) {
-    console.error("Applicant reply error:",error);
-    showReplyNotice(
-      "Your message could not be sent: " +
-      (error.message || "Please try again."),
-      "error"
-    );
-  } finally {
-    sendingReply = false;
-    button.disabled = false;
-    button.textContent = "Send Message";
-  }
-}
-
-/* COUNTRIES AND VISA TYPES */
-
-async function loadCountries() {
-  countryEl.disabled = true;
-  applyingFromEl.disabled = true;
-
-  countryEl.innerHTML = '<option value="">Loading countries...</option>';
-  applyingFromEl.innerHTML = '<option value="">Loading countries...</option>';
-
-  const result = await backendRequest({action:"countries"});
-  const countries = result.countries || [];
-
-  countryEl.innerHTML = '<option value="">Select destination country</option>';
-  applyingFromEl.innerHTML = '<option value="">Select applying-from country</option>';
-
-  countries.forEach(country => {
-    const destinationOption = document.createElement("option");
-    destinationOption.value = country.id;
-    destinationOption.textContent = country.country_name;
-    countryEl.appendChild(destinationOption);
-
-    const originOption = document.createElement("option");
-    originOption.value = country.id;
-    originOption.textContent = country.country_name;
-    applyingFromEl.appendChild(originOption);
-  });
-
-  countryEl.disabled = false;
-  applyingFromEl.disabled = false;
-
-  if (!countries.length) {
-    showMessage("No countries are currently available.","info");
-  }
-}
-
-async function loadVisaTypes(countryId) {
-  const requestNumber = ++visaRequestNumber;
-
-  visaTypeEl.disabled = true;
-  visaTypeEl.innerHTML = '<option value="">Loading visa types...</option>';
-
-  selectedVisa = null;
-  visaTypes = [];
+async function loadVisaTypes(countryId){
+  const request=++visaRequestNumber;
+  visaTypeEl.disabled=true;
+  visaTypeEl.innerHTML='<option value="">Loading visa types...</option>';
+  selectedVisa=null;
+  visaTypes=[];
   updateFees();
-  loadPublicProcessingTime();
+  updateProcessingTime();
 
-  const result = await backendRequest({
-    action:"visa_types",
-    country_id:countryId
-  });
+  const result=await backendRequest({action:"visa_types",country_id:countryId});
+  if(request!==visaRequestNumber)return;
 
-  if (requestNumber !== visaRequestNumber) return;
-
-  visaTypes = result.visa_types || [];
-  visaTypeEl.innerHTML = '<option value="">Select a visa type</option>';
-
-  visaTypes.forEach(visa => {
-    const option = document.createElement("option");
-    option.value = visa.id;
-    option.textContent =
-      (visa.visa_name || "Visa") + " — " + feeRangeText(visa);
+  visaTypes=result.visa_types||[];
+  visaTypeEl.innerHTML='<option value="">Select a visa type</option>';
+  visaTypes.forEach(visa=>{
+    const option=document.createElement("option");
+    option.value=visa.id;
+    option.textContent=(visa.visa_name||"Visa")+" — "+feeRangeText(visa);
     visaTypeEl.appendChild(option);
   });
-
-  visaTypeEl.disabled = false;
-
-  if (!visaTypes.length) {
-    showMessage("No visa types are available for this destination.","info");
-  }
+  visaTypeEl.disabled=false;
+  if(!visaTypes.length)showMessage("No visa types are available for this destination.","info");
 }
 
-/* PROCESSING TIME CATEGORY MATCHING */
-
-function normaliseCategory(value) {
-  const name = String(value || "").toLowerCase().trim();
-
-  if (name.includes("seasonal") || name.includes("agricultural") ||
-      name.includes("farm worker")) return "Seasonal/Agricultural Work";
-  if (name.includes("permanent residence") ||
-      name.includes("permanent resident") ||
-      name.includes("immigration") || name.includes("settlement"))
-    return "Permanent Residence/Immigration";
-  if (name.includes("humanitarian") || name.includes("refugee") ||
-      name.includes("asylum")) return "Humanitarian/Refugee";
-  if (name.includes("diplomatic") || name.includes("official"))
-    return "Diplomatic/Official";
-  if (name.includes("journalist") || name.includes("media"))
-    return "Journalist/Media";
-  if (name.includes("religious") || name.includes("pilgrimage") ||
-      name.includes("pilgrim")) return "Religious/Pilgrimage";
-  if (name.includes("exchange") || name.includes("research"))
-    return "Exchange/Research";
-  if (name.includes("job seeker") || name.includes("jobseeker"))
-    return "Job Seeker";
-  if (name.includes("au pair") || name.includes("au-pair"))
-    return "Au Pair";
-  if (name.includes("internship") || name.includes("training") ||
-      name.includes("trainee")) return "Internship/Training";
-  if (name.includes("sports") || name.includes("sport") ||
-      name.includes("entertainment") || name.includes("artist") ||
-      name.includes("performer")) return "Sports/Arts/Entertainment";
-  if (name.includes("crew") || name.includes("seafarer") ||
-      name.includes("seaman")) return "Crew/Seafarer";
-  if (name.includes("investor") || name.includes("entrepreneur"))
-    return "Investor/Entrepreneur";
-  if (name.includes("evisa") || name.includes("e-visa") ||
-      name.includes("eta") || name.includes("electronic travel"))
-    return "eVisa/ETA";
-  if (name.includes("conference") || name.includes("event"))
-    return "Conference/Event";
-  if (name.includes("medical") || name.includes("treatment") ||
-      name.includes("health")) return "Medical";
-  if (name.includes("family") || name.includes("spouse") ||
-      name.includes("dependent") || name.includes("reunion"))
-    return "Family/Spouse";
-  if (name.includes("tourist") || name.includes("visitor") ||
-      name.includes("holiday") || name.includes("sightseeing"))
-    return "Tourist/Visitor";
-  if (name.includes("student") || name.includes("study") ||
-      name.includes("education")) return "Student";
-  if (name.includes("transit")) return "Transit";
-  if (name.includes("business")) return "Business";
-  if (name.includes("work") || name.includes("employment") ||
-      name.includes("worker")) return "Work";
-
-  return "Other";
-}
-
-function formatVerificationDate(value) {
-  if (!value) return "Not provided";
-  const date = new Date(value);
-  return Number.isNaN(date.getTime())
-    ? "Not provided"
-    : date.toLocaleDateString();
- }async function loadPublicProcessingTime() {
-  const requestNumber = ++processingRequestNumber;
-  if (!processingResult) return;
-
-  const destinationName =
-    countryEl.options[countryEl.selectedIndex]?.textContent?.trim();
-
-  const applyingFromName =
-    applyingFromEl.options[
-      applyingFromEl.selectedIndex
-    ]?.textContent?.trim();
-
-  const category = normaliseCategory(
-    selectedVisa?.visa_name || selectedVisa?.name || ""
-  );
-
-  if (!countryEl.value || !applyingFromEl.value || !selectedVisa) {
-    processingResult.textContent =
-      "Select an applying-from country, destination country and visa type to view the available processing time.";
+/* PROCESSING TIME: V18 VISA TYPES FIELD */
+function updateProcessingTime(){
+  const request=++processingRequestNumber;
+  if(!countryEl.value||!applyingFromEl.value||!selectedVisa){
+    processingResult.textContent="Select an applying-from country, destination country and visa type to view the available processing time.";
     return;
   }
-
-  processingResult.textContent =
-    "Checking the processing time for your selected countries and visa category...";
-
-  try {
-    const client = getSupabaseClient();
-
-    const {data,error} = await client
-      .from("visa_processing_times")
-      .select("destination,applying_from,region,visa_category,min_days,max_days,time_unit,source_url,last_verified_at,is_active")
-      .eq("destination",destinationName)
-      .eq("applying_from",applyingFromName)
-      .eq("visa_category",category)
-      .eq("is_active",true)
-      .not("source_url","is",null)
-      .not("last_verified_at","is",null)
-      .order("last_verified_at",{ascending:false})
-      .limit(1);
-
-    if (requestNumber !== processingRequestNumber) return;
-    if (error) throw error;
-
-    processingResult.innerHTML = "";
-
-    if (!data || !data.length) {
-      processingResult.textContent =
-        "No verified processing time has been published for " +
-        category + " applications from " + applyingFromName +
-        " to " + destinationName +
-        ". Please contact our support team for assistance.";
-      return;
-    }
-
-    const item = data[0];
-    const min = Number(item.min_days);
-    const max = Number(item.max_days);
-
-    if (!Number.isInteger(min) || !Number.isInteger(max) ||
-        min < 0 || max < min) {
-      processingResult.textContent =
-        "The published processing-time record is incomplete. Please contact support.";
-      return;
-    }
-
-    const card = document.createElement("div");
-    card.className = "processing-result";
-
-    const heading = document.createElement("h3");
-    heading.textContent = item.destination + " — " + item.visa_category;
-    card.appendChild(heading);
-
-    const origin = document.createElement("p");
-    origin.className = "muted";
-    origin.textContent = "Applying from: " + item.applying_from;
-    card.appendChild(origin);
-
-    const duration = document.createElement("p");
-    const strong = document.createElement("strong");
-    strong.textContent = min + "–" + max + " " + (item.time_unit || "days");
-    duration.appendChild(strong);
-    card.appendChild(duration);
-
-    const region = document.createElement("p");
-    region.className = "muted";
-    region.textContent = "Region: " + (item.region || "Not specified");
-    card.appendChild(region);
-
-    const verified = document.createElement("p");
-    verified.className = "muted";
-    verified.textContent =
-      "Last verified: " + formatVerificationDate(item.last_verified_at);
-    card.appendChild(verified);
-
-    if (item.source_url) {
-      try {
-        const source = new URL(item.source_url);
-        if (source.protocol === "https:") {
-          const link = document.createElement("a");
-          link.href = source.href;
-          link.target = "_blank";
-          link.rel = "noopener noreferrer";
-          link.textContent = "View official information source";
-          card.appendChild(link);
-        }
-      } catch(sourceError) {
-        console.warn("Invalid processing-time source URL.");
-      }
-    }
-
-    processingResult.appendChild(card);
-
-  } catch(error) {
-    console.error("Processing-time lookup error:",error);
-
-    if (requestNumber === processingRequestNumber) {
-      processingResult.textContent =
-        "We could not load the processing time at the moment. Please try again later.";
-    }
+  const days=Number(selectedVisa.processing_days);
+  processingResult.textContent="";
+  const p=document.createElement("p");
+  if(Number.isInteger(days)&&days>0){
+    p.textContent="Estimated processing time: "+days+" days.";
+  }else{
+    p.textContent="No processing-time estimate has been configured for this visa type. Please contact customer support.";
   }
+  processingResult.appendChild(p);
+  const note=document.createElement("p");
+  note.className="muted";
+  note.textContent="This is the configured general estimate for the selected visa type. Actual processing time may differ depending on the authority handling the application and the country from which you apply.";
+  processingResult.appendChild(note);
 }
 
-/* FEES */
-
-function updateFees() {
-  const count = applicantsEl.querySelectorAll(".applicant").length || 1;
-  const bounds = getFeeBounds(selectedVisa);
-
-  document.getElementById("applicantCount").textContent = String(count);
-  document.getElementById("officialFee").textContent =
-    bounds ? money(bounds.min) + " – " + money(bounds.max) : "Select a visa type";
-  document.getElementById("serviceFee").textContent =
-    money(SERVICE_FEE_PER_APPLICANT);
-  document.getElementById("serviceTotal").textContent =
-    money(SERVICE_FEE_PER_APPLICANT * count);
-  document.getElementById("grandTotal").textContent =
-    bounds
-      ? money((bounds.min + SERVICE_FEE_PER_APPLICANT) * count) +
-        " – " +
-        money((bounds.max + SERVICE_FEE_PER_APPLICANT) * count)
-      : "—";
+/* FEES: NEVER COMBINE SERVICE FEE AND GOVERNMENT FEE */
+function updateFees(){
+  const count=applicantsEl.querySelectorAll(".applicant").length||1;
+  const bounds=getFeeBounds(selectedVisa);
+  document.getElementById("applicantCount").textContent=String(count);
+  document.getElementById("officialFee").textContent=bounds?feeRangeText(selectedVisa):"Select a visa type";
+  document.getElementById("serviceFee").textContent=money(SERVICE_FEE_PER_APPLICANT);
+  document.getElementById("serviceTotal").textContent=money(SERVICE_FEE_PER_APPLICANT*count);
 }
 
-/* FORM FIELD HELPERS */
-
-function addField(parent,labelText,name,type="text",required=false) {
-  const wrap = document.createElement("div");
-  const label = document.createElement("label");
-  const input = document.createElement("input");
-
-  label.appendChild(document.createTextNode(
-    labelText + (required ? " *" : "")
-  ));
-
-  input.name = name;
-  input.type = type;
-  input.required = required;
-
-  if (type === "file") input.accept = ".pdf,.jpg,.jpeg,.png";
-
+/* APPLICANT FORM HELPERS */
+function addField(parent,labelText,name,type="text",required=false){
+  const wrap=document.createElement("div");
+  const label=document.createElement("label");
+  label.appendChild(document.createTextNode(labelText+(required?" *":"")));
+  const input=document.createElement("input");
+  input.name=name;
+  input.type=type;
+  input.required=required;
+  if(type==="file")input.accept=".pdf,.jpg,.jpeg,.png";
   label.appendChild(input);
   wrap.appendChild(label);
   parent.appendChild(wrap);
   return input;
 }
-
-function addSelect(parent,labelText,name,options,required=false) {
-  const wrap = document.createElement("div");
-  const label = document.createElement("label");
-  const select = document.createElement("select");
-
-  label.appendChild(document.createTextNode(
-    labelText + (required ? " *" : "")
-  ));
-
-  select.name = name;
-  select.required = required;
-
-  options.forEach(item => {
-    const option = document.createElement("option");
-    option.value = item.value;
-    option.textContent = item.label;
+function addSelect(parent,labelText,name,options,required=false){
+  const wrap=document.createElement("div");
+  const label=document.createElement("label");
+  label.appendChild(document.createTextNode(labelText+(required?" *":"")));
+  const select=document.createElement("select");
+  select.name=name;
+  select.required=required;
+  options.forEach(item=>{
+    const option=document.createElement("option");
+    option.value=item.value;
+    option.textContent=item.label;
     select.appendChild(option);
   });
-
   label.appendChild(select);
   wrap.appendChild(label);
   parent.appendChild(wrap);
   return select;
 }
-
-/* ADD APPLICANT */
-
-function addApplicant(isPrimary=false) {
-  const count = applicantsEl.querySelectorAll(".applicant").length;
-
-  if (count >= MAX_APPLICANTS) {
-    showMessage(
-      "You can add a maximum of " + MAX_APPLICANTS + " applicants.",
-      "error"
-    );
+function addApplicant(isPrimary=false){
+  const count=applicantsEl.querySelectorAll(".applicant").length;
+  if(count>=MAX_APPLICANTS){
+    showMessage("You can add a maximum of "+MAX_APPLICANTS+" applicants.","error");
     return;
   }
 
-  const card = document.createElement("div");
-  card.className = "applicant";
-
-  const heading = document.createElement("h3");
-  heading.textContent = isPrimary ? "Primary Applicant" : "Family Member " + count;
+  const card=document.createElement("div");
+  card.className="applicant";
+  const heading=document.createElement("h3");
+  heading.textContent=isPrimary?"Primary Applicant":"Family Member "+count;
   card.appendChild(heading);
 
-  const grid = document.createElement("div");
-  grid.className = "grid";
+  const grid=document.createElement("div");
+  grid.className="grid";
   card.appendChild(grid);
 
   addField(grid,"First name","first_name","text",true);
@@ -1415,493 +445,435 @@ function addApplicant(isPrimary=false) {
   addField(grid,"Passport number","passport_number");
   addField(grid,"Date of birth","date_of_birth","date");
 
-  const passport = addSelect(grid,"Do you have a passport?","has_passport",[
-    {value:"true",label:"Yes"},
-    {value:"false",label:"No"}
+  const passport=addSelect(grid,"Do you have a passport?","has_passport",[
+    {value:"true",label:"Yes"},{value:"false",label:"No"}
+  ],true);
+  const refugee=addSelect(grid,"Are you a refugee?","is_refugee",[
+    {value:"false",label:"No"},{value:"true",label:"Yes"}
   ],true);
 
-  const refugee = addSelect(grid,"Are you a refugee?","is_refugee",[
-    {value:"false",label:"No"},
-    {value:"true",label:"Yes"}
-  ],true);
-
-  const refugeeNumber = addField(grid,"Refugee card number","refugee_card_number");
-  const unNumber = addField(grid,"UN manifest number","un_manifest_number");
-  const passportPhoto = addField(grid,"Passport photo","passport_photo","file");
-  const passportPage = addField(grid,"Passport information page","passport_page","file");
-  const refugeeCard = addField(grid,"Refugee card document","refugee_card","file");
-  const unManifest = addField(grid,"UN manifest document","un_manifest","file");
+  const refugeeNumber=addField(grid,"Refugee card number","refugee_card_number");
+  const unNumber=addField(grid,"UN manifest number","un_manifest_number");
+  const passportPhoto=addField(grid,"Passport photo","passport_photo","file");
+  const passportPage=addField(grid,"Passport information page","passport_page","file");
+  const refugeeCard=addField(grid,"Refugee card document","refugee_card","file");
+  const unManifest=addField(grid,"UN manifest document","un_manifest","file");
   addField(grid,"Other supporting document","supporting_document","file");
 
-  function updateConditionalFields() {
-    const hasPassport = passport.value === "true";
-    const isRefugee = refugee.value === "true";
-
-    passportPhoto.parentElement.style.display = hasPassport ? "" : "none";
-    passportPage.parentElement.style.display = hasPassport ? "" : "none";
-    refugeeNumber.parentElement.style.display = isRefugee ? "" : "none";
-    refugeeCard.parentElement.style.display = isRefugee ? "" : "none";
-    unNumber.parentElement.style.display = isRefugee ? "" : "none";
-    unManifest.parentElement.style.display = isRefugee ? "" : "none";
-
-    if (!hasPassport) {
-      passportPhoto.value = "";
-      passportPage.value = "";
-    }
-
-    if (!isRefugee) {
-      refugeeNumber.value = "";
-      refugeeCard.value = "";
-      unNumber.value = "";
-      unManifest.value = "";
-    }
+  function updateConditional(){
+    const has=passport.value==="true";
+    const refugeeValue=refugee.value==="true";
+    passportPhoto.parentElement.style.display=has?"":"none";
+    passportPage.parentElement.style.display=has?"":"none";
+    refugeeNumber.parentElement.style.display=refugeeValue?"":"none";
+    refugeeCard.parentElement.style.display=refugeeValue?"":"none";
+    unNumber.parentElement.style.display=refugeeValue?"":"none";
+    unManifest.parentElement.style.display=refugeeValue?"":"none";
+    if(!has){passportPhoto.value="";passportPage.value="";}
+    if(!refugeeValue){refugeeNumber.value="";refugeeCard.value="";unNumber.value="";unManifest.value="";}
   }
+  passport.addEventListener("change",updateConditional);
+  refugee.addEventListener("change",updateConditional);
+  updateConditional();
 
-  passport.addEventListener("change",updateConditionalFields);
-  refugee.addEventListener("change",updateConditionalFields);
-  updateConditionalFields();
-
-  if (!isPrimary) {
-    const remove = document.createElement("button");
-    remove.type = "button";
-    remove.className = "secondary";
-    remove.textContent = "Remove applicant";
-
-    remove.addEventListener("click",() => {
+  if(!isPrimary){
+    const remove=document.createElement("button");
+    remove.type="button";
+    remove.className="secondary";
+    remove.textContent="Remove applicant";
+    remove.addEventListener("click",()=>{
       card.remove();
       renumberApplicants();
       updateFees();
     });
-
     card.appendChild(remove);
   }
-
   applicantsEl.appendChild(card);
   updateFees();
 }
-
-function renumberApplicants() {
-  [...applicantsEl.querySelectorAll(".applicant")].forEach((card,index) => {
-    card.querySelector("h3").textContent =
-      index === 0 ? "Primary Applicant" : "Family Member " + index;
+function renumberApplicants(){
+  [...applicantsEl.querySelectorAll(".applicant")].forEach((card,index)=>{
+    card.querySelector("h3").textContent=index===0?"Primary Applicant":"Family Member "+index;
   });
 }
 
-/* DOCUMENT HANDLING */
-
-function fileToBase64(file) {
-  return new Promise((resolve,reject) => {
-    if (!file) return resolve(null);
-
-    if (file.size > MAX_FILE_SIZE) {
-      return reject(new Error(file.name + " exceeds the 8 MB file limit."));
-    }
-
-    if (!ALLOWED_FILE_TYPES.includes(file.type)) {
-      return reject(new Error(file.name + " must be a PDF, JPEG or PNG file."));
-    }
-
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result).split(",")[1]);
-    reader.onerror = () => reject(new Error("Could not read " + file.name));
+/* DOCUMENTS */
+function fileToBase64(file){
+  return new Promise((resolve,reject)=>{
+    if(!file)return resolve(null);
+    if(file.size>MAX_FILE_SIZE)return reject(new Error(file.name+" exceeds the 8 MB file limit."));
+    if(!ALLOWED_FILE_TYPES.includes(file.type))return reject(new Error(file.name+" must be PDF, JPEG or PNG."));
+    const reader=new FileReader();
+    reader.onload=()=>resolve(String(reader.result).split(",")[1]);
+    reader.onerror=()=>reject(new Error("Could not read "+file.name));
     reader.readAsDataURL(file);
   });
 }
+async function collectApplicant(card,index){
+  const get=name=>card.querySelector('[name="'+name+'"]');
+  const first=get("first_name").value.trim();
+  const last=get("last_name").value.trim();
+  if(!first||!last)throw new Error("Enter the first and last name for applicant "+(index+1)+".");
 
-async function collectApplicant(card,index) {
-  const get = name => card.querySelector('[name="' + name + '"]');
+  const hasPassport=get("has_passport").value==="true";
+  const isRefugee=get("is_refugee").value==="true";
+  const email=get("email").value.trim()||(index===0?currentUser.email:null);
+  if(index===0&&!email)throw new Error("The primary applicant needs an email address.");
+  if(email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw new Error("Enter a valid email address for applicant "+(index+1)+".");
+  if(isRefugee&&!get("refugee_card_number").value.trim())throw new Error("Enter the refugee card number for applicant "+(index+1)+".");
 
-  const firstName = get("first_name").value.trim();
-  const lastName = get("last_name").value.trim();
-
-  if (!firstName || !lastName) {
-    throw new Error(
-      "Please enter the first and last name for applicant " + (index+1) + "."
-    );
-  }
-
-  const hasPassport = get("has_passport").value === "true";
-  const isRefugee = get("is_refugee").value === "true";
-  const enteredEmail = get("email").value.trim();
-  const email = enteredEmail || (index === 0 ? currentUser.email : null);
-
-  if (index === 0 && !email) {
-    throw new Error("The primary applicant needs an email address.");
-  }
-
-  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    throw new Error(
-      "Please enter a valid email address for applicant " + (index+1) + "."
-    );
-  }
-
-  if (isRefugee && !get("refugee_card_number").value.trim()) {
-    throw new Error(
-      "Please enter the refugee card number for applicant " + (index+1) + "."
-    );
-  }
-
-  const fileFields = [
-    ["passport_photo","passport_photo",hasPassport],
-    ["passport_page","passport_page",hasPassport],
-    ["refugee_card","refugee_card",isRefugee],
-    ["un_manifest","un_manifest",isRefugee],
-    ["supporting_document","supporting_document",true]
+  const fileFields=[
+    ["passport_photo",hasPassport],
+    ["passport_page",hasPassport],
+    ["refugee_card",isRefugee],
+    ["un_manifest",isRefugee],
+    ["supporting_document",true]
   ];
-
-  const documents = [];
-
-  for (const [field,type,applicable] of fileFields) {
-    if (!applicable) continue;
-    const file = get(field).files[0];
-
-    if (file) {
+  const documents=[];
+  for(const [field,applicable] of fileFields){
+    if(!applicable)continue;
+    const file=get(field).files[0];
+    if(file){
       documents.push({
         file_name:file.name,
         content_type:file.type,
         base64:await fileToBase64(file),
-        document_type:type
+        document_type:field
       });
     }
   }
-
-  if (hasPassport &&
-      !documents.some(d => d.document_type === "passport_photo")) {
-    throw new Error(
-      "Please upload a passport photo for applicant " + (index+1) + "."
-    );
-  }
-
-  if (hasPassport &&
-      !documents.some(d => d.document_type === "passport_page")) {
-    throw new Error(
-      "Please upload the passport information page for applicant " + (index+1) + "."
-    );
-  }
+  if(hasPassport&&!documents.some(d=>d.document_type==="passport_photo"))
+    throw new Error("Upload a passport photo for applicant "+(index+1)+".");
+  if(hasPassport&&!documents.some(d=>d.document_type==="passport_page"))
+    throw new Error("Upload the passport information page for applicant "+(index+1)+".");
 
   return {
-    first_name:firstName,
-    last_name:lastName,
+    first_name:first,
+    last_name:last,
     email,
     phone:get("phone").value.trim(),
     nationality:get("nationality").value.trim(),
     passport_number:get("passport_number").value.trim(),
-    date_of_birth:get("date_of_birth").value || null,
+    date_of_birth:get("date_of_birth").value||null,
     has_passport:hasPassport,
     is_refugee:isRefugee,
-    refugee_card_number:isRefugee
-      ? get("refugee_card_number").value.trim()
-      : null,
-    un_manifest_number:isRefugee
-      ? get("un_manifest_number").value.trim()
-      : null,
+    refugee_card_number:isRefugee?get("refugee_card_number").value.trim():null,
+    un_manifest_number:isRefugee?get("un_manifest_number").value.trim():null,
     documents
   };
 }
 
-/* RESULT DISPLAY */
+/* TRACKING */
+function addRow(parent,label,value){
+  const p=document.createElement("p");
+  const strong=document.createElement("strong");
+  strong.textContent=label+": ";
+  p.appendChild(strong);
+  p.appendChild(document.createTextNode(value===null||value===undefined||value===""?"Not provided":String(value)));
+  parent.appendChild(p);
+}
+function renderTracking(applications){
+  trackingResults.innerHTML="";
+  if(!applications.length){
+    trackingResults.textContent="You do not have any applications yet.";
+    return;
+  }
+  applications.forEach(app=>{
+    const card=document.createElement("div");
+    card.className="tracking-card";
+    const h=document.createElement("h3");
+    h.textContent="Visa Application";
+    card.appendChild(h);
 
-function appendResultRow(parent,label,value) {
-  const row = document.createElement("p");
-  const strong = document.createElement("strong");
-  strong.textContent = label + ": ";
-  row.appendChild(strong);
-  row.appendChild(document.createTextNode(
-    value === null || value === undefined || value === ""
-      ? "Not provided"
-      : String(value)
-  ));
-  parent.appendChild(row);
+    addRow(card,"Reference number",app.reference_number);
+    addRow(card,"Applying from",firstDefined(app,["applying_from","applying_from_country"]));
+    addRow(card,"Destination",firstDefined(app,["destination_country","country_name"]));
+    addRow(card,"Visa type",firstDefined(app,["visa_type","visa_name"]));
+
+    const processing=firstDefined(app,["processing_time_label","processing_time","estimated_processing_time"]);
+    const days=Number(app.processing_days);
+    addRow(card,"Estimated processing time",processing||(Number.isInteger(days)&&days>0?days+" days":"Not configured"));
+
+    addRow(card,"Application date",firstDefined(app,["application_date","created_at"]));
+    const status=document.createElement("p");
+    const label=document.createElement("strong");
+    label.textContent="Application status: ";
+    status.appendChild(label);
+    const badge=document.createElement("span");
+    badge.className="status";
+    badge.textContent=app.status||"Pending";
+    status.appendChild(badge);
+    card.appendChild(status);
+
+    addRow(card,"Consultancy service fee status",app.service_fee_payment_status||"pending");
+    addRow(card,"Government visa fee status",app.visa_fee_payment_status||"pending");
+    addRow(card,"Administrator update",firstDefined(app,["admin_notes","status_message","remarks"],"Please check back for further updates."));
+    trackingResults.appendChild(card);
+  });
+}
+async function loadTracking(){
+  if(!currentUser){
+    trackingResults.textContent="Please sign in to view your applications.";
+    return;
+  }
+  trackingResults.textContent="Loading your applications...";
+  try{
+    const result=await backendRequest({action:"my_applications"});
+    const apps=result.applications||result.my_applications||result.data||[];
+    if(!Array.isArray(apps))throw new Error("The tracking response was invalid.");
+    renderTracking(apps);
+  }catch(error){
+    console.error("Tracking error:",error);
+    trackingResults.textContent="We could not load your applications. Please refresh or contact support. "+(error.message||"");
+  }
 }
 
-/* SUBMIT APPLICATION THROUGH V17 */
-
-async function submitApplication() {
-  if (submitting) return;
-
-  hideMessage();
-
-  if (!currentUser) {
-    showMessage("Please sign in before submitting.","error");
+/* APPLICANT MESSAGES */
+function updateUnread(count){
+  const badge=document.getElementById("unreadCount");
+  badge.textContent=count?String(count):"";
+  badge.classList.toggle("hidden",!count);
+}
+function messageDate(value){
+  const date=new Date(value);
+  return value&&!Number.isNaN(date.getTime())?date.toLocaleString():"Date unavailable";
+}
+function renderInbox(messages,replies){
+  const container=document.getElementById("inboxResults");
+  container.innerHTML="";
+  const items=[];
+  (messages||[]).forEach(m=>items.push({text:m.message,sender:"Administrator",created_at:m.created_at,is_read:m.is_read,role:"admin"}));
+  (replies||[]).forEach(m=>items.push({text:m.message,sender:m.sender_role==="admin"?"Administrator":"You",created_at:m.created_at,is_read:m.is_read,role:m.sender_role==="admin"?"admin":"applicant"}));
+  items.sort((a,b)=>new Date(a.created_at||0)-new Date(b.created_at||0));
+  if(!items.length){
+    container.textContent="Your inbox is empty.";
+    document.getElementById("messageSummary").textContent="No messages yet.";
+    updateUnread(0);
     return;
   }
+  let unread=0;
+  items.forEach(item=>{
+    if(item.role==="admin"&&item.is_read!==true)unread++;
+    const card=document.createElement("div");
+    card.className="message-card "+(item.role==="admin"?"admin-message":"applicant-message");
+    const heading=document.createElement("strong");
+    heading.textContent=item.sender;
+    card.appendChild(heading);
+    const state=document.createElement("span");
+    state.className="message-status "+(item.is_read===true?"read":"unread");
+    state.textContent=item.is_read===true?"Read":"Unread";
+    card.appendChild(state);
+    const body=document.createElement("p");
+    body.style.whiteSpace="pre-wrap";
+    body.textContent=item.text||"";
+    card.appendChild(body);
+    const time=document.createElement("small");
+    time.textContent=messageDate(item.created_at);
+    card.appendChild(time);
+    container.appendChild(card);
+  });
+  updateUnread(unread);
+  document.getElementById("messageSummary").textContent=items.length+" message(s), "+unread+" unread from administrator.";
+}
+async function loadMessages(){
+  if(!currentUser)return;
+  if(loadingMessages)return;
+  loadingMessages=true;
+  const container=document.getElementById("inboxResults");
+  container.textContent="Loading messages...";
+  try{
+    const client=getClient();
+    const [m,r]=await Promise.all([
+      client.from("applicant_messages").select("id,message,is_read,created_at,sender_name").eq("recipient_user_id",currentUser.id).order("created_at",{ascending:true}),
+      client.from("applicant_message_replies").select("id,message,is_read,created_at,sender_role").eq("applicant_user_id",currentUser.id).order("created_at",{ascending:true})
+    ]);
+    if(m.error)throw m.error;
+    if(r.error)throw r.error;
+    const messages=m.data||[];
+    const replies=r.data||[];
+    renderInbox(messages,replies);
 
-  if (!applyingFromEl.value) {
-    showMessage("Please select the country from which you are applying.","error");
-    applyingFromEl.focus();
-    return;
-  }
+    const unreadMessages=messages.filter(x=>x.is_read!==true).map(x=>x.id);
+    const unreadReplies=replies.filter(x=>x.sender_role==="admin"&&x.is_read!==true).map(x=>x.id);
 
-  if (!countryEl.value || !visaTypeEl.value || !selectedVisa) {
-    showMessage("Please select a destination country and visa type.","error");
-    return;
-  }
-
-  if (!validFeeRange(selectedVisa)) {
-    showMessage(
-      "The official visa fee range is missing or invalid. No application has been submitted.",
-      "error"
-    );
-    return;
-  }
-
-  if (!document.getElementById("confirm").checked) {
-    showMessage("Please confirm the information before submitting.","error");
-    return;
-  }
-
-  const cards = [...applicantsEl.querySelectorAll(".applicant")];
-
-  if (!cards.length || cards.length > MAX_APPLICANTS) {
-    showMessage("Please check the number of applicants.","error");
-    return;
-  }
-
-  submitting = true;
-  submitButton.disabled = true;
-  submitButton.textContent = "Submitting application...";
-
-  try {
-    const applicants = [];
-
-    for (let i=0;i<cards.length;i++) {
-      applicants.push(await collectApplicant(cards[i],i));
+    if(unreadMessages.length){
+      const {error}=await client.from("applicant_messages").update({is_read:true}).in("id",unreadMessages).eq("recipient_user_id",currentUser.id);
+      if(error)throw error;
     }
+    if(unreadReplies.length){
+      const {error}=await client.from("applicant_message_replies").update({is_read:true}).in("id",unreadReplies).eq("applicant_user_id",currentUser.id).eq("sender_role","admin");
+      if(error)throw error;
+    }
+    if(unreadMessages.length||unreadReplies.length){
+      renderInbox(messages.map(x=>({...x,is_read:true})),replies.map(x=>x.sender_role==="admin"?({...x,is_read:true}):x));
+    }
+  }catch(error){
+    console.error("Messages error:",error);
+    container.textContent="Messages could not be loaded. "+(error.message||"");
+  }finally{loadingMessages=false;}
+}
+async function sendApplicantReply(){
+  if(sendingReply)return;
+  if(!currentUser){showReplyNotice("Please sign in first.","error");return;}
+  const input=document.getElementById("replyMessage");
+  const text=input.value.trim();
+  if(!text){showReplyNotice("Write a message first.","error");return;}
+  sendingReply=true;
+  const button=document.getElementById("sendApplicantReply");
+  button.disabled=true;
+  button.textContent="Sending...";
+  try{
+    const {error}=await getClient().from("applicant_message_replies").insert({
+      applicant_user_id:currentUser.id,
+      sender_user_id:currentUser.id,
+      sender_role:"applicant",
+      message:text,
+      is_read:false
+    });
+    if(error)throw error;
+    input.value="";
+    showReplyNotice("Your message has been sent.","success");
+    await loadMessages();
+  }catch(error){
+    showReplyNotice("Your message could not be sent: "+(error.message||"Please try again."),"error");
+  }finally{
+    sendingReply=false;
+    button.disabled=false;
+    button.textContent="Send Message";
+  }
+}
 
-    /*
-      V17 ROUTE:
-      The applying-from country is used for the processing-time lookup.
-      It is not sent as a saved application field unless the backend supports it.
-    */
+/* SUBMISSION */
+function appendResult(parent,label,value){
+  const p=document.createElement("p");
+  const strong=document.createElement("strong");
+  strong.textContent=label+": ";
+  p.appendChild(strong);
+  p.appendChild(document.createTextNode(value===null||value===undefined||value===""?"Not provided":String(value)));
+  parent.appendChild(p);
+}
+async function submitApplication(){
+  if(submitting)return;
+  hideMessage();
+  if(!currentUser){showMessage("Please sign in before submitting.","error");return;}
+  if(!applyingFromEl.value){showMessage("Select your applying-from country.","error");applyingFromEl.focus();return;}
+  if(!countryEl.value||!visaTypeEl.value||!selectedVisa){showMessage("Select a destination country and visa type.","error");return;}
+  if(!getFeeBounds(selectedVisa)){showMessage("The official visa fee range is missing or invalid. No application was submitted.","error");return;}
+  if(!document.getElementById("confirm").checked){showMessage("Please confirm the information before submitting.","error");return;}
 
-    const result = await backendRequest({
+  const cards=[...applicantsEl.querySelectorAll(".applicant")];
+  if(!cards.length||cards.length>MAX_APPLICANTS){showMessage("Check the number of applicants.","error");return;}
+
+  submitting=true;
+  submitButton.disabled=true;
+  submitButton.textContent="Submitting application...";
+
+  try{
+    const applicants=[];
+    for(let i=0;i<cards.length;i++)applicants.push(await collectApplicant(cards[i],i));
+
+    const result=await backendRequest({
       action:"submit",
-      country_id:countryEl.value,
+      destination_country_id:countryEl.value,
+      applying_from_country_id:applyingFromEl.value,
       visa_type_id:visaTypeEl.value,
       applicants
     });
 
-    const submitted = result.applications || [];
-    const resultDetails = document.getElementById("resultDetails");
-    resultDetails.innerHTML = "";
+    const submitted=result.applications||[];
+    const details=document.getElementById("resultDetails");
+    details.innerHTML="";
 
-    submitted.forEach((application,index) => {
-      const item = document.createElement("div");
-      item.className = "fee-box";
-
-      const heading = document.createElement("h3");
-      heading.textContent = "Applicant " + (index+1);
+    submitted.forEach((app,index)=>{
+      const item=document.createElement("div");
+      item.className="fee-box";
+      const heading=document.createElement("h3");
+      heading.textContent="Applicant "+(index+1);
       item.appendChild(heading);
-
-      const selectedBounds = getFeeBounds(selectedVisa) || {
-        min:0,
-        max:0
-      };
-
-      const min = firstDefined(application,[
-        "official_fee_min",
-        "official_visa_fee_min",
-        "visa_fee_min"
-      ],selectedBounds.min);
-
-      const max = firstDefined(application,[
-        "official_fee_max",
-        "official_visa_fee_max",
-        "visa_fee_max"
-      ],selectedBounds.max);
-
-      const totalMin = firstDefined(application,[
-        "total_min",
-        "total_fee_min",
-        "total_amount_min"
-      ],Number(min)+SERVICE_FEE_PER_APPLICANT);
-
-      const totalMax = firstDefined(application,[
-        "total_max",
-        "total_fee_max",
-        "total_amount_max"
-      ],Number(max)+SERVICE_FEE_PER_APPLICANT);
-
-      appendResultRow(item,"Reference number",application.reference_number);
-      appendResultRow(item,"Destination",application.destination_country);
-      appendResultRow(item,"Visa type",application.visa_type);
-
-      appendResultRow(
-        item,
-        "Estimated official visa fee",
-        money(min) + " – " + money(max)
-      );
-
-      appendResultRow(
-        item,
-        "Service fee",
-        money(firstDefined(
-          application,
-          ["service_fee"],
-          SERVICE_FEE_PER_APPLICANT
-        ))
-      );
-
-      appendResultRow(
-        item,
-        "Estimated total",
-        money(totalMin) + " – " + money(totalMax)
-      );
-
-      appendResultRow(item,"Payment status","Pending");
-      resultDetails.appendChild(item);
+      appendResult(item,"Reference number",app.reference_number);
+      appendResult(item,"Destination",app.destination_country);
+      appendResult(item,"Visa type",app.visa_type);
+      appendResult(item,"Estimated official government visa fee",feeRangeText(selectedVisa));
+      appendResult(item,"Consultancy service fee",money(firstDefined(app,["service_fee"],SERVICE_FEE_PER_APPLICANT)));
+      appendResult(item,"Consultancy service fee payment status",app.service_fee_payment_status||"pending");
+      appendResult(item,"Government visa fee payment status",app.visa_fee_payment_status||"pending");
+      details.appendChild(item);
     });
 
     document.getElementById("results").classList.remove("hidden");
 
-    if (!submitted.length) {
-      showMessage(
-        result.message ||
-        "The backend returned a successful response but no application records were returned. Please check your tracking page before trying again.",
-        "info"
-      );
-    } else if (submitted.length !== applicants.length) {
-      showMessage(
-        "The backend accepted the submission but returned an unexpected number of records. Do not submit again. Contact support with the reference details shown.",
-        "info"
-      );
-    } else {
-      showMessage(
-        result.message ||
-        "Your application was submitted. The final fee must be confirmed before payment.",
-        "success"
-      );
+    if(!submitted.length){
+      showMessage(result.message||"The backend returned no application records. Check your tracking page before submitting again.","info");
+    }else if(submitted.length!==applicants.length){
+      showMessage("The backend returned an unexpected number of records. Do not submit again until you have checked your tracking page.","info");
+    }else{
+      showMessage(result.message||"Your application was submitted successfully. Payment remains pending until verified.","success");
     }
-
-    submitButton.textContent = "Application submitted";
+    submitButton.textContent="Application submitted";
     await loadTracking();
-
-  } catch(error) {
+  }catch(error){
     console.error("Application submission error:",error);
-    showMessage(error.message || "Application submission failed.","error");
-    submitButton.disabled = false;
-    submitButton.textContent = "Submit Visa Application";
-  } finally {
-    submitting = false;
-  }
+    showMessage(error.message||"Application submission failed.","error");
+    submitButton.disabled=false;
+    submitButton.textContent="Submit Visa Application";
+  }finally{submitting=false;}
 }
 
 /* EVENTS */
-
-applyingFromEl.addEventListener("change",() => {
-  processingRequestNumber++;
-  loadPublicProcessingTime();
-});
-
-countryEl.addEventListener("change",async() => {
+applyingFromEl.addEventListener("change",updateProcessingTime);
+countryEl.addEventListener("change",async()=>{
   hideMessage();
-  visaRequestNumber++;
-  processingRequestNumber++;
-
-  if (!countryEl.value) {
-    visaTypeEl.innerHTML =
-      '<option value="">Select a destination country first</option>';
-    visaTypeEl.disabled = true;
-    selectedVisa = null;
-    visaTypes = [];
-
-    processingResult.textContent =
-      "Select an applying-from country, destination and visa type to view the available processing time.";
-
+  if(!countryEl.value){
+    visaRequestNumber++;
+    visaTypeEl.innerHTML='<option value="">Select a destination country first</option>';
+    visaTypeEl.disabled=true;
+    selectedVisa=null;
+    visaTypes=[];
     updateFees();
+    updateProcessingTime();
     return;
   }
-
-  processingResult.textContent =
-    "Select a visa type to view its available processing time.";
-
-  try {
-    await loadVisaTypes(countryEl.value);
-  } catch(error) {
-    visaTypeEl.innerHTML =
-      '<option value="">Could not load visa types</option>';
-    visaTypeEl.disabled = true;
+  try{await loadVisaTypes(countryEl.value);}
+  catch(error){
+    visaTypeEl.innerHTML='<option value="">Could not load visa types</option>';
+    visaTypeEl.disabled=true;
     showMessage(error.message,"error");
   }
 });
-
-visaTypeEl.addEventListener("change",() => {
-  selectedVisa = visaTypes.find(
-    visa => String(visa.id) === String(visaTypeEl.value)
-  ) || null;
-
+visaTypeEl.addEventListener("change",()=>{
+  selectedVisa=visaTypes.find(v=>String(v.id)===String(visaTypeEl.value))||null;
   updateFees();
-
-  if (selectedVisa && !validFeeRange(selectedVisa)) {
-    showMessage(
-      "The official fee range is not configured for this visa type.",
-      "error"
-    );
-  } else {
-    hideMessage();
-  }
-
-  loadPublicProcessingTime();
+  updateProcessingTime();
+  if(selectedVisa&&!getFeeBounds(selectedVisa))showMessage("The official fee range is not configured for this visa type.","error");
 });
-
-document.getElementById("addApplicant")
-  .addEventListener("click",() => addApplicant(false));
-
+document.getElementById("addApplicant").addEventListener("click",()=>addApplicant(false));
 submitButton.addEventListener("click",submitApplication);
-
-document.getElementById("refreshTracking")
-  .addEventListener("click",loadTracking);
-
-document.getElementById("refreshMessages")
-  .addEventListener("click",loadMessages);
-
-document.getElementById("sendApplicantReply")
-  .addEventListener("click",sendApplicantReply);
-
-document.getElementById("myMessagesButton")
-  .addEventListener("click",() => {
-    if (currentUser) loadMessages();
-  });
+document.getElementById("refreshTracking").addEventListener("click",loadTracking);
+document.getElementById("refreshMessages").addEventListener("click",loadMessages);
+document.getElementById("sendApplicantReply").addEventListener("click",sendApplicantReply);
+document.querySelector('a[href="#myMessagesSection"]').addEventListener("click",()=>{if(currentUser)loadMessages();});
 
 /* INITIALIZATION */
-
-async function initialise() {
-  try {
+async function initialise(){
+  try{
     await loadUser();
-
-    document.getElementById("signInPrompt").style.display = "none";
-
+    document.getElementById("signInPrompt").style.display="none";
     addApplicant(true);
     await loadCountries();
     updateFees();
     await loadTracking();
     await loadMessages();
-
-  } catch(error) {
-    console.error("Application page initialisation:",error);
-
-    showMessage(
-      error.message || "Could not initialise application page.",
-      "error"
-    );
-
-    submitButton.disabled = true;
-
-    trackingResults.textContent =
-      "Please sign in to view your application tracking and submit an application.";
-
-    document.getElementById("inboxResults").textContent =
-      "Please sign in to view your messages.";
-
-    document.getElementById("messageSummary").textContent =
-      "Sign in to access your inbox.";
-
-    document.getElementById("signInPrompt").style.display = "block";
+  }catch(error){
+    console.error("V18 application page initialization:",error);
+    showMessage(error.message||"Could not initialize the application page.","error");
+    submitButton.disabled=true;
+    trackingResults.textContent="Please sign in to view your applications.";
+    document.getElementById("inboxResults").textContent="Please sign in to view your messages.";
+    document.getElementById("messageSummary").textContent="Sign in to access your inbox.";
+    document.getElementById("signInPrompt").style.display="block";
   }
 }
-
 initialise();
-
 })();
 </script>
 </body>
