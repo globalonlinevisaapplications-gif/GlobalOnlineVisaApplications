@@ -1,7 +1,7 @@
 
 /**
  * GLOBAL ONLINE VISA APPLICATIONS
- * Production Configuration - V17
+ * Production Configuration - V18
  * Hosting: Netlify
  * Backend: Supabase
  */
@@ -16,7 +16,7 @@
   window.SITE_NAME = "Global Online Visa Applications";
 
   window.SITE_URL =
-    "https://globalonlinevisaapplication.netlify.app";
+    "https://globalonlinevisaapplications.netlify.app";
 
   window.SITE_ENVIRONMENT = "production";
 
@@ -27,19 +27,19 @@
   window.SUPABASE_URL =
     "https://iqpnlzufcasseycvmvzs.supabase.co";
 
-  // CURRENT SUPABASE PUBLISHABLE KEY
-  // Never put a secret or service_role key here.
+  // Public publishable key.
+  // NEVER place a service_role or secret key here.
 
   window.SUPABASE_ANON_KEY =
     "sb_publishable_W8PD_H5br4lYSFQ1BMMfyA_ywmLOsae";
 
   // ==========================================
-  // V17 BACKEND
+  // V18 BACKEND
   // ==========================================
 
   window.SUPABASE_FUNCTION_URL =
     window.SUPABASE_URL +
-    "/functions/v1/visa-backend-v17";
+    "/functions/v1/visa-backend-v18";
 
   // ==========================================
   // INITIALIZE SUPABASE
@@ -68,7 +68,9 @@
 
   window.API_CONFIG = {
     baseURL: window.SUPABASE_FUNCTION_URL,
+
     method: "POST",
+
     timeout: 30000,
 
     headers: {
@@ -105,7 +107,7 @@
 
     productionMode: true,
 
-    backendVersion: "visa-backend-v17",
+    backendVersion: "visa-backend-v18",
 
     emailWorker: "integrated-gmail-api",
 
@@ -123,17 +125,25 @@
   window.validateAppConfig = function () {
     return (
       typeof window.SITE_URL === "string" &&
+
       typeof window.SUPABASE_URL === "string" &&
+
       typeof window.SUPABASE_ANON_KEY === "string" &&
+
       window.SITE_URL ===
-        "https://globalonlinevisaapplication.netlify.app" &&
+        "https://globalonlinevisaapplications.netlify.app" &&
+
       window.SUPABASE_URL ===
         "https://iqpnlzufcasseycvmvzs.supabase.co" &&
+
       window.SUPABASE_FUNCTION_URL ===
         window.SUPABASE_URL +
-        "/functions/v1/visa-backend-v17" &&
+        "/functions/v1/visa-backend-v18" &&
+
       window.APP_CONFIG.backendVersion ===
-        "visa-backend-v17"
+        "visa-backend-v18" &&
+
+      window.APP_CONFIG.serviceFeePerApplicant === 285
     );
   };
 
@@ -170,7 +180,7 @@
   };
 
   // ==========================================
-  // CALL V17 BACKEND
+  // CALL V18 BACKEND
   // ==========================================
 
   window.callVisaBackend = async function (requestData) {
@@ -212,6 +222,7 @@
 
           headers: {
             ...window.API_CONFIG.headers,
+
             "Authorization": "Bearer " + token
           },
 
@@ -246,7 +257,7 @@
           window.APP_CONFIG.backendVersion
       ) {
         throw new Error(
-          "Backend version mismatch."
+          "Backend version mismatch. Expected V18."
         );
       }
 
@@ -272,9 +283,11 @@
 
   window.submitVisaApplication =
     async function (applicationData) {
+
       return await window.callVisaBackend(
         applicationData
       );
+
     };
 
   // ==========================================
@@ -282,6 +295,7 @@
   // ==========================================
 
   window.navigateTo = function (page) {
+
     const destination =
       window.APP_ROUTES[page];
 
@@ -299,13 +313,17 @@
   // ==========================================
 
   if (window.validateAppConfig()) {
+
     console.info(
-      "Global Online Visa Applications configuration loaded - V17."
+      "Global Online Visa Applications configuration loaded - V18."
     );
+
   } else {
+
     console.error(
       "Application configuration is invalid."
     );
+
   }
 
 })();
