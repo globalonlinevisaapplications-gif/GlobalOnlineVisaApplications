@@ -287,6 +287,18 @@ h2{color:#092c50}
   text-align:center;
 }
 
+#registrationMessage{
+  display:none;
+  margin:10px 0 0;
+  padding:12px;
+  border-radius:6px;
+  background:#dcfce7;
+  color:#166534;
+  font-size:14px;
+  line-height:1.5;
+  text-align:center;
+}
+
 .hidden{display:none!important}
 
 .account-status{
@@ -355,7 +367,6 @@ footer a{
 
 <header>
   <h2>Global Online Visa Applications</h2>
-
   <nav>
     <a href="index.html">Home</a>
     <a href="#services">Services</a>
@@ -369,54 +380,34 @@ footer a{
 
 <div class="hero">
   <h1>Global Online Visa Applications</h1>
-
   <p>
     Apply for your visa online through a simple and convenient
     application process. Get professional application support
     for destinations around the world.
   </p>
-
   <a class="btn" href="apply.html">Apply for a Visa</a>
 </div>
 
 <section class="stats">
-  <div class="stat">
-    <h2>750+</h2>
-    <p>Clients Served</p>
-  </div>
-
-  <div class="stat">
-    <h2>99%</h2>
-    <p>Reported Success Rate</p>
-  </div>
-
-  <div class="stat">
-    <h2>48 Hours</h2>
-    <p>Document Review Target</p>
-  </div>
-
-  <div class="stat">
-    <h2>200+</h2>
-    <p>Countries and Territories</p>
-  </div>
+  <div class="stat"><h2>750+</h2><p>Clients Served</p></div>
+  <div class="stat"><h2>99%</h2><p>Reported Success Rate</p></div>
+  <div class="stat"><h2>48 Hours</h2><p>Document Review Target</p></div>
+  <div class="stat"><h2>200+</h2><p>Countries and Territories</p></div>
 </section>
 
 <section id="services">
   <h2>Our Services</h2>
   <p>Get started with your online visa application.</p>
-
   <div class="cards">
     <div class="card">
       <h3>Visa Applications</h3>
       <p>Complete your visa application online.</p>
       <a class="btn" href="apply.html">Apply Now</a>
     </div>
-
     <div class="card">
       <h3>Application Support</h3>
       <p>Get assistance with your application process.</p>
     </div>
-
     <div class="card">
       <h3>Application Tracking</h3>
       <p>Access your account to follow your application.</p>
@@ -427,50 +418,36 @@ footer a{
 
 <section id="processing" class="processing">
   <h2>Visa Application Processing Time</h2>
-
   <p class="processing-intro">
     We aim to make your application process clear and convenient.
     Here are the main stages after you begin your application.
   </p>
-
   <div class="processing-steps">
     <div class="processing-step">
       <div class="step-number">1</div>
       <h3>Document Review</h3>
-      <p>
-        Our target is to review submitted documents within
-        <strong>48 hours</strong> after receiving all required documents.
-      </p>
+      <p>Our target is to review submitted documents within
+      <strong>48 hours</strong> after receiving all required documents.</p>
     </div>
-
     <div class="processing-step">
       <div class="step-number">2</div>
       <h3>Application Preparation</h3>
-      <p>
-        We check the application information and prepare
-        the required documents for the next stage.
-      </p>
+      <p>We check the application information and prepare
+      the required documents for the next stage.</p>
     </div>
-
     <div class="processing-step">
       <div class="step-number">3</div>
       <h3>Application Submission</h3>
-      <p>
-        Once the application is complete and verified,
-        it can proceed to the relevant submission process.
-      </p>
+      <p>Once the application is complete and verified,
+      it can proceed to the relevant submission process.</p>
     </div>
-
     <div class="processing-step">
       <div class="step-number">4</div>
       <h3>Government Decision</h3>
-      <p>
-        The embassy or immigration authority makes the final decision.
-        Waiting times depend on the destination and visa category.
-      </p>
+      <p>The embassy or immigration authority makes the final decision.
+      Waiting times depend on the destination and visa category.</p>
     </div>
   </div>
-
   <div class="processing-note">
     <strong>Important information:</strong>
     Our 48-hour target applies to our document review,
@@ -480,13 +457,8 @@ footer a{
     We cannot guarantee approval or a government decision within
     a specific number of days.
   </div>
-
-  <p>
-    <a href="processing-times.html">View Processing Time Information</a>
-  </p>
+  <p><a href="processing-times.html">View Processing Time Information</a></p>
 </section>
-
-<!-- APPLICANT ACCOUNT -->
 
 <section id="account">
   <h2>Applicant Account</h2>
@@ -494,51 +466,34 @@ footer a{
 
   <div class="account">
 
-    <!-- NORMAL ACCOUNT PANEL -->
-
     <div id="normalAccountPanel">
 
       <h3>Create an Account</h3>
 
       <form id="registerForm">
         <label for="registerEmail">Email address</label>
-        <input
-          type="email"
-          id="registerEmail"
-          placeholder="Email address"
-          autocomplete="email"
-          required
-        >
+        <input type="email" id="registerEmail"
+          placeholder="Email address" autocomplete="email" required>
 
         <label for="registerPassword">Create password</label>
-
         <div class="password-wrap">
-          <input
-            type="password"
-            id="registerPassword"
-            placeholder="Minimum 6 characters"
-            required
-            minlength="6"
-            autocomplete="new-password"
-          >
-
-          <button
-            type="button"
-            class="password-toggle"
+          <input type="password" id="registerPassword"
+            placeholder="Minimum 6 characters" required
+            minlength="6" autocomplete="new-password">
+          <button type="button" class="password-toggle"
             data-password-target="registerPassword"
-            aria-label="Show password"
-            aria-pressed="false"
-          >
+            aria-label="Show password" aria-pressed="false">
             <svg viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2"
-                 stroke-linecap="round" stroke-linejoin="round">
+              stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
               <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/>
               <circle cx="12" cy="12" r="3"/>
             </svg>
           </button>
         </div>
 
-        <button type="submit" id="registerButton">Register</button>
+        <button type="submit" id="registerButton">Create Account</button>
+        <p id="registrationMessage" role="status" aria-live="polite"></p>
       </form>
 
       <hr>
@@ -547,114 +502,59 @@ footer a{
 
       <form id="loginForm">
         <label for="loginEmail">Email address</label>
-        <input
-          type="email"
-          id="loginEmail"
-          placeholder="Email address"
-          autocomplete="username"
-          required
-        >
+        <input type="email" id="loginEmail"
+          placeholder="Email address" autocomplete="username" required>
 
         <label for="loginPassword">Password</label>
-
         <div class="password-wrap">
-          <input
-            type="password"
-            id="loginPassword"
-            placeholder="Password"
-            required
-            autocomplete="current-password"
-          >
-
-          <button
-            type="button"
-            class="password-toggle"
+          <input type="password" id="loginPassword"
+            placeholder="Password" required autocomplete="current-password">
+          <button type="button" class="password-toggle"
             data-password-target="loginPassword"
-            aria-label="Show password"
-            aria-pressed="false"
-          >
+            aria-label="Show password" aria-pressed="false">
             <svg viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2"
-                 stroke-linecap="round" stroke-linejoin="round">
+              stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
               <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/>
               <circle cx="12" cy="12" r="3"/>
             </svg>
           </button>
         </div>
-
         <button type="submit" id="loginButton">Login</button>
       </form>
 
-      <button type="button" id="resetPassword">
-        Forgot or Reset Password
-      </button>
-
+      <button type="button" id="resetPassword">Forgot or Reset Password</button>
     </div>
-
-    <!-- PASSWORD RESET EMAIL PANEL -->
 
     <div id="recoveryEmailPanel" class="hidden">
       <h3>Reset Your Password</h3>
-
-      <p>
-        Enter the email address registered to your applicant account.
-        We will send you a secure password reset link.
-      </p>
-
+      <p>Enter the email address registered to your applicant account.
+      We will send you a secure password reset link.</p>
       <form id="recoveryEmailForm">
         <label for="recoveryEmail">Registered email address</label>
-        <input
-          type="email"
-          id="recoveryEmail"
-          placeholder="Your email address"
-          autocomplete="email"
-          required
-        >
-
-        <button type="submit" id="sendRecoveryButton">
-          Send Reset Link
-        </button>
+        <input type="email" id="recoveryEmail"
+          placeholder="Your email address" autocomplete="email" required>
+        <button type="submit" id="sendRecoveryButton">Send Reset Link</button>
       </form>
-
-      <button type="button" id="backFromRecovery">
-        Back to Login
-      </button>
+      <button type="button" id="backFromRecovery">Back to Login</button>
     </div>
-
-    <!-- NEW PASSWORD PANEL -->
 
     <div id="newPasswordPanel" class="hidden">
       <h3>Create a New Password</h3>
-
-      <p>
-        Your recovery link has been opened. Enter your new password
-        below and confirm it.
-      </p>
-
+      <p>Your recovery link has been opened. Enter your new password
+      below and confirm it.</p>
       <form id="newPasswordForm">
-
         <label for="newPassword">New password</label>
-
         <div class="password-wrap">
-          <input
-            type="password"
-            id="newPassword"
-            minlength="6"
-            autocomplete="new-password"
-            placeholder="New password"
-            required
-          >
-
-          <button
-            type="button"
-            class="password-toggle"
+          <input type="password" id="newPassword"
+            minlength="6" autocomplete="new-password"
+            placeholder="New password" required>
+          <button type="button" class="password-toggle"
             data-password-target="newPassword"
-            aria-label="Show password"
-            aria-pressed="false"
-          >
+            aria-label="Show password" aria-pressed="false">
             <svg viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2"
-                 stroke-linecap="round" stroke-linejoin="round">
+              stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
               <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/>
               <circle cx="12" cy="12" r="3"/>
             </svg>
@@ -662,58 +562,37 @@ footer a{
         </div>
 
         <label for="confirmNewPassword">Confirm new password</label>
-
         <div class="password-wrap">
-          <input
-            type="password"
-            id="confirmNewPassword"
-            minlength="6"
-            autocomplete="new-password"
-            placeholder="Confirm new password"
-            required
-          >
-
-          <button
-            type="button"
-            class="password-toggle"
+          <input type="password" id="confirmNewPassword"
+            minlength="6" autocomplete="new-password"
+            placeholder="Confirm new password" required>
+          <button type="button" class="password-toggle"
             data-password-target="confirmNewPassword"
-            aria-label="Show password"
-            aria-pressed="false"
-          >
+            aria-label="Show password" aria-pressed="false">
             <svg viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2"
-                 stroke-linecap="round" stroke-linejoin="round">
+              stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
               <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/>
               <circle cx="12" cy="12" r="3"/>
             </svg>
           </button>
         </div>
-
-        <button type="submit" id="savePasswordButton">
-          Save New Password
-        </button>
+        <button type="submit" id="savePasswordButton">Save New Password</button>
       </form>
     </div>
 
-    <!-- SIGNED-IN ACCOUNT PANEL -->
-
     <div id="signedInPanel" class="hidden">
       <h3>Applicant Account</h3>
-
       <div class="account-status">
         <strong>Signed in successfully</strong>
         <p id="signedInEmail"></p>
       </div>
-
       <div class="account-links">
         <a href="apply.html">Apply for or Track a Visa</a>
         <a href="apply.html">View My Applications</a>
         <a href="my-messages.html">My Messages</a>
       </div>
-
-      <button type="button" id="signOutButton">
-        Sign Out
-      </button>
+      <button type="button" id="signOutButton">Sign Out</button>
     </div>
 
     <p id="message" role="status" aria-live="polite"></p>
@@ -722,33 +601,22 @@ footer a{
       Keep your login details private. Never share your password
       or verification links with anyone.
     </p>
-
   </div>
 </section>
 
 <section id="contact">
   <h2>Contact Us</h2>
   <p>Global Online Visa Applications</p>
-
-  <p>
-    Email:
+  <p>Email:
     <a href="mailto:globalonlinevisaapplications@gmail.com">
       globalonlinevisaapplications@gmail.com
     </a>
   </p>
-
-  <p>
-    Phone:
-    <a href="tel:+254751896015">+254 751 896 015</a>
-  </p>
+  <p>Phone: <a href="tel:+254751896015">+254 751 896 015</a></p>
 </section>
 
 <footer>
-  <p>
-    © 2026 Global Online Visa Applications.
-    All rights reserved.
-  </p>
-
+  <p>© 2026 Global Online Visa Applications. All rights reserved.</p>
   <a href="index.html">Home</a>
   <a href="apply.html">Apply</a>
   <a href="processing-times.html">Processing Time</a>
@@ -759,9 +627,7 @@ footer a{
 <script>
 "use strict";
 
-/* =========================================
-   WEBSITE CONFIGURATION
-========================================= */
+/* WEBSITE CONFIGURATION */
 
 const WEBSITE_URL =
   window.SITE_URL ||
@@ -777,13 +643,14 @@ const HOME_URL =
 const ACCOUNT_URL = HOME_URL + "#account";
 
 const message = document.getElementById("message");
+const registrationMessage =
+  document.getElementById("registrationMessage");
 
 let supabaseClient = null;
 let recoveryMode = false;
+let confirmationRedirectStarted = false;
 
-/* =========================================
-   MESSAGE DISPLAY
-========================================= */
+/* GENERAL MESSAGES */
 
 function showMessage(text, success = false) {
   message.textContent = text;
@@ -794,9 +661,21 @@ function clearMessage() {
   message.textContent = "";
 }
 
-/* =========================================
-   SUPABASE CONFIGURATION
-========================================= */
+function showRegistrationMessage(text, success = true) {
+  registrationMessage.textContent = text;
+  registrationMessage.style.display = "block";
+  registrationMessage.style.background =
+    success ? "#dcfce7" : "#fee2e2";
+  registrationMessage.style.color =
+    success ? "#166534" : "#991b1b";
+}
+
+function clearRegistrationMessage() {
+  registrationMessage.textContent = "";
+  registrationMessage.style.display = "none";
+}
+
+/* SUPABASE CONFIGURATION */
 
 function getSupabaseSettings() {
   const url =
@@ -852,55 +731,43 @@ function initializeSupabase() {
   }
 }
 
-/* =========================================
-   ACCOUNT PANEL CONTROL
-========================================= */
+/* ACCOUNT PANEL CONTROL */
 
 function showNormalAccount() {
   recoveryMode = false;
-
   document.getElementById("normalAccountPanel").classList.remove("hidden");
   document.getElementById("recoveryEmailPanel").classList.add("hidden");
   document.getElementById("newPasswordPanel").classList.add("hidden");
   document.getElementById("signedInPanel").classList.add("hidden");
-
   clearMessage();
 }
 
 function showRecoveryEmailPanel() {
   recoveryMode = false;
-
   document.getElementById("normalAccountPanel").classList.add("hidden");
   document.getElementById("recoveryEmailPanel").classList.remove("hidden");
   document.getElementById("newPasswordPanel").classList.add("hidden");
   document.getElementById("signedInPanel").classList.add("hidden");
 
   const loginEmail = document.getElementById("loginEmail").value.trim();
-
   if (loginEmail) {
     document.getElementById("recoveryEmail").value = loginEmail;
   }
-
   clearMessage();
 }
 
 function showNewPasswordPanel() {
   recoveryMode = true;
-
   document.getElementById("normalAccountPanel").classList.add("hidden");
   document.getElementById("recoveryEmailPanel").classList.add("hidden");
   document.getElementById("newPasswordPanel").classList.remove("hidden");
   document.getElementById("signedInPanel").classList.add("hidden");
 
-  showMessage(
-    "Enter your new password and confirm it.",
-    true
-  );
+  showMessage("Enter your new password and confirm it.",true);
 }
 
 function showSignedInPanel(user) {
   recoveryMode = false;
-
   document.getElementById("normalAccountPanel").classList.add("hidden");
   document.getElementById("recoveryEmailPanel").classList.add("hidden");
   document.getElementById("newPasswordPanel").classList.add("hidden");
@@ -912,9 +779,7 @@ function showSignedInPanel(user) {
   clearMessage();
 }
 
-/* =========================================
-   PASSWORD SHOW / HIDE
-========================================= */
+/* PASSWORD SHOW / HIDE */
 
 document.querySelectorAll("[data-password-target]").forEach(button => {
   button.addEventListener("click",function() {
@@ -940,17 +805,20 @@ document.querySelectorAll("[data-password-target]").forEach(button => {
   });
 });
 
-/* =========================================
-   APPLICANT REGISTRATION
-========================================= */
+/* APPLICANT REGISTRATION */
 
 document.getElementById("registerForm").addEventListener(
   "submit",
   async function(event) {
     event.preventDefault();
+    clearRegistrationMessage();
+    clearMessage();
 
     if (!supabaseClient) {
-      showMessage("Supabase is not available. Please refresh the page.");
+      showRegistrationMessage(
+        "Supabase is not available. Please refresh the page.",
+        false
+      );
       return;
     }
 
@@ -963,12 +831,15 @@ document.getElementById("registerForm").addEventListener(
     const button = document.getElementById("registerButton");
 
     if (password.length < 6) {
-      showMessage("Your password must contain at least 6 characters.");
+      showRegistrationMessage(
+        "Your password must contain at least 6 characters.",
+        false
+      );
       return;
     }
 
     button.disabled = true;
-    button.textContent = "Registering...";
+    button.textContent = "Creating Account...";
 
     try {
       const {data,error} = await supabaseClient.auth.signUp({
@@ -984,36 +855,33 @@ document.getElementById("registerForm").addEventListener(
       document.getElementById("registerPassword").value = "";
 
       if (data.session) {
-        showMessage(
-          "Your account has been created and you are signed in. You can now continue to the application page.",
-          true
+        showRegistrationMessage(
+          "Your account has been created successfully. Opening your application page..."
         );
 
-        setTimeout(() => {
-          window.location.href = APPLICATION_URL;
-        },1200);
+        window.location.replace(APPLICATION_URL);
 
       } else {
-        showMessage(
-          "Registration received. Please check your email and click the confirmation link before signing in.",
-          true
+        showRegistrationMessage(
+          "Registration received. Please check your email and click the confirmation link before signing in."
         );
       }
 
     } catch(error) {
       console.error("Registration error:",error);
-      showMessage(error.message || "Registration failed.");
+      showRegistrationMessage(
+        error.message || "Registration failed. Please try again.",
+        false
+      );
 
     } finally {
       button.disabled = false;
-      button.textContent = "Register";
+      button.textContent = "Create Account";
     }
   }
 );
 
-/* =========================================
-   APPLICANT LOGIN
-========================================= */
+/* APPLICANT LOGIN */
 
 document.getElementById("loginForm").addEventListener(
   "submit",
@@ -1046,11 +914,12 @@ document.getElementById("loginForm").addEventListener(
 
       document.getElementById("loginPassword").value = "";
 
-      showMessage("Login successful. Opening your application account...",true);
+      showMessage(
+        "Login successful. Opening your application account...",
+        true
+      );
 
-      setTimeout(() => {
-        window.location.href = APPLICATION_URL;
-      },1000);
+      window.location.replace(APPLICATION_URL);
 
     } catch(error) {
       console.error("Login error:",error);
@@ -1063,22 +932,16 @@ document.getElementById("loginForm").addEventListener(
   }
 );
 
-/* =========================================
-   REQUEST PASSWORD RESET EMAIL
-========================================= */
+/* PASSWORD RESET EMAIL */
 
 document.getElementById("resetPassword").addEventListener(
   "click",
-  function() {
-    showRecoveryEmailPanel();
-  }
+  showRecoveryEmailPanel
 );
 
 document.getElementById("backFromRecovery").addEventListener(
   "click",
-  function() {
-    showNormalAccount();
-  }
+  showNormalAccount
 );
 
 document.getElementById("recoveryEmailForm").addEventListener(
@@ -1128,9 +991,7 @@ document.getElementById("recoveryEmailForm").addEventListener(
   }
 );
 
-/* =========================================
-   SAVE NEW PASSWORD
-========================================= */
+/* SAVE NEW PASSWORD */
 
 document.getElementById("newPasswordForm").addEventListener(
   "submit",
@@ -1187,16 +1048,11 @@ document.getElementById("newPasswordForm").addEventListener(
       document.getElementById("confirmNewPassword").value = "";
 
       showMessage(
-        "Your password has been updated successfully. You can now access your applicant account.",
+        "Your password has been updated successfully. Opening your application page.",
         true
       );
 
-      showSignedInPanel(data.user);
-
-      showMessage(
-        "Your password has been updated successfully. You can now continue to your application.",
-        true
-      );
+      window.location.replace(APPLICATION_URL);
 
     } catch(error) {
       console.error("Password update error:",error);
@@ -1209,9 +1065,7 @@ document.getElementById("newPasswordForm").addEventListener(
   }
 );
 
-/* =========================================
-   SIGN OUT
-========================================= */
+/* SIGN OUT */
 
 document.getElementById("signOutButton").addEventListener(
   "click",
@@ -1240,9 +1094,7 @@ document.getElementById("signOutButton").addEventListener(
   }
 );
 
-/* =========================================
-   AUTHENTICATION STATE
-========================================= */
+/* AUTHENTICATION STATE */
 
 async function checkCurrentSession() {
   if (!supabaseClient) return;
@@ -1266,21 +1118,13 @@ async function checkCurrentSession() {
   }
 }
 
-/* =========================================
-   INITIALIZE AUTHENTICATION
-========================================= */
+/* INITIALIZE AUTHENTICATION */
 
 async function initializeAccount() {
   if (!initializeSupabase()) return;
 
-  /*
-   * Listen for password recovery before checking
-   * the existing session. This is important because
-   * Supabase sends the PASSWORD_RECOVERY event when
-   * the applicant opens the recovery email link.
-   */
-
   supabaseClient.auth.onAuthStateChange((event,session) => {
+
     if (event === "PASSWORD_RECOVERY" && session) {
       showNewPasswordPanel();
       return;
@@ -1293,26 +1137,69 @@ async function initializeAccount() {
       return;
     }
 
-    if (
-      event === "SIGNED_IN" &&
-      session?.user &&
-      !recoveryMode
-    ) {
-      showSignedInPanel(session.user);
-    }
+    /*
+     * Do not redirect every SIGNED_IN event.
+     * Password recovery and normal login are handled
+     * by their own forms.
+     */
   });
 
-  await checkCurrentSession();
+  /*
+   * Supabase processes the email confirmation callback
+   * using detectSessionInUrl. Wait for session restoration
+   * before deciding where to send the applicant.
+   */
+
+  try {
+    const {data,error} = await supabaseClient.auth.getSession();
+
+    if (error) throw error;
+
+    const params = new URLSearchParams(window.location.search);
+    const hash = window.location.hash;
+
+    const isRecovery =
+      hash.includes("type=recovery") ||
+      params.get("type") === "recovery";
+
+    if (isRecovery) {
+      showNewPasswordPanel();
+      return;
+    }
+
+    const isEmailCallback =
+      params.has("code") ||
+      hash.includes("type=signup") ||
+      hash.includes("type=email_change") ||
+      hash.includes("access_token=");
+
+    if (isEmailCallback && data.session?.user) {
+      if (!confirmationRedirectStarted) {
+        confirmationRedirectStarted = true;
+        window.location.replace(APPLICATION_URL);
+      }
+      return;
+    }
+
+    if (data.session?.user) {
+      showSignedInPanel(data.session.user);
+    } else {
+      showNormalAccount();
+    }
+
+  } catch(error) {
+    console.error("Session initialization error:",error);
+    showMessage(
+      error.message || "Could not initialize your applicant account."
+    );
+  }
 }
 
-/* =========================================
-   START
-========================================= */
+/* START */
 
 document.addEventListener("DOMContentLoaded",function() {
   initializeAccount();
 });
-
 </script>
 
 </body>
