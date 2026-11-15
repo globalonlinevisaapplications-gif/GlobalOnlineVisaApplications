@@ -52,6 +52,11 @@ button:disabled{opacity:.5;cursor:not-allowed}
 .message-status.unread{background:#fef3c7;color:#92400e}
 .message-status.read{background:#dcfce7;color:#166534}
 .unread-count{background:#dc2626;color:white;border-radius:20px;padding:1px 7px;font-size:11px}
+.payment-summary{background:#eff6ff;border:1px solid #bfdbfe;border-radius:9px;padding:16px;margin-top:15px}
+.payment-summary h3{margin-top:0}
+.payment-amount{font-size:22px;font-weight:700;color:var(--navy)}
+.payment-approved{background:#f0fdf4;border-color:#bbf7d0}
+.payment-rejected{background:#fef2f2;border-color:#fecaca}
 footer{border-top:1px solid var(--border);margin-top:24px;padding-top:16px;color:var(--muted);font-size:13px}
 a.contact-link{color:var(--blue);font-weight:bold}
 @media(max-width:650px){body{padding:12px 8px}.grid{grid-template-columns:1fr}.container{padding:17px}.fee-row{align-items:flex-start}.assistance-buttons a{width:100%}}
@@ -355,9 +360,8 @@ async function loadVisaTypes(countryId){
   if(!visaTypes.length)showMessage("No visa types are available for this destination.","info");
 }
 
-/* PROCESSING TIME: V18 VISA TYPES FIELD */
+/* PROCESSING TIME */
 function updateProcessingTime(){
-  const request=++processingRequestNumber;
   if(!countryEl.value||!applyingFromEl.value||!selectedVisa){
     processingResult.textContent="Select an applying-from country, destination country and visa type to view the available processing time.";
     return;
@@ -377,7 +381,7 @@ function updateProcessingTime(){
   processingResult.appendChild(note);
 }
 
-/* FEES: NEVER COMBINE SERVICE FEE AND GOVERNMENT FEE */
+/* FEES */
 function updateFees(){
   const count=applicantsEl.querySelectorAll(".applicant").length||1;
   const bounds=getFeeBounds(selectedVisa);
@@ -572,15 +576,20 @@ function addRow(parent,label,value){
   p.appendChild(document.createTextNode(value===null||value===undefined||value===""?"Not provided":String(value)));
   parent.appendChild(p);
 }
+
+/* UPDATED TRACKING WITH CONSULTANCY SERVICE FEE */
 function renderTracking(applications){
   trackingResults.innerHTML="";
+
   if(!applications.length){
     trackingResults.textContent="You do not have any applications yet.";
     return;
   }
+
   applications.forEach(app=>{
     const card=document.createElement("div");
     card.className="tracking-card";
+
     const h=document.createElement("h3");
     h.textContent="Visa Application";
     card.appendChild(h);
@@ -595,22 +604,117 @@ function renderTracking(applications){
     addRow(card,"Estimated processing time",processing||(Number.isInteger(days)&&days>0?days+" days":"Not configured"));
 
     addRow(card,"Application date",firstDefined(app,["application_date","created_at"]));
+
     const status=document.createElement("p");
     const label=document.createElement("strong");
     label.textContent="Application status: ";
     status.appendChild(label);
+
     const badge=document.createElement("span");
     badge.className="status";
     badge.textContent=app.status||"Pending";
     status.appendChild(badge);
     card.appendChild(status);
 
-    addRow(card,"Consultancy service fee status",app.service_fee_payment_status||"pending");
-    addRow(card,"Government visa fee status",app.visa_fee_payment_status||"pending");
-    addRow(card,"Administrator update",firstDefined(app,["admin_notes","status_message","remarks"],"Please check back for further updates."));
+    // CONSULTANCY SERVICE FEE
+    const paymentBox=document.createElement("div");
+    paymentBox.className="payment-summary";
+
+    const paymentHeading=document.createElement("h3");
+    paymentHeading.textContent="Consultancy Service Fee";
+    paymentBox.appendChild(paymentHeading);
+
+    const paymentStatus=String(
+      app.service_fee_payment_status||"pending"
+    ).trim().toLowerCase();
+
+    const rawFee=firstDefined(
+      app,
+      ["service_fee","consultancy_service_fee"],
+      SERVICE_FEE_PER_APPLICANT
+    );
+
+    const serviceFee=Number(rawFee);
+    const validFee=Number.isFinite(serviceFee)&&serviceFee>=0
+      ?serviceFee
+      :SERVICE_FEE_PER_APPLICANT;
+
+    addRow(paymentBox,"Fee per applicant",money(validFee));
+
+    const paymentStatusLine=document.createElement("p");
+    paymentStatusLine.appendChild(document.createTextNode("Payment status: "));
+
+    const paymentBadge=document.createElement("span");
+    paymentBadge.className="status";
+
+    if(["approved","paid","confirmed"].includes(paymentStatus)){
+      paymentBox.classList.add("payment-approved");
+      paymentBadge.textContent="Payment Approved";
+      paymentStatusLine.appendChild(paymentBadge);
+      paymentBox.appendChild(paymentStatusLine);
+
+      const amount=document.createElement("p");
+      amount.className="payment-amount";
+      amount.textContent="Amount Needed: USD 0.00";
+      paymentBox.appendChild(amount);
+
+      const note=document.createElement("p");
+      note.textContent="Your consultancy service fee payment has been approved by the administrator.";
+      paymentBox.appendChild(note);
+
+    }else if(paymentStatus==="rejected"){
+      paymentBox.classList.add("payment-rejected");
+      paymentBadge.textContent="Payment Rejected";
+      paymentStatusLine.appendChild(paymentBadge);
+      paymentBox.appendChild(paymentStatusLine);
+
+      const amount=document.createElement("p");
+      amount.className="payment-amount";
+      amount.textContent="Amount Needed: "+money(validFee);
+      paymentBox.appendChild(amount);
+
+      const note=document.createElement("p");
+      note.textContent="Your payment requires attention. Please contact the administrator for assistance before making another payment.";
+      paymentBox.appendChild(note);
+
+    }else{
+      paymentBadge.textContent="Pending";
+      paymentStatusLine.appendChild(paymentBadge);
+      paymentBox.appendChild(paymentStatusLine);
+
+      const amount=document.createElement("p");
+      amount.className="payment-amount";
+      amount.textContent="Amount Needed: "+money(validFee);
+      paymentBox.appendChild(amount);
+
+      const note=document.createElement("p");
+      note.textContent="Your consultancy service fee is pending. Wait for verified payment instructions from the administrator before sending money.";
+      paymentBox.appendChild(note);
+    }
+
+    card.appendChild(paymentBox);
+
+    // GOVERNMENT VISA FEE REMAINS SEPARATE
+    addRow(
+      card,
+      "Government visa fee status",
+      app.visa_fee_payment_status||"pending"
+    );
+
+    addRow(
+      card,
+      "Administrator update",
+      firstDefined(
+        app,
+        ["admin_notes","status_message","remarks"],
+        "Please check back for further updates."
+      )
+    );
+
     trackingResults.appendChild(card);
   });
 }
+
 async function loadTracking(){
   if(!currentUser){
     trackingResults.textContent="Please sign in to view your applications.";
