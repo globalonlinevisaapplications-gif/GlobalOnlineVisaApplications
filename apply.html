@@ -6,8 +6,15 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#12345a">
 <title>Apply and Track Your Visa | Global Online Visa Applications</title>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
+
+<link rel="stylesheet"
+href="https://cdn.jsdelivr.net/npm/intl-tel-input@29.5.8/dist/css/intlTelInput.min.css">
+
+<script src="https://cdn.jsdelivr.net/npm/intl-tel-input@29.5.8/dist/js/intlTelInput.min.js"></script>
+
 <style>
 *{box-sizing:border-box}
 :root{--navy:#12345a;--blue:#1455a0;--light:#eff6ff;--border:#e2e8f0;--muted:#64748b}
@@ -57,11 +64,20 @@ button:disabled{opacity:.5;cursor:not-allowed}
 .payment-amount{font-size:22px;font-weight:700;color:var(--navy)}
 .payment-approved{background:#f0fdf4;border-color:#bbf7d0}
 .payment-rejected{background:#fef2f2;border-color:#fecaca}
+.iti{width:100%}
+.iti input{width:100%;min-width:0;padding-top:12px;padding-bottom:12px}
 footer{border-top:1px solid var(--border);margin-top:24px;padding-top:16px;color:var(--muted);font-size:13px}
 a.contact-link{color:var(--blue);font-weight:bold}
-@media(max-width:650px){body{padding:12px 8px}.grid{grid-template-columns:1fr}.container{padding:17px}.fee-row{align-items:flex-start}.assistance-buttons a{width:100%}}
+@media(max-width:650px){
+body{padding:12px 8px}
+.grid{grid-template-columns:1fr}
+.container{padding:17px}
+.fee-row{align-items:flex-start}
+.assistance-buttons a{width:100%}
+}
 </style>
 </head>
+
 <body>
 <div class="container">
 <header>
@@ -84,6 +100,7 @@ a.contact-link{color:var(--blue);font-weight:bold}
   <a href="/#account" class="contact-link">Sign in to your account</a>
   before submitting an application.
 </div>
+
 <div id="message" class="notice" role="status" aria-live="polite"></div>
 
 <section class="section">
@@ -109,17 +126,25 @@ a.contact-link{color:var(--blue);font-weight:bold}
 </section>
 
 <div id="applicationForm">
+
 <section class="section">
 <h2>1. Destination and Visa Type</h2>
+
 <label for="applyingFrom">Applying from country *</label>
-<select id="applyingFrom" required disabled><option value="">Loading countries...</option></select>
+<select id="applyingFrom" required disabled>
+<option value="">Loading countries...</option>
+</select>
 <p class="muted">Choose the country from which the applicant or family group is applying.</p>
 
 <label for="country">Destination country *</label>
-<select id="country" required disabled><option value="">Loading countries...</option></select>
+<select id="country" required disabled>
+<option value="">Loading countries...</option>
+</select>
 
 <label for="visaType">Visa type *</label>
-<select id="visaType" required disabled><option value="">Select a destination country first</option></select>
+<select id="visaType" required disabled>
+<option value="">Select a destination country first</option>
+</select>
 
 <div class="processing-box">
 <h3>Visa Processing Time</h3>
@@ -132,7 +157,7 @@ a.contact-link{color:var(--blue);font-weight:bold}
 
 <section class="section">
 <h2>2. Applicants</h2>
-<p class="muted">Submit up to 10 applicants in one family or group application. Each applicant can have a different nationality.</p>
+<p class="muted">Submit up to 10 applicants in one family or group application. Each applicant can have a different nationality. Each applicant must provide a WhatsApp number. Family members may share one number.</p>
 <div id="applicants"></div>
 <button type="button" class="secondary" id="addApplicant">+ Add Family Member</button>
 </section>
@@ -150,8 +175,10 @@ a.contact-link{color:var(--blue);font-weight:bold}
 
 <section class="section">
 <h2>4. Confirmation</h2>
-<label><input type="checkbox" id="confirm" required>
-I confirm that the information supplied is accurate and that I agree to the application processing terms.</label>
+<label>
+<input type="checkbox" id="confirm" required>
+I confirm that the information supplied is accurate and that I agree to the application processing terms.
+</label>
 <button type="button" id="submitButton">Submit Visa Application</button>
 <p class="muted">Your application will be submitted with payment pending. Do not send payment until the administrator provides verified payment instructions.</p>
 </section>
@@ -219,30 +246,62 @@ let processingRequestNumber = 0;
 let loadingMessages = false;
 let sendingReply = false;
 
+const phoneInstances = new WeakMap();
+
+function initializeWhatsAppInput(input) {
+  if (!window.intlTelInput) {
+    throw new Error("The international phone selector could not load. Please refresh the page.");
+  }
+
+  input.type = "tel";
+  input.required = true;
+  input.autocomplete = "tel";
+  input.placeholder = "Enter WhatsApp number";
+
+  const instance = window.intlTelInput(input, {
+    initialCountry: "ke",
+    separateDialCode: true,
+    nationalMode: true,
+    allowDropdown: true,
+    countrySearch: true,
+    loadUtils: () =>
+      import("https://cdn.jsdelivr.net/npm/intl-tel-input@29.5.8/dist/js/utils.js")
+  });
+
+  phoneInstances.set(input, instance);
+}
+
 function showMessage(text,type="info"){
   messageEl.textContent=text;
   messageEl.className="notice "+type;
   messageEl.style.display="block";
   messageEl.scrollIntoView({behavior:"smooth",block:"center"});
 }
-function hideMessage(){messageEl.style.display="none";}
+
+function hideMessage(){
+  messageEl.style.display="none";
+}
+
 function showReplyNotice(text,type="info"){
   const el=document.getElementById("replyNotice");
   el.textContent=text;
   el.className="notice "+type;
   el.style.display="block";
 }
+
 function money(value){
   const n=Number(value);
   if(!Number.isFinite(n)||n<0)return "Not available";
   return new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"}).format(n);
 }
+
 function firstDefined(obj,keys,fallback=null){
   for(const key of keys){
     if(obj && obj[key]!==undefined && obj[key]!==null && obj[key]!=="")return obj[key];
   }
   return fallback;
 }
+
 function getFeeBounds(visa){
   if(!visa)return null;
   const min=Number(firstDefined(visa,["official_fee_min","visa_fee_min"],NaN));
@@ -250,10 +309,12 @@ function getFeeBounds(visa){
   if(!Number.isFinite(min)||!Number.isFinite(max)||min<0||max<min)return null;
   return {min,max};
 }
+
 function feeRangeText(visa){
   const b=getFeeBounds(visa);
   return b?money(b.min)+" – "+money(b.max):"Fee range unavailable";
 }
+
 function getClient(){
   if(!window.supabase||!window.SUPABASE_URL||!window.SUPABASE_ANON_KEY)
     throw new Error("Supabase configuration is missing. Check config.js.");
@@ -321,6 +382,7 @@ async function loadCountries(){
 
   countries.forEach(country=>{
     if(!country.id||!country.country_name)return;
+
     const a=document.createElement("option");
     a.value=country.id;
     a.textContent=country.country_name;
@@ -331,8 +393,10 @@ async function loadCountries(){
     b.textContent=country.country_name;
     applyingFromEl.appendChild(b);
   });
+
   countryEl.disabled=false;
   applyingFromEl.disabled=false;
+
   if(!countries.length)showMessage("No countries are currently available.","info");
 }
 
@@ -350,12 +414,14 @@ async function loadVisaTypes(countryId){
 
   visaTypes=result.visa_types||[];
   visaTypeEl.innerHTML='<option value="">Select a visa type</option>';
+
   visaTypes.forEach(visa=>{
     const option=document.createElement("option");
     option.value=visa.id;
     option.textContent=(visa.visa_name||"Visa")+" — "+feeRangeText(visa);
     visaTypeEl.appendChild(option);
   });
+
   visaTypeEl.disabled=false;
   if(!visaTypes.length)showMessage("No visa types are available for this destination.","info");
 }
@@ -366,14 +432,17 @@ function updateProcessingTime(){
     processingResult.textContent="Select an applying-from country, destination country and visa type to view the available processing time.";
     return;
   }
+
   const days=Number(selectedVisa.processing_days);
   processingResult.textContent="";
   const p=document.createElement("p");
+
   if(Number.isInteger(days)&&days>0){
     p.textContent="Estimated processing time: "+days+" days.";
   }else{
     p.textContent="No processing-time estimate has been configured for this visa type. Please contact customer support.";
   }
+
   processingResult.appendChild(p);
   const note=document.createElement("p");
   note.className="muted";
@@ -385,6 +454,7 @@ function updateProcessingTime(){
 function updateFees(){
   const count=applicantsEl.querySelectorAll(".applicant").length||1;
   const bounds=getFeeBounds(selectedVisa);
+
   document.getElementById("applicantCount").textContent=String(count);
   document.getElementById("officialFee").textContent=bounds?feeRangeText(selectedVisa):"Select a visa type";
   document.getElementById("serviceFee").textContent=money(SERVICE_FEE_PER_APPLICANT);
@@ -396,36 +466,47 @@ function addField(parent,labelText,name,type="text",required=false){
   const wrap=document.createElement("div");
   const label=document.createElement("label");
   label.appendChild(document.createTextNode(labelText+(required?" *":"")));
+
   const input=document.createElement("input");
   input.name=name;
   input.type=type;
   input.required=required;
+
   if(type==="file")input.accept=".pdf,.jpg,.jpeg,.png";
+
   label.appendChild(input);
   wrap.appendChild(label);
   parent.appendChild(wrap);
+
   return input;
 }
+
 function addSelect(parent,labelText,name,options,required=false){
   const wrap=document.createElement("div");
   const label=document.createElement("label");
   label.appendChild(document.createTextNode(labelText+(required?" *":"")));
+
   const select=document.createElement("select");
   select.name=name;
   select.required=required;
+
   options.forEach(item=>{
     const option=document.createElement("option");
     option.value=item.value;
     option.textContent=item.label;
     select.appendChild(option);
   });
+
   label.appendChild(select);
   wrap.appendChild(label);
   parent.appendChild(wrap);
+
   return select;
 }
+
 function addApplicant(isPrimary=false){
   const count=applicantsEl.querySelectorAll(".applicant").length;
+
   if(count>=MAX_APPLICANTS){
     showMessage("You can add a maximum of "+MAX_APPLICANTS+" applicants.","error");
     return;
@@ -433,6 +514,7 @@ function addApplicant(isPrimary=false){
 
   const card=document.createElement("div");
   card.className="applicant";
+
   const heading=document.createElement("h3");
   heading.textContent=isPrimary?"Primary Applicant":"Family Member "+count;
   card.appendChild(heading);
@@ -444,16 +526,24 @@ function addApplicant(isPrimary=false){
   addField(grid,"First name","first_name","text",true);
   addField(grid,"Last name","last_name","text",true);
   addField(grid,"Email address","email","email",isPrimary);
-  addField(grid,"Phone number","phone");
+
+  /* REQUIRED INTERNATIONAL WHATSAPP NUMBER */
+  const whatsappInput=addField(grid,"WhatsApp number","phone","tel",true);
+  whatsappInput.autocomplete="tel";
+  initializeWhatsAppInput(whatsappInput);
+
   addField(grid,"Nationality","nationality");
   addField(grid,"Passport number","passport_number");
   addField(grid,"Date of birth","date_of_birth","date");
 
   const passport=addSelect(grid,"Do you have a passport?","has_passport",[
-    {value:"true",label:"Yes"},{value:"false",label:"No"}
+    {value:"true",label:"Yes"},
+    {value:"false",label:"No"}
   ],true);
+
   const refugee=addSelect(grid,"Are you a refugee?","is_refugee",[
-    {value:"false",label:"No"},{value:"true",label:"Yes"}
+    {value:"false",label:"No"},
+    {value:"true",label:"Yes"}
   ],true);
 
   const refugeeNumber=addField(grid,"Refugee card number","refugee_card_number");
@@ -462,20 +552,33 @@ function addApplicant(isPrimary=false){
   const passportPage=addField(grid,"Passport information page","passport_page","file");
   const refugeeCard=addField(grid,"Refugee card document","refugee_card","file");
   const unManifest=addField(grid,"UN manifest document","un_manifest","file");
+
   addField(grid,"Other supporting document","supporting_document","file");
 
   function updateConditional(){
     const has=passport.value==="true";
     const refugeeValue=refugee.value==="true";
+
     passportPhoto.parentElement.style.display=has?"":"none";
     passportPage.parentElement.style.display=has?"":"none";
     refugeeNumber.parentElement.style.display=refugeeValue?"":"none";
     refugeeCard.parentElement.style.display=refugeeValue?"":"none";
     unNumber.parentElement.style.display=refugeeValue?"":"none";
     unManifest.parentElement.style.display=refugeeValue?"":"none";
-    if(!has){passportPhoto.value="";passportPage.value="";}
-    if(!refugeeValue){refugeeNumber.value="";refugeeCard.value="";unNumber.value="";unManifest.value="";}
+
+    if(!has){
+      passportPhoto.value="";
+      passportPage.value="";
+    }
+
+    if(!refugeeValue){
+      refugeeNumber.value="";
+      refugeeCard.value="";
+      unNumber.value="";
+      unManifest.value="";
+    }
   }
+
   passport.addEventListener("change",updateConditional);
   refugee.addEventListener("change",updateConditional);
   updateConditional();
@@ -485,16 +588,20 @@ function addApplicant(isPrimary=false){
     remove.type="button";
     remove.className="secondary";
     remove.textContent="Remove applicant";
+
     remove.addEventListener("click",()=>{
       card.remove();
       renumberApplicants();
       updateFees();
     });
+
     card.appendChild(remove);
   }
+
   applicantsEl.appendChild(card);
   updateFees();
 }
+
 function renumberApplicants(){
   [...applicantsEl.querySelectorAll(".applicant")].forEach((card,index)=>{
     card.querySelector("h3").textContent=index===0?"Primary Applicant":"Family Member "+index;
@@ -505,26 +612,61 @@ function renumberApplicants(){
 function fileToBase64(file){
   return new Promise((resolve,reject)=>{
     if(!file)return resolve(null);
-    if(file.size>MAX_FILE_SIZE)return reject(new Error(file.name+" exceeds the 8 MB file limit."));
-    if(!ALLOWED_FILE_TYPES.includes(file.type))return reject(new Error(file.name+" must be PDF, JPEG or PNG."));
+
+    if(file.size>MAX_FILE_SIZE)
+      return reject(new Error(file.name+" exceeds the 8 MB file limit."));
+
+    if(!ALLOWED_FILE_TYPES.includes(file.type))
+      return reject(new Error(file.name+" must be PDF, JPEG or PNG."));
+
     const reader=new FileReader();
+
     reader.onload=()=>resolve(String(reader.result).split(",")[1]);
     reader.onerror=()=>reject(new Error("Could not read "+file.name));
+
     reader.readAsDataURL(file);
   });
 }
+
 async function collectApplicant(card,index){
   const get=name=>card.querySelector('[name="'+name+'"]');
+
   const first=get("first_name").value.trim();
   const last=get("last_name").value.trim();
-  if(!first||!last)throw new Error("Enter the first and last name for applicant "+(index+1)+".");
+
+  if(!first||!last)
+    throw new Error("Enter the first and last name for applicant "+(index+1)+".");
+
+  /* VALIDATE AND FORMAT WHATSAPP NUMBER */
+  const phoneInput=get("phone");
+  const phoneInstance=phoneInstances.get(phoneInput);
+
+  if(!phoneInstance)
+    throw new Error("WhatsApp phone selector is unavailable for applicant "+(index+1)+".");
+
+  await phoneInstance.promise;
+
+  if(!phoneInput.value.trim()||!phoneInstance.isValidNumber())
+    throw new Error("Enter a valid international WhatsApp number for applicant "+(index+1)+".");
+
+  const internationalPhone=phoneInstance.getNumber();
+
+  if(!/^\+[1-9][0-9]{7,14}$/.test(internationalPhone))
+    throw new Error("The WhatsApp number for applicant "+(index+1)+" is not in the required international format.");
 
   const hasPassport=get("has_passport").value==="true";
   const isRefugee=get("is_refugee").value==="true";
+
   const email=get("email").value.trim()||(index===0?currentUser.email:null);
-  if(index===0&&!email)throw new Error("The primary applicant needs an email address.");
-  if(email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw new Error("Enter a valid email address for applicant "+(index+1)+".");
-  if(isRefugee&&!get("refugee_card_number").value.trim())throw new Error("Enter the refugee card number for applicant "+(index+1)+".");
+
+  if(index===0&&!email)
+    throw new Error("The primary applicant needs an email address.");
+
+  if(email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+    throw new Error("Enter a valid email address for applicant "+(index+1)+".");
+
+  if(isRefugee&&!get("refugee_card_number").value.trim())
+    throw new Error("Enter the refugee card number for applicant "+(index+1)+".");
 
   const fileFields=[
     ["passport_photo",hasPassport],
@@ -533,10 +675,14 @@ async function collectApplicant(card,index){
     ["un_manifest",isRefugee],
     ["supporting_document",true]
   ];
+
   const documents=[];
+
   for(const [field,applicable] of fileFields){
     if(!applicable)continue;
+
     const file=get(field).files[0];
+
     if(file){
       documents.push({
         file_name:file.name,
@@ -546,8 +692,10 @@ async function collectApplicant(card,index){
       });
     }
   }
+
   if(hasPassport&&!documents.some(d=>d.document_type==="passport_photo"))
     throw new Error("Upload a passport photo for applicant "+(index+1)+".");
+
   if(hasPassport&&!documents.some(d=>d.document_type==="passport_page"))
     throw new Error("Upload the passport information page for applicant "+(index+1)+".");
 
@@ -555,7 +703,7 @@ async function collectApplicant(card,index){
     first_name:first,
     last_name:last,
     email,
-    phone:get("phone").value.trim(),
+    phone:internationalPhone,
     nationality:get("nationality").value.trim(),
     passport_number:get("passport_number").value.trim(),
     date_of_birth:get("date_of_birth").value||null,
@@ -571,9 +719,14 @@ async function collectApplicant(card,index){
 function addRow(parent,label,value){
   const p=document.createElement("p");
   const strong=document.createElement("strong");
+
   strong.textContent=label+": ";
   p.appendChild(strong);
-  p.appendChild(document.createTextNode(value===null||value===undefined||value===""?"Not provided":String(value)));
+
+  p.appendChild(document.createTextNode(
+    value===null||value===undefined||value===""?"Not provided":String(value)
+  ));
+
   parent.appendChild(p);
 }
 
@@ -601,22 +754,24 @@ function renderTracking(applications){
 
     const processing=firstDefined(app,["processing_time_label","processing_time","estimated_processing_time"]);
     const days=Number(app.processing_days);
+
     addRow(card,"Estimated processing time",processing||(Number.isInteger(days)&&days>0?days+" days":"Not configured"));
 
     addRow(card,"Application date",firstDefined(app,["application_date","created_at"]));
 
     const status=document.createElement("p");
     const label=document.createElement("strong");
+
     label.textContent="Application status: ";
     status.appendChild(label);
 
     const badge=document.createElement("span");
     badge.className="status";
     badge.textContent=app.status||"Pending";
+
     status.appendChild(badge);
     card.appendChild(status);
 
-    // CONSULTANCY SERVICE FEE
     const paymentBox=document.createElement("div");
     paymentBox.className="payment-summary";
 
@@ -635,6 +790,7 @@ function renderTracking(applications){
     );
 
     const serviceFee=Number(rawFee);
+
     const validFee=Number.isFinite(serviceFee)&&serviceFee>=0
       ?serviceFee
       :SERVICE_FEE_PER_APPLICANT;
@@ -694,7 +850,6 @@ function renderTracking(applications){
 
     card.appendChild(paymentBox);
 
-    // GOVERNMENT VISA FEE REMAINS SEPARATE
     addRow(
       card,
       "Government visa fee status",
@@ -720,12 +875,18 @@ async function loadTracking(){
     trackingResults.textContent="Please sign in to view your applications.";
     return;
   }
+
   trackingResults.textContent="Loading your applications...";
+
   try{
     const result=await backendRequest({action:"my_applications"});
     const apps=result.applications||result.my_applications||result.data||[];
-    if(!Array.isArray(apps))throw new Error("The tracking response was invalid.");
+
+    if(!Array.isArray(apps))
+      throw new Error("The tracking response was invalid.");
+
     renderTracking(apps);
+
   }catch(error){
     console.error("Tracking error:",error);
     trackingResults.textContent="We could not load your applications. Please refresh or contact support. "+(error.message||"");
@@ -738,94 +899,169 @@ function updateUnread(count){
   badge.textContent=count?String(count):"";
   badge.classList.toggle("hidden",!count);
 }
+
 function messageDate(value){
   const date=new Date(value);
   return value&&!Number.isNaN(date.getTime())?date.toLocaleString():"Date unavailable";
 }
+
 function renderInbox(messages,replies){
   const container=document.getElementById("inboxResults");
   container.innerHTML="";
+
   const items=[];
-  (messages||[]).forEach(m=>items.push({text:m.message,sender:"Administrator",created_at:m.created_at,is_read:m.is_read,role:"admin"}));
-  (replies||[]).forEach(m=>items.push({text:m.message,sender:m.sender_role==="admin"?"Administrator":"You",created_at:m.created_at,is_read:m.is_read,role:m.sender_role==="admin"?"admin":"applicant"}));
+
+  (messages||[]).forEach(m=>items.push({
+    text:m.message,
+    sender:"Administrator",
+    created_at:m.created_at,
+    is_read:m.is_read,
+    role:"admin"
+  }));
+
+  (replies||[]).forEach(m=>items.push({
+    text:m.message,
+    sender:m.sender_role==="admin"?"Administrator":"You",
+    created_at:m.created_at,
+    is_read:m.is_read,
+    role:m.sender_role==="admin"?"admin":"applicant"
+  }));
+
   items.sort((a,b)=>new Date(a.created_at||0)-new Date(b.created_at||0));
+
   if(!items.length){
     container.textContent="Your inbox is empty.";
     document.getElementById("messageSummary").textContent="No messages yet.";
     updateUnread(0);
     return;
   }
+
   let unread=0;
+
   items.forEach(item=>{
     if(item.role==="admin"&&item.is_read!==true)unread++;
+
     const card=document.createElement("div");
     card.className="message-card "+(item.role==="admin"?"admin-message":"applicant-message");
+
     const heading=document.createElement("strong");
     heading.textContent=item.sender;
     card.appendChild(heading);
+
     const state=document.createElement("span");
     state.className="message-status "+(item.is_read===true?"read":"unread");
     state.textContent=item.is_read===true?"Read":"Unread";
     card.appendChild(state);
+
     const body=document.createElement("p");
     body.style.whiteSpace="pre-wrap";
     body.textContent=item.text||"";
     card.appendChild(body);
+
     const time=document.createElement("small");
     time.textContent=messageDate(item.created_at);
     card.appendChild(time);
+
     container.appendChild(card);
   });
+
   updateUnread(unread);
-  document.getElementById("messageSummary").textContent=items.length+" message(s), "+unread+" unread from administrator.";
+
+  document.getElementById("messageSummary").textContent=
+    items.length+" message(s), "+unread+" unread from administrator.";
 }
+
 async function loadMessages(){
   if(!currentUser)return;
   if(loadingMessages)return;
+
   loadingMessages=true;
+
   const container=document.getElementById("inboxResults");
   container.textContent="Loading messages...";
+
   try{
     const client=getClient();
+
     const [m,r]=await Promise.all([
-      client.from("applicant_messages").select("id,message,is_read,created_at,sender_name").eq("recipient_user_id",currentUser.id).order("created_at",{ascending:true}),
-      client.from("applicant_message_replies").select("id,message,is_read,created_at,sender_role").eq("applicant_user_id",currentUser.id).order("created_at",{ascending:true})
+      client.from("applicant_messages")
+        .select("id,message,is_read,created_at,sender_name")
+        .eq("recipient_user_id",currentUser.id)
+        .order("created_at",{ascending:true}),
+
+      client.from("applicant_message_replies")
+        .select("id,message,is_read,created_at,sender_role")
+        .eq("applicant_user_id",currentUser.id)
+        .order("created_at",{ascending:true})
     ]);
+
     if(m.error)throw m.error;
     if(r.error)throw r.error;
+
     const messages=m.data||[];
     const replies=r.data||[];
+
     renderInbox(messages,replies);
 
     const unreadMessages=messages.filter(x=>x.is_read!==true).map(x=>x.id);
     const unreadReplies=replies.filter(x=>x.sender_role==="admin"&&x.is_read!==true).map(x=>x.id);
 
     if(unreadMessages.length){
-      const {error}=await client.from("applicant_messages").update({is_read:true}).in("id",unreadMessages).eq("recipient_user_id",currentUser.id);
+      const {error}=await client.from("applicant_messages")
+        .update({is_read:true})
+        .in("id",unreadMessages)
+        .eq("recipient_user_id",currentUser.id);
+
       if(error)throw error;
     }
+
     if(unreadReplies.length){
-      const {error}=await client.from("applicant_message_replies").update({is_read:true}).in("id",unreadReplies).eq("applicant_user_id",currentUser.id).eq("sender_role","admin");
+      const {error}=await client.from("applicant_message_replies")
+        .update({is_read:true})
+        .in("id",unreadReplies)
+        .eq("applicant_user_id",currentUser.id)
+        .eq("sender_role","admin");
+
       if(error)throw error;
     }
+
     if(unreadMessages.length||unreadReplies.length){
-      renderInbox(messages.map(x=>({...x,is_read:true})),replies.map(x=>x.sender_role==="admin"?({...x,is_read:true}):x));
+      renderInbox(
+        messages.map(x=>({...x,is_read:true})),
+        replies.map(x=>x.sender_role==="admin"?({...x,is_read:true}):x)
+      );
     }
+
   }catch(error){
     console.error("Messages error:",error);
     container.textContent="Messages could not be loaded. "+(error.message||"");
-  }finally{loadingMessages=false;}
+  }finally{
+    loadingMessages=false;
+  }
 }
+
 async function sendApplicantReply(){
   if(sendingReply)return;
-  if(!currentUser){showReplyNotice("Please sign in first.","error");return;}
+
+  if(!currentUser){
+    showReplyNotice("Please sign in first.","error");
+    return;
+  }
+
   const input=document.getElementById("replyMessage");
   const text=input.value.trim();
-  if(!text){showReplyNotice("Write a message first.","error");return;}
+
+  if(!text){
+    showReplyNotice("Write a message first.","error");
+    return;
+  }
+
   sendingReply=true;
+
   const button=document.getElementById("sendApplicantReply");
   button.disabled=true;
   button.textContent="Sending...";
+
   try{
     const {error}=await getClient().from("applicant_message_replies").insert({
       applicant_user_id:currentUser.id,
@@ -834,10 +1070,13 @@ async function sendApplicantReply(){
       message:text,
       is_read:false
     });
+
     if(error)throw error;
+
     input.value="";
     showReplyNotice("Your message has been sent.","success");
     await loadMessages();
+
   }catch(error){
     showReplyNotice("Your message could not be sent: "+(error.message||"Please try again."),"error");
   }finally{
@@ -851,22 +1090,54 @@ async function sendApplicantReply(){
 function appendResult(parent,label,value){
   const p=document.createElement("p");
   const strong=document.createElement("strong");
+
   strong.textContent=label+": ";
   p.appendChild(strong);
-  p.appendChild(document.createTextNode(value===null||value===undefined||value===""?"Not provided":String(value)));
+
+  p.appendChild(document.createTextNode(
+    value===null||value===undefined||value===""?"Not provided":String(value)
+  ));
+
   parent.appendChild(p);
 }
+
 async function submitApplication(){
   if(submitting)return;
+
   hideMessage();
-  if(!currentUser){showMessage("Please sign in before submitting.","error");return;}
-  if(!applyingFromEl.value){showMessage("Select your applying-from country.","error");applyingFromEl.focus();return;}
-  if(!countryEl.value||!visaTypeEl.value||!selectedVisa){showMessage("Select a destination country and visa type.","error");return;}
-  if(!getFeeBounds(selectedVisa)){showMessage("The official visa fee range is missing or invalid. No application was submitted.","error");return;}
-  if(!document.getElementById("confirm").checked){showMessage("Please confirm the information before submitting.","error");return;}
+
+  if(!currentUser){
+    showMessage("Please sign in before submitting.","error");
+    return;
+  }
+
+  if(!applyingFromEl.value){
+    showMessage("Select your applying-from country.","error");
+    applyingFromEl.focus();
+    return;
+  }
+
+  if(!countryEl.value||!visaTypeEl.value||!selectedVisa){
+    showMessage("Select a destination country and visa type.","error");
+    return;
+  }
+
+  if(!getFeeBounds(selectedVisa)){
+    showMessage("The official visa fee range is missing or invalid. No application was submitted.","error");
+    return;
+  }
+
+  if(!document.getElementById("confirm").checked){
+    showMessage("Please confirm the information before submitting.","error");
+    return;
+  }
 
   const cards=[...applicantsEl.querySelectorAll(".applicant")];
-  if(!cards.length||cards.length>MAX_APPLICANTS){showMessage("Check the number of applicants.","error");return;}
+
+  if(!cards.length||cards.length>MAX_APPLICANTS){
+    showMessage("Check the number of applicants.","error");
+    return;
+  }
 
   submitting=true;
   submitButton.disabled=true;
@@ -874,7 +1145,10 @@ async function submitApplication(){
 
   try{
     const applicants=[];
-    for(let i=0;i<cards.length;i++)applicants.push(await collectApplicant(cards[i],i));
+
+    for(let i=0;i<cards.length;i++){
+      applicants.push(await collectApplicant(cards[i],i));
+    }
 
     const result=await backendRequest({
       action:"submit",
@@ -886,14 +1160,17 @@ async function submitApplication(){
 
     const submitted=result.applications||[];
     const details=document.getElementById("resultDetails");
+
     details.innerHTML="";
 
     submitted.forEach((app,index)=>{
       const item=document.createElement("div");
       item.className="fee-box";
+
       const heading=document.createElement("h3");
       heading.textContent="Applicant "+(index+1);
       item.appendChild(heading);
+
       appendResult(item,"Reference number",app.reference_number);
       appendResult(item,"Destination",app.destination_country);
       appendResult(item,"Visa type",app.visa_type);
@@ -901,6 +1178,7 @@ async function submitApplication(){
       appendResult(item,"Consultancy service fee",money(firstDefined(app,["service_fee"],SERVICE_FEE_PER_APPLICANT)));
       appendResult(item,"Consultancy service fee payment status",app.service_fee_payment_status||"pending");
       appendResult(item,"Government visa fee payment status",app.visa_fee_payment_status||"pending");
+
       details.appendChild(item);
     });
 
@@ -908,25 +1186,34 @@ async function submitApplication(){
 
     if(!submitted.length){
       showMessage(result.message||"The backend returned no application records. Check your tracking page before submitting again.","info");
+
     }else if(submitted.length!==applicants.length){
       showMessage("The backend returned an unexpected number of records. Do not submit again until you have checked your tracking page.","info");
+
     }else{
       showMessage(result.message||"Your application was submitted successfully. Payment remains pending until verified.","success");
     }
+
     submitButton.textContent="Application submitted";
     await loadTracking();
+
   }catch(error){
     console.error("Application submission error:",error);
     showMessage(error.message||"Application submission failed.","error");
     submitButton.disabled=false;
     submitButton.textContent="Submit Visa Application";
-  }finally{submitting=false;}
+
+  }finally{
+    submitting=false;
+  }
 }
 
 /* EVENTS */
 applyingFromEl.addEventListener("change",updateProcessingTime);
+
 countryEl.addEventListener("change",async()=>{
   hideMessage();
+
   if(!countryEl.value){
     visaRequestNumber++;
     visaTypeEl.innerHTML='<option value="">Select a destination country first</option>';
@@ -937,39 +1224,54 @@ countryEl.addEventListener("change",async()=>{
     updateProcessingTime();
     return;
   }
-  try{await loadVisaTypes(countryEl.value);}
-  catch(error){
+
+  try{
+    await loadVisaTypes(countryEl.value);
+  }catch(error){
     visaTypeEl.innerHTML='<option value="">Could not load visa types</option>';
     visaTypeEl.disabled=true;
     showMessage(error.message,"error");
   }
 });
+
 visaTypeEl.addEventListener("change",()=>{
   selectedVisa=visaTypes.find(v=>String(v.id)===String(visaTypeEl.value))||null;
   updateFees();
   updateProcessingTime();
-  if(selectedVisa&&!getFeeBounds(selectedVisa))showMessage("The official fee range is not configured for this visa type.","error");
+
+  if(selectedVisa&&!getFeeBounds(selectedVisa))
+    showMessage("The official fee range is not configured for this visa type.","error");
 });
+
 document.getElementById("addApplicant").addEventListener("click",()=>addApplicant(false));
 submitButton.addEventListener("click",submitApplication);
 document.getElementById("refreshTracking").addEventListener("click",loadTracking);
 document.getElementById("refreshMessages").addEventListener("click",loadMessages);
 document.getElementById("sendApplicantReply").addEventListener("click",sendApplicantReply);
-document.querySelector('a[href="#myMessagesSection"]').addEventListener("click",()=>{if(currentUser)loadMessages();});
+
+document.querySelector('a[href="#myMessagesSection"]').addEventListener("click",()=>{
+  if(currentUser)loadMessages();
+});
 
 /* INITIALIZATION */
 async function initialise(){
   try{
     await loadUser();
+
     document.getElementById("signInPrompt").style.display="none";
+
     addApplicant(true);
     await loadCountries();
+
     updateFees();
     await loadTracking();
     await loadMessages();
+
   }catch(error){
     console.error("V18 application page initialization:",error);
+
     showMessage(error.message||"Could not initialize the application page.","error");
+
     submitButton.disabled=true;
     trackingResults.textContent="Please sign in to view your applications.";
     document.getElementById("inboxResults").textContent="Please sign in to view your messages.";
@@ -977,7 +1279,9 @@ async function initialise(){
     document.getElementById("signInPrompt").style.display="block";
   }
 }
+
 initialise();
+
 })();
 </script>
 </body>
