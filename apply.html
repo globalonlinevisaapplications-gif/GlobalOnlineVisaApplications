@@ -112,7 +112,7 @@ body{padding:12px 8px}
 
 <section class="section" id="myMessagesSection">
 <h2>My Messages</h2>
-<p class="muted">Read private messages and replies from the administrator.</p>
+<p class="muted">Read private messages and replies from the administrator, including application confirmations, status updates, document requests and payment instructions.</p>
 <button type="button" id="refreshMessages">Refresh Messages</button>
 <span id="messageSummary" class="muted">Sign in to view your inbox.</span>
 <div id="inboxResults">Sign in to view your messages.</div>
@@ -221,8 +221,8 @@ I confirm that the information supplied is accurate and that I agree to the appl
 (() => {
 "use strict";
 
-/* V19 BACKEND */
-const BACKEND_VERSION = "visa-backend-v19";
+/* V20 BACKEND */
+const BACKEND_VERSION = "visa-backend-v20";
 const SERVICE_FEE_PER_APPLICANT = 285;
 const MAX_APPLICANTS = Math.min(10,Math.max(1,Number(window.APP_CONFIG?.maximumApplicants)||10));
 const MAX_FILE_SIZE = 8 * 1024 * 1024;
@@ -323,7 +323,7 @@ function getClient(){
   return window.supabaseClient;
 }
 
-/* AUTHENTICATED V19 REQUEST */
+/* AUTHENTICATED V20 REQUEST */
 async function backendRequest(payload){
   const client=getClient();
   const {data,error}=await client.auth.getSession();
@@ -331,7 +331,15 @@ async function backendRequest(payload){
   const session=data.session;
   if(!session?.access_token)throw new Error("Your session has expired. Please sign in again.");
 
-  const url=window.SUPABASE_URL.replace(/\/$/,"")+"/functions/v1/"+BACKEND_VERSION;
+  const configuredUrl=window.SUPABASE_FUNCTION_URL;
+  const url=configuredUrl
+    ?configuredUrl.replace(/\/$/,"")
+    :window.SUPABASE_URL.replace(/\/$/,"")+"/functions/v1/"+BACKEND_VERSION;
+
+  if(!url.endsWith("/"+BACKEND_VERSION)){
+    throw new Error("Your config.js is not pointing to the V20 backend. Update SUPABASE_FUNCTION_URL to visa-backend-v20.");
+  }
+
   const controller=new AbortController();
   const timeout=setTimeout(()=>controller.abort(),30000);
 
@@ -350,11 +358,11 @@ async function backendRequest(payload){
     const result=await response.json().catch(()=>({}));
 
     if(!response.ok||result.ok===false||result.success===false){
-      throw new Error(result.error||result.message||"The V19 backend request failed.");
+      throw new Error(result.error||result.message||"The V20 backend request failed.");
     }
 
     if(result.version&&result.version!==BACKEND_VERSION){
-      throw new Error("Backend version mismatch. Confirm visa-backend-v19 is deployed.");
+      throw new Error("Backend version mismatch. Confirm visa-backend-v20 is deployed.");
     }
 
     return result;
@@ -892,7 +900,10 @@ async function loadTracking(){
   }
 }
 
-/* APPLICANT MESSAGES */
+/* APPLICANT MESSAGES
+   V20 automated messages are stored in applicant_messages.
+   This inbox reads that table and applicant_message_replies.
+*/
 function updateUnread(count){
   const badge=document.getElementById("unreadCount");
   badge.textContent=count?String(count):"";
@@ -912,7 +923,7 @@ function renderInbox(messages,replies){
 
   (messages||[]).forEach(m=>items.push({
     text:m.message,
-    sender:"Administrator",
+    sender:m.sender_name||"Global Online Visa Applications",
     created_at:m.created_at,
     is_read:m.is_read,
     role:"admin"
@@ -1195,6 +1206,7 @@ async function submitApplication(){
 
     submitButton.textContent="Application submitted";
     await loadTracking();
+    await loadMessages();
 
   }catch(error){
     console.error("Application submission error:",error);
@@ -1267,7 +1279,7 @@ async function initialise(){
     await loadMessages();
 
   }catch(error){
-    console.error("V19 application page initialization:",error);
+    console.error("V20 application page initialization:",error);
 
     showMessage(error.message||"Could not initialize the application page.","error");
 
