@@ -76,11 +76,10 @@ textarea{min-height:100px;resize:vertical}
 </head>
 
 <body>
-
 <header>
   <div>
     <strong>Global Online Visa Applications</strong>
-    <div>Administrator Dashboard · V19</div>
+    <div>Administrator Dashboard · V20</div>
     <a id="publicWebsiteLink" href="https://globalvisaagencies.netlify.app/" target="_blank" rel="noopener noreferrer">Visit official website</a>
   </div>
   <div>
@@ -129,8 +128,7 @@ textarea{min-height:100px;resize:vertical}
   </form>
 </section>
 
-<div id="dashboard" class="hidden">
-
+<section id="dashboard" class="hidden">
 <div class="stats">
   <div class="stat">Applications<strong id="statApps">—</strong></div>
   <div class="stat">Unpaid service fees<strong id="statServicePending">—</strong></div>
@@ -173,13 +171,11 @@ textarea{min-height:100px;resize:vertical}
   </p>
   <div class="table-wrap">
     <table>
-      <thead>
-        <tr>
-          <th>Reference</th><th>Applicant</th><th>Applying from</th>
-          <th>Destination / Visa</th><th>Consultancy fee</th>
-          <th>Government visa fee</th><th>Status</th><th>Payments</th><th>Actions</th>
-        </tr>
-      </thead>
+      <thead><tr>
+        <th>Reference</th><th>Applicant</th><th>Applying from</th>
+        <th>Destination / Visa</th><th>Consultancy fee</th>
+        <th>Government visa fee</th><th>Status</th><th>Payments</th><th>Actions</th>
+      </tr></thead>
       <tbody id="appRows"></tbody>
     </table>
   </div>
@@ -187,10 +183,7 @@ textarea{min-height:100px;resize:vertical}
 
 <section id="payments" class="panel tab hidden">
   <h2>Separate payment records</h2>
-  <p class="fee-note">
-    Consultancy service fee payments and government visa fee payments are recorded independently.
-    No combined payment total is calculated or displayed.
-  </p>
+  <p class="fee-note">Consultancy service fee payments and government visa fee payments are recorded independently. No combined payment total is calculated or displayed.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>Date</th><th>Application</th><th>Payment type</th><th>Amount</th><th>Status</th><th>Record ID</th></tr></thead>
@@ -222,12 +215,14 @@ textarea{min-height:100px;resize:vertical}
 
 <section id="messages" class="panel tab hidden">
   <h2>Applicant messaging centre</h2>
+
   <div class="message-grid">
     <div class="panel">
       <h3>Announcement to all applicants</h3>
       <textarea id="broadcastMessage" placeholder="Write your announcement…"></textarea>
       <button id="sendBroadcast" type="button">Send announcement</button>
     </div>
+
     <div class="panel">
       <h3>Private message</h3>
       <label for="messageApplicant">Select applicant</label>
@@ -235,11 +230,17 @@ textarea{min-height:100px;resize:vertical}
       <label for="privateMessage">Message</label>
       <textarea id="privateMessage"></textarea>
       <button id="sendPrivate" type="button">Send private message</button>
+
       <label for="missingDocumentMessage">Missing documents request</label>
       <textarea id="missingDocumentMessage" placeholder="Describe the documents required…"></textarea>
       <button id="sendMissingDocument" class="secondary" type="button">Send document request</button>
+
+      <label for="paymentInstructionsMessage">Payment instructions</label>
+      <textarea id="paymentInstructionsMessage" placeholder="Enter the payment instructions for this applicant…"></textarea>
+      <button id="sendPaymentInstructions" class="secondary" type="button">Send payment instructions</button>
     </div>
   </div>
+
   <div class="panel">
     <h3>Applicant conversation</h3>
     <button id="loadReplies" class="secondary" type="button">Load conversation</button>
@@ -252,10 +253,7 @@ textarea{min-height:100px;resize:vertical}
 
 <section id="processing-times" class="panel tab hidden">
   <h2>Visa processing times</h2>
-  <p class="fee-note">
-    Processing estimates are read from the visa_types records.
-    The configured processing_days value is an estimate, not a guaranteed decision date.
-  </p>
+  <p class="fee-note">Processing estimates are read from the visa_types records. The configured processing_days value is an estimate, not a guaranteed decision date.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>Destination</th><th>Visa type</th><th>Processing days</th><th>Official visa fee minimum</th><th>Official visa fee maximum</th></tr></thead>
@@ -263,8 +261,7 @@ textarea{min-height:100px;resize:vertical}
     </table>
   </div>
 </section>
-
-</div>
+</section>
 </main>
 
 <div id="detailOverlay" class="detail-overlay" role="dialog" aria-modal="true">
@@ -281,7 +278,7 @@ textarea{min-height:100px;resize:vertical}
 (() => {
 "use strict";
 
-const BACKEND_VERSION = "visa-backend-v19";
+const BACKEND_VERSION = "visa-backend-v20";
 const SERVICE_FEE_PER_APPLICANT = 285;
 const OFFICIAL_SITE = "https://globalvisaagencies.netlify.app";
 
@@ -355,7 +352,7 @@ function visaFeeStatus(application){
 }
 
 function servicePaid(application){
-  return serviceStatus(application)==="paid";
+  return ["paid","approved","confirmed"].includes(serviceStatus(application));
 }
 
 async function api(payload){
@@ -386,7 +383,7 @@ async function api(payload){
       throw new Error(result.error||result.message||"Backend request failed.");
     }
     if(result.version&&result.version!==BACKEND_VERSION){
-      throw new Error("Backend version mismatch. Expected V19.");
+      throw new Error("Backend version mismatch. Expected V20.");
     }
     return result;
   }catch(error){
@@ -537,7 +534,7 @@ function renderApplications(){
 
     return (!q||text.includes(q))&&
       (!status||a.status===status)&&
-      (!service||serviceStatus(a)===service)&&
+      (!service||(service==="paid"?servicePaid(a):!servicePaid(a)))&&
       (!destination||(a.destination_country_name||a.destination_country)===destination)&&
       (!visaName||(v.visa_name||a.visa_type)===visaName);
   });
@@ -545,7 +542,6 @@ function renderApplications(){
   $("appRows").innerHTML=rows.map(a=>{
     const p=applicant(a),v=visa(a);
     const name=[p.first_name,p.last_name].filter(Boolean).join(" ")||"Applicant";
-    const serviceAmount=serviceFee(a);
     const governmentFee=a.official_visa_fee;
     const options=[...new Set([...STATUS_OPTIONS,a.status].filter(Boolean))];
 
@@ -554,7 +550,7 @@ function renderApplications(){
       <td>${esc(name)}<br><span class="muted">${esc(p.email||"")}</span><br><span class="fee-note">${applicantCount(a)} applicant(s)</span></td>
       <td>${esc(a.applying_from||"Not specified")}</td>
       <td>${esc(a.destination_country_name||a.destination_country||"—")}<br>${esc(v.visa_name||a.visa_type||"—")}</td>
-      <td>${money(serviceAmount)}<br><span class="fee-note">Status: ${esc(serviceStatus(a))}</span></td>
+      <td>${money(serviceFee(a))}<br><span class="fee-note">Status: ${esc(serviceStatus(a))}</span></td>
       <td>${governmentFee===null||governmentFee===undefined?"Not confirmed":money(governmentFee)}<br><span class="fee-note">Status: ${esc(visaFeeStatus(a))}</span></td>
       <td>${esc(a.status||"Pending")}</td>
       <td>Service: ${esc(serviceStatus(a))}<br>Visa: ${esc(visaFeeStatus(a))}</td>
@@ -626,7 +622,7 @@ function render(){
 
 async function refresh(){
   $("refresh").disabled=true;
-  notice("Loading V19 dashboard data…");
+  notice("Loading V20 dashboard data…");
   try{
     const [a,p,e,n]=await Promise.all([
       api({action:"admin_applications"}),
@@ -640,7 +636,7 @@ async function refresh(){
     notifications=n.notifications||[];
     render();
     $("dashboard").classList.remove("hidden");
-    notice("V19 dashboard data loaded successfully.","success");
+    notice("V20 dashboard data loaded successfully.","success");
   }catch(error){notice(error.message,"error");}
   finally{$("refresh").disabled=false;}
 }
@@ -728,9 +724,8 @@ async function openDocument(id,action){
   a.remove();
 }
 
-/* Payment confirmation is deliberately separate.
-   PRC generation remains controlled by the V19 backend
-   after successful administrator payment approval. */
+/* Payment approval is performed by the secure V20 backend.
+   The PRC is generated only after the database approval RPC succeeds. */
 
 async function confirmPayment(applicationId,paymentType){
   const a=apps.find(x=>String(x.id)===String(applicationId));
@@ -753,14 +748,19 @@ async function confirmPayment(applicationId,paymentType){
     throw new Error("Invalid payment type.");
   }
 
-  await api({
+  const result=await api({
     action:"admin_confirm_payment",
     application_id:applicationId,
     payment_type:paymentType,
     amount:amount
   });
 
-  notice(paymentType==="service_fee"?"Consultancy service fee payment confirmed.":"Government visa fee payment confirmed.","success");
+  if(paymentType==="service_fee"&&result.prc_code){
+    notice("Payment approved. PRC: "+result.prc_code,"success");
+  }else{
+    notice(paymentType==="service_fee"?"Consultancy service fee payment approved.":"Government visa fee payment approved.","success");
+  }
+
   await refresh();
 }
 
@@ -852,57 +852,104 @@ async function loadMessageApplicants(){
     }).join("");
 }
 
-async function sendMessage(userId,message){
+/* Every applicant_messages insert supplies all required database fields. */
+
+async function sendMessage(userId,message,prefix=""){
   if(!userId)throw new Error("Select an applicant.");
-  if(!message.trim())throw new Error("Enter a message.");
+  const cleanMessage=String(message||"").trim();
+  if(!cleanMessage)throw new Error("Enter a message.");
+  if(cleanMessage.length>5000)throw new Error("Message must be 5,000 characters or fewer.");
+
   await verifyAdmin();
+
+  const finalMessage=prefix?prefix+"\n\n"+cleanMessage:cleanMessage;
+
   const {error}=await sb.from("applicant_messages").insert({
+    id:crypto.randomUUID(),
     recipient_user_id:userId,
     sender_user_id:currentAdmin.id,
     sender_name:"Administrator",
-    message:message.trim(),
-    is_read:false
+    message:finalMessage,
+    is_read:false,
+    created_at:new Date().toISOString()
   });
-  if(error)throw new Error(error.message);
+
+  if(error)throw new Error("Could not send message: "+error.message);
 }
 
 $("sendPrivate").addEventListener("click",async()=>{
+  const button=$("sendPrivate");
+  button.disabled=true;
   try{
     await sendMessage($("messageApplicant").value,$("privateMessage").value);
     $("privateMessage").value="";
     notice("Private message sent.","success");
   }catch(e){notice(e.message,"error");}
+  finally{button.disabled=false;}
 });
 
 $("sendMissingDocument").addEventListener("click",async()=>{
+  const button=$("sendMissingDocument");
+  button.disabled=true;
   try{
-    await sendMessage($("messageApplicant").value,"MISSING DOCUMENT REQUEST\n\n"+$("missingDocumentMessage").value);
+    await sendMessage(
+      $("messageApplicant").value,
+      $("missingDocumentMessage").value,
+      "MISSING DOCUMENT REQUEST"
+    );
     $("missingDocumentMessage").value="";
     notice("Document request sent.","success");
   }catch(e){notice(e.message,"error");}
+  finally{button.disabled=false;}
+});
+
+$("sendPaymentInstructions").addEventListener("click",async()=>{
+  const button=$("sendPaymentInstructions");
+  button.disabled=true;
+  try{
+    await sendMessage(
+      $("messageApplicant").value,
+      $("paymentInstructionsMessage").value,
+      "PAYMENT INSTRUCTIONS"
+    );
+    $("paymentInstructionsMessage").value="";
+    notice("Payment instructions sent to the selected applicant.","success");
+  }catch(e){notice(e.message,"error");}
+  finally{button.disabled=false;}
 });
 
 $("sendBroadcast").addEventListener("click",async()=>{
+  const button=$("sendBroadcast");
+  button.disabled=true;
   try{
     const message=$("broadcastMessage").value.trim();
     if(!message)throw new Error("Write an announcement first.");
+    if(message.length>5000)throw new Error("Message must be 5,000 characters or fewer.");
+
     await loadMessageApplicants();
     if(!messageApplicants.length)throw new Error("No applicant accounts found.");
     if(!confirm("Send this announcement to "+messageApplicants.length+" applicants?"))return;
 
+    await verifyAdmin();
+    const createdAt=new Date().toISOString();
+
     const rows=messageApplicants.map(p=>({
+      id:crypto.randomUUID(),
       recipient_user_id:p.user_id,
       sender_user_id:currentAdmin.id,
       sender_name:"Administrator",
       message,
-      is_read:false
+      is_read:false,
+      created_at:createdAt
     }));
 
     const {error}=await sb.from("applicant_messages").insert(rows);
-    if(error)throw error;
+    if(error)throw new Error("Could not send announcement: "+error.message);
+
     $("broadcastMessage").value="";
     notice("Announcement sent to applicants.","success");
   }catch(e){notice(e.message,"error");}
+  finally{button.disabled=false;}
 });
 
 async function loadReplies(){
@@ -917,7 +964,7 @@ async function loadReplies(){
   if(m.error)throw m.error;
   if(r.error)throw r.error;
 
-  const messages=(m.data||[]).map(x=>({...x,display_sender:"Administrator"}));
+  const messages=(m.data||[]).map(x=>({...x,display_sender:x.sender_name||"Administrator"}));
   const replies=(r.data||[]).map(x=>({...x,display_sender:x.sender_role==="admin"?"Administrator":"Applicant"}));
   const all=[...messages,...replies].sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));
 
@@ -946,6 +993,8 @@ $("sendReply").addEventListener("click",async()=>{
     const userId=$("messageApplicant").value;
     const message=$("adminReply").value.trim();
     if(!userId||!message)throw new Error("Select an applicant and enter a response.");
+    if(message.length>5000)throw new Error("Message must be 5,000 characters or fewer.");
+
     await verifyAdmin();
     const {error}=await sb.from("applicant_message_replies").insert({
       applicant_user_id:userId,
@@ -955,6 +1004,7 @@ $("sendReply").addEventListener("click",async()=>{
       is_read:false
     });
     if(error)throw error;
+
     $("adminReply").value="";
     await loadReplies();
     notice("Administrator response sent.","success");
