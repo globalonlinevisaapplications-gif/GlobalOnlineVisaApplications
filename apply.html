@@ -221,8 +221,8 @@ I confirm that the information supplied is accurate and that I agree to the appl
 (() => {
 "use strict";
 
-/* V18 BACKEND */
-const BACKEND_VERSION = "visa-backend-v18";
+/* V19 BACKEND */
+const BACKEND_VERSION = "visa-backend-v19";
 const SERVICE_FEE_PER_APPLICANT = 285;
 const MAX_APPLICANTS = Math.min(10,Math.max(1,Number(window.APP_CONFIG?.maximumApplicants)||10));
 const MAX_FILE_SIZE = 8 * 1024 * 1024;
@@ -242,7 +242,6 @@ let selectedVisa = null;
 let visaTypes = [];
 let submitting = false;
 let visaRequestNumber = 0;
-let processingRequestNumber = 0;
 let loadingMessages = false;
 let sendingReply = false;
 
@@ -324,7 +323,7 @@ function getClient(){
   return window.supabaseClient;
 }
 
-/* AUTHENTICATED V18 REQUEST */
+/* AUTHENTICATED V19 REQUEST */
 async function backendRequest(payload){
   const client=getClient();
   const {data,error}=await client.auth.getSession();
@@ -347,18 +346,25 @@ async function backendRequest(payload){
       body:JSON.stringify(payload),
       signal:controller.signal
     });
+
     const result=await response.json().catch(()=>({}));
+
     if(!response.ok||result.ok===false||result.success===false){
-      throw new Error(result.error||result.message||"The V18 backend request failed.");
+      throw new Error(result.error||result.message||"The V19 backend request failed.");
     }
+
     if(result.version&&result.version!==BACKEND_VERSION){
-      throw new Error("Backend version mismatch. Confirm visa-backend-v18 is deployed.");
+      throw new Error("Backend version mismatch. Confirm visa-backend-v19 is deployed.");
     }
+
     return result;
+
   }catch(error){
     if(error.name==="AbortError")throw new Error("The request timed out. Please try again.");
     throw error;
-  }finally{clearTimeout(timeout);}
+  }finally{
+    clearTimeout(timeout);
+  }
 }
 
 async function loadUser(){
@@ -444,6 +450,7 @@ function updateProcessingTime(){
   }
 
   processingResult.appendChild(p);
+
   const note=document.createElement("p");
   note.className="muted";
   note.textContent="This is the configured general estimate for the selected visa type. Actual processing time may differ depending on the authority handling the application and the country from which you apply.";
@@ -527,7 +534,6 @@ function addApplicant(isPrimary=false){
   addField(grid,"Last name","last_name","text",true);
   addField(grid,"Email address","email","email",isPrimary);
 
-  /* REQUIRED INTERNATIONAL WHATSAPP NUMBER */
   const whatsappInput=addField(grid,"WhatsApp number","phone","tel",true);
   whatsappInput.autocomplete="tel";
   initializeWhatsAppInput(whatsappInput);
@@ -637,7 +643,6 @@ async function collectApplicant(card,index){
   if(!first||!last)
     throw new Error("Enter the first and last name for applicant "+(index+1)+".");
 
-  /* VALIDATE AND FORMAT WHATSAPP NUMBER */
   const phoneInput=get("phone");
   const phoneInstance=phoneInstances.get(phoneInput);
 
@@ -730,7 +735,6 @@ function addRow(parent,label,value){
   parent.appendChild(p);
 }
 
-/* UPDATED TRACKING WITH CONSULTANCY SERVICE FEE */
 function renderTracking(applications){
   trackingResults.innerHTML="";
 
@@ -756,7 +760,6 @@ function renderTracking(applications){
     const days=Number(app.processing_days);
 
     addRow(card,"Estimated processing time",processing||(Number.isInteger(days)&&days>0?days+" days":"Not configured"));
-
     addRow(card,"Application date",firstDefined(app,["application_date","created_at"]));
 
     const status=document.createElement("p");
@@ -850,11 +853,7 @@ function renderTracking(applications){
 
     card.appendChild(paymentBox);
 
-    addRow(
-      card,
-      "Government visa fee status",
-      app.visa_fee_payment_status||"pending"
-    );
+    addRow(card,"Government visa fee status",app.visa_fee_payment_status||"pending");
 
     addRow(
       card,
@@ -1268,7 +1267,7 @@ async function initialise(){
     await loadMessages();
 
   }catch(error){
-    console.error("V18 application page initialization:",error);
+    console.error("V19 application page initialization:",error);
 
     showMessage(error.message||"Could not initialize the application page.","error");
 
