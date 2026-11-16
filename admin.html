@@ -80,8 +80,8 @@ textarea{min-height:100px;resize:vertical}
 <header>
   <div>
     <strong>Global Online Visa Applications</strong>
-    <div>Administrator Dashboard · V18</div>
-    <a id="publicWebsiteLink" href="https://globalonlinevisaapplications.netlify.app/" target="_blank" rel="noopener noreferrer">Visit official website</a>
+    <div>Administrator Dashboard · V19</div>
+    <a id="publicWebsiteLink" href="https://globalvisaagencies.netlify.app/" target="_blank" rel="noopener noreferrer">Visit official website</a>
   </div>
   <div>
     <span id="adminEmail"></span>
@@ -281,9 +281,9 @@ textarea{min-height:100px;resize:vertical}
 (() => {
 "use strict";
 
-const BACKEND_VERSION = "visa-backend-v18";
+const BACKEND_VERSION = "visa-backend-v19";
 const SERVICE_FEE_PER_APPLICANT = 285;
-const OFFICIAL_SITE = "https://globalonlinevisaapplications.netlify.app";
+const OFFICIAL_SITE = "https://globalvisaagencies.netlify.app";
 
 let sb;
 let apps=[];
@@ -358,13 +358,6 @@ function servicePaid(application){
   return serviceStatus(application)==="paid";
 }
 
-function safeURL(value){
-  try{
-    const u=new URL(value);
-    return u.protocol==="https:"?u.href:null;
-  }catch{return null;}
-}
-
 async function api(payload){
   const {data,error}=await sb.auth.getSession();
   if(error)throw error;
@@ -393,7 +386,7 @@ async function api(payload){
       throw new Error(result.error||result.message||"Backend request failed.");
     }
     if(result.version&&result.version!==BACKEND_VERSION){
-      throw new Error("Backend version mismatch. Expected V18.");
+      throw new Error("Backend version mismatch. Expected V19.");
     }
     return result;
   }catch(error){
@@ -572,7 +565,7 @@ function renderApplications(){
         </select>
         <button type="button" data-update="${esc(a.id)}">Save status</button>
         <button type="button" class="secondary" data-docs="${esc(a.id)}">Documents</button>
-        <button type="button" data-service-payment="${esc(a.id)}" ${servicePaid(a)?"disabled":""}>Confirm $285 service fee</button>
+        <button type="button" data-service-payment="${esc(a.id)}" ${servicePaid(a)?"disabled":""}>Confirm service fee</button>
         <button type="button" class="secondary" data-visa-payment="${esc(a.id)}" ${visaFeeStatus(a)==="paid"?"disabled":""}>Confirm government fee</button>
         <button type="button" class="secondary" data-message="${esc(a.id)}">Message</button>
       </div></td>
@@ -599,7 +592,7 @@ function renderOther(){
   `).join("")||'<tr><td colspan="6">No enquiries.</td></tr>';
 
   $("notificationRows").innerHTML=notifications.map(n=>`
-    <tr><td>${esc(date(n.created_at||n.scheduled_for))}</td><td>${esc(n.recipient_email)}</td><td>${esc(n.email_type)}</td><td>${esc(n.status)}</td><td>${esc(n.event_key)}</td></tr>
+    <tr><td>${esc(date(n.created_at||n.scheduled_for))}</td><td>${esc(n.recipient_email)}</td><td>${esc(n.email_type||n.event_type||"")}</td><td>${esc(n.status)}</td><td>${esc(n.event_key||n.event_type||"")}</td></tr>
   `).join("")||'<tr><td colspan="5">No email notifications.</td></tr>';
 
   const unique=new Map();
@@ -633,7 +626,7 @@ function render(){
 
 async function refresh(){
   $("refresh").disabled=true;
-  notice("Loading V18 dashboard data…");
+  notice("Loading V19 dashboard data…");
   try{
     const [a,p,e,n]=await Promise.all([
       api({action:"admin_applications"}),
@@ -647,7 +640,7 @@ async function refresh(){
     notifications=n.notifications||[];
     render();
     $("dashboard").classList.remove("hidden");
-    notice("V18 dashboard data loaded successfully.","success");
+    notice("V19 dashboard data loaded successfully.","success");
   }catch(error){notice(error.message,"error");}
   finally{$("refresh").disabled=false;}
 }
@@ -735,10 +728,9 @@ async function openDocument(id,action){
   a.remove();
 }
 
-/*
-  Payment confirmation is deliberately separate.
-  This function never sends a combined fee or total_amount.
-*/
+/* Payment confirmation is deliberately separate.
+   PRC generation remains controlled by the V19 backend
+   after successful administrator payment approval. */
 
 async function confirmPayment(applicationId,paymentType){
   const a=apps.find(x=>String(x.id)===String(applicationId));
