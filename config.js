@@ -9,7 +9,9 @@
 (function () {
   "use strict";
 
+  // ==========================================
   // WEBSITE CONFIGURATION
+  // ==========================================
 
   window.SITE_NAME = "Global Online Visa Applications";
 
@@ -18,23 +20,31 @@
 
   window.SITE_ENVIRONMENT = "production";
 
+  // ==========================================
   // SUPABASE PROJECT
+  // ==========================================
 
   window.SUPABASE_URL =
     "https://iqpnlzufcasseycvmvzs.supabase.co";
 
   // Public publishable key only.
+  // NEVER put a service_role or secret key here.
 
   window.SUPABASE_ANON_KEY =
     "sb_publishable_W8PD_H5br4lYSFQ1BMMfyA_ywmLOsae";
 
+  // ==========================================
   // V20 BACKEND
+  // Exact deployed Supabase function name
+  // ==========================================
 
   window.SUPABASE_FUNCTION_URL =
     window.SUPABASE_URL +
-    "/functions/v1/visa-backend-v20";
+    "/functions/v1/supabase-functions-visa-backend-v20-index-ts";
 
+  // ==========================================
   // INITIALIZE SUPABASE
+  // ==========================================
 
   if (
     window.supabase &&
@@ -53,7 +63,9 @@
     );
   }
 
+  // ==========================================
   // API CONFIGURATION
+  // ==========================================
 
   window.API_CONFIG = {
     baseURL: window.SUPABASE_FUNCTION_URL,
@@ -68,7 +80,9 @@
     }
   };
 
+  // ==========================================
   // WEBSITE ROUTES
+  // ==========================================
 
   window.APP_ROUTES = {
     home: window.SITE_URL + "/",
@@ -78,7 +92,9 @@
     admin: window.SITE_URL + "/admin.html"
   };
 
+  // ==========================================
   // APPLICATION SETTINGS
+  // ==========================================
 
   window.APP_CONFIG = {
     applicationName:
@@ -113,7 +129,9 @@
     maxFileSizeMB: 8
   };
 
+  // ==========================================
   // GLOBAL API HELPER
+  // ==========================================
 
   window.callVisaAPI = async function (action, data = {}) {
     try {
@@ -158,11 +176,14 @@
 
     } catch (error) {
       console.error("Visa API error:", error);
+
       throw error;
     }
   };
 
+  // ==========================================
   // CONFIGURATION READY
+  // ==========================================
 
   console.info(
     "Global Online Visa Applications initialized.",
