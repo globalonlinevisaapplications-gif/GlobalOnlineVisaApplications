@@ -9,9 +9,7 @@
 (function () {
   "use strict";
 
-  // ==========================================
   // WEBSITE CONFIGURATION
-  // ==========================================
 
   window.SITE_NAME = "Global Online Visa Applications";
 
@@ -20,30 +18,24 @@
 
   window.SITE_ENVIRONMENT = "production";
 
-  // ==========================================
   // SUPABASE PROJECT
-  // ==========================================
 
   window.SUPABASE_URL =
     "https://iqpnlzufcasseycvmvzs.supabase.co";
 
   // Public publishable key only.
-  // NEVER place a service_role or secret key here.
+  // Never put a service_role key here.
 
   window.SUPABASE_ANON_KEY =
     "sb_publishable_W8PD_H5br4lYSFQ1BMMfyA_ywmLOsae";
 
-  // ==========================================
-  // V20 BACKEND
-  // ==========================================
+  // V20 BACKEND - CORRECT DEPLOYED FUNCTION NAME
 
   window.SUPABASE_FUNCTION_URL =
     window.SUPABASE_URL +
-    "/functions/v1/visa-backend-v20";
+    "/functions/v1/supabase-functions-visa-backend-v20-index-ts";
 
-  // ==========================================
   // INITIALIZE SUPABASE
-  // ==========================================
 
   if (
     window.supabase &&
@@ -62,15 +54,11 @@
     );
   }
 
-  // ==========================================
   // API CONFIGURATION
-  // ==========================================
 
   window.API_CONFIG = {
     baseURL: window.SUPABASE_FUNCTION_URL,
-
     method: "POST",
-
     timeout: 30000,
 
     headers: {
@@ -79,9 +67,7 @@
     }
   };
 
-  // ==========================================
   // WEBSITE ROUTES
-  // ==========================================
 
   window.APP_ROUTES = {
     home: window.SITE_URL + "/",
@@ -91,13 +77,10 @@
     admin: window.SITE_URL + "/admin.html"
   };
 
-  // ==========================================
   // APPLICATION SETTINGS
-  // ==========================================
 
   window.APP_CONFIG = {
-    applicationName:
-      "Global Online Visa Applications",
+    applicationName: "Global Online Visa Applications",
 
     currency: "USD",
 
@@ -128,16 +111,13 @@
     maxFileSizeMB: 8
   };
 
-  // ==========================================
   // GLOBAL API HELPER
-  // ==========================================
 
   window.callVisaAPI = async function (action, data = {}) {
     try {
-      const sessionResult =
-        window.supabaseClient
-          ? await window.supabaseClient.auth.getSession()
-          : null;
+      const sessionResult = window.supabaseClient
+        ? await window.supabaseClient.auth.getSession()
+        : null;
 
       const accessToken =
         sessionResult?.data?.session?.access_token ||
@@ -150,7 +130,6 @@
 
           headers: {
             ...window.API_CONFIG.headers,
-
             "Authorization": "Bearer " + accessToken
           },
 
@@ -175,14 +154,11 @@
 
     } catch (error) {
       console.error("Visa API error:", error);
-
       throw error;
     }
   };
 
-  // ==========================================
   // CONFIGURATION READY
-  // ==========================================
 
   console.info(
     "Global Online Visa Applications initialized.",
