@@ -1,7 +1,7 @@
 
 /**
  * GLOBAL ONLINE VISA APPLICATIONS
- * Production Configuration - V18
+ * Production Configuration - V19
  * Hosting: Netlify
  * Backend: Supabase
  */
@@ -34,12 +34,12 @@
     "sb_publishable_W8PD_H5br4lYSFQ1BMMfyA_ywmLOsae";
 
   // ==========================================
-  // V18 BACKEND
+  // V19 BACKEND
   // ==========================================
 
   window.SUPABASE_FUNCTION_URL =
     window.SUPABASE_URL +
-    "/functions/v1/visa-backend-v18";
+    "/functions/v1/visa-backend-v19";
 
   // ==========================================
   // INITIALIZE SUPABASE
@@ -107,223 +107,88 @@
 
     productionMode: true,
 
-    backendVersion: "visa-backend-v18",
+    backendVersion: "visa-backend-v19",
 
-    emailWorker: "integrated-gmail-api",
+    consultancyServiceFee: 285,
 
-    serviceFeePerApplicant: 285,
+    consultancyServiceFeeCurrency: "USD",
 
-    maximumApplicants: 10,
+    governmentVisaFeeSeparate: true,
 
-    websiteURL: window.SITE_URL
+    calculateCombinedFees: false,
+
+    paymentMethod: "later",
+
+    generatePRCAfterAdminApprovalOnly: true,
+
+    maxApplicants: 10,
+
+    maxFileSize: 8 * 1024 * 1024,
+
+    maxFileSizeMB: 8
   };
 
   // ==========================================
-  // VALIDATE CONFIGURATION
+  // GLOBAL API HELPER
   // ==========================================
 
-  window.validateAppConfig = function () {
-    return (
-      typeof window.SITE_URL === "string" &&
-
-      typeof window.SUPABASE_URL === "string" &&
-
-      typeof window.SUPABASE_ANON_KEY === "string" &&
-
-      window.SITE_URL ===
-        "https://globalvisaagencies.netlify.app" &&
-
-      window.SUPABASE_URL ===
-        "https://iqpnlzufcasseycvmvzs.supabase.co" &&
-
-      window.SUPABASE_FUNCTION_URL ===
-        window.SUPABASE_URL +
-        "/functions/v1/visa-backend-v18" &&
-
-      window.APP_CONFIG.backendVersion ===
-        "visa-backend-v18" &&
-
-      window.APP_CONFIG.serviceFeePerApplicant === 285
-    );
-  };
-
-  // ==========================================
-  // GET AUTHENTICATED USER TOKEN
-  // ==========================================
-
-  window.getAccessToken = async function () {
-    if (!window.supabaseClient) {
-      throw new Error(
-        "Supabase client is not initialized."
-      );
-    }
-
-    const { data, error } =
-      await window.supabaseClient.auth.getSession();
-
-    if (error) {
-      throw new Error(
-        "Could not retrieve your login session: " +
-        error.message
-      );
-    }
-
-    const token = data.session?.access_token;
-
-    if (!token) {
-      throw new Error(
-        "Please sign in before continuing."
-      );
-    }
-
-    return token;
-  };
-
-  // ==========================================
-  // CALL V18 BACKEND
-  // ==========================================
-
-  window.callVisaBackend = async function (requestData) {
-    if (!window.validateAppConfig()) {
-      throw new Error(
-        "Application configuration is invalid."
-      );
-    }
-
-    if (!window.supabaseClient) {
-      throw new Error(
-        "Supabase client is not initialized."
-      );
-    }
-
-    if (
-      !requestData ||
-      typeof requestData !== "object" ||
-      Array.isArray(requestData)
-    ) {
-      throw new Error(
-        "Invalid request data."
-      );
-    }
-
-    const token = await window.getAccessToken();
-
-    const controller = new AbortController();
-
-    const timeout = setTimeout(function () {
-      controller.abort();
-    }, window.API_CONFIG.timeout);
-
+  window.callVisaAPI = async function (action, data = {}) {
     try {
       const response = await fetch(
-        window.SUPABASE_FUNCTION_URL,
+        window.API_CONFIG.baseURL,
         {
-          method: "POST",
+          method: window.API_CONFIG.method,
 
           headers: {
             ...window.API_CONFIG.headers,
-
-            "Authorization": "Bearer " + token
+            "Authorization":
+              "Bearer " + (
+                window.supabaseClient
+                  ? (
+                      await window.supabaseClient.auth.getSession()
+                    ).data.session?.access_token ||
+                    window.SUPABASE_ANON_KEY
+                  : window.SUPABASE_ANON_KEY
+              )
           },
 
-          body: JSON.stringify(requestData),
-
-          signal: controller.signal
+          body: JSON.stringify({
+            action,
+            ...data
+          })
         }
       );
 
-      const result = await response.json().catch(
-        function () {
-          return {};
-        }
-      );
+      const result = await response.json();
 
-      if (
-        !response.ok ||
-        result.ok === false ||
-        result.success === false
-      ) {
+      if (!response.ok) {
         throw new Error(
           result.error ||
           result.message ||
-          "Backend request failed. HTTP status: " +
-          response.status
-        );
-      }
-
-      if (
-        result.version &&
-        result.version !==
-          window.APP_CONFIG.backendVersion
-      ) {
-        throw new Error(
-          "Backend version mismatch. Expected V18."
+          "API request failed."
         );
       }
 
       return result;
 
     } catch (error) {
-      if (error.name === "AbortError") {
-        throw new Error(
-          "Request timed out. Please try again."
-        );
-      }
+      console.error("Visa API error:", error);
 
       throw error;
-
-    } finally {
-      clearTimeout(timeout);
     }
   };
 
   // ==========================================
-  // SUBMIT APPLICATION
+  // CONFIGURATION READY
   // ==========================================
 
-  window.submitVisaApplication =
-    async function (applicationData) {
-
-      return await window.callVisaBackend(
-        applicationData
-      );
-
-    };
-
-  // ==========================================
-  // WEBSITE NAVIGATION
-  // ==========================================
-
-  window.navigateTo = function (page) {
-
-    const destination =
-      window.APP_ROUTES[page];
-
-    if (!destination) {
-      throw new Error(
-        "Invalid website page."
-      );
+  console.info(
+    "Global Online Visa Applications initialized.",
+    {
+      environment: window.SITE_ENVIRONMENT,
+      backend: window.APP_CONFIG.backendVersion,
+      endpoint: window.SUPABASE_FUNCTION_URL
     }
-
-    window.location.href = destination;
-  };
-
-  // ==========================================
-  // INITIALIZATION MESSAGE
-  // ==========================================
-
-  if (window.validateAppConfig()) {
-
-    console.info(
-      "Global Online Visa Applications configuration loaded - V18."
-    );
-
-  } else {
-
-    console.error(
-      "Application configuration is invalid."
-    );
-
-  }
+  );
 
 })();
