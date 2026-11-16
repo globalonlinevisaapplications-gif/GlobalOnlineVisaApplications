@@ -6,11 +6,11 @@ import {
 
 /**
  * GLOBAL ONLINE VISA APPLICATIONS
- * CORRECTED V18 BACKEND
+ * COMPLETE CORRECTED V18 BACKEND
  *
  * Consultancy service fee: USD 285 per applicant.
  * Government visa fee: separate.
- * PRC generated only after administrator payment approval.
+ * PRC is generated only after administrator approval.
  * No combined fee totals are calculated or returned.
  */
 
@@ -29,7 +29,6 @@ const SERVICE_FEE = 285;
 const CURRENCY = "USD";
 const MAX_APPLICANTS = 10;
 const MAX_FILE_SIZE = 8 * 1024 * 1024;
-const MAX_DOCUMENTS = 20;
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -52,8 +51,6 @@ type FeeRange = {
   service_fee: number;
   currency: string;
 };
-
-/* GENERAL HELPERS */
 
 function money(value: number): number {
   return Math.round((value + Number.EPSILON) * 100) / 100;
@@ -97,7 +94,6 @@ function id(value: unknown, name = "ID"): string {
 
 function email(value: unknown): string | null {
   const result = opt(value, 254);
-
   if (result && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(result)) {
     fail("Please provide a valid email address.");
   }
@@ -111,16 +107,10 @@ function feeRange(visa: Obj): FeeRange {
   const max = Number(rawMax);
 
   if (
-    rawMin === null ||
-    rawMin === undefined ||
-    rawMin === "" ||
-    rawMax === null ||
-    rawMax === undefined ||
-    rawMax === "" ||
-    !Number.isFinite(min) ||
-    !Number.isFinite(max) ||
-    min < 0 ||
-    max < min
+    rawMin === null || rawMin === undefined || rawMin === "" ||
+    rawMax === null || rawMax === undefined || rawMax === "" ||
+    !Number.isFinite(min) || !Number.isFinite(max) ||
+    min < 0 || max < min
   ) {
     fail(
       "The government visa fee range is not configured correctly. Please contact the administrator."
@@ -264,9 +254,8 @@ async function findCountryById(
   if (error) {
     fail(`Could not verify country: ${error.message}`);
   }
-  if (!data) {
-    fail("Selected country was not found.");
-  }
+  if (!data) fail("Selected country was not found.");
+
   return data;
 }
 
@@ -283,7 +272,6 @@ async function findCountryByName(
   }
 
   const target = normalizeCountryName(countryName);
-
   return (data ?? []).find(
     (country: Obj) =>
       normalizeCountryName(country.country_name) === target
@@ -331,7 +319,6 @@ function decodeBase64(value: string): Uint8Array {
     .replace(/\s/g, "");
 
   let binary: string;
-
   try {
     binary = atob(cleaned);
   } catch {
@@ -339,25 +326,20 @@ function decodeBase64(value: string): Uint8Array {
   }
 
   const bytes = new Uint8Array(binary.length);
-
   for (let i = 0; i < binary.length; i++) {
     bytes[i] = binary.charCodeAt(i);
   }
-
   return bytes;
 }
 
 function safeFilename(value: unknown): string {
   const original = str(value, "File name", 180);
-
   const cleaned = original
     .replace(/[^a-zA-Z0-9._-]/g, "_")
     .replace(/^\.+/, "")
     .slice(0, 140);
 
-  if (!cleaned) {
-    fail("Invalid uploaded file name.");
-  }
+  if (!cleaned) fail("Invalid uploaded file name.");
   return cleaned;
 }
 
@@ -381,25 +363,19 @@ async function saveApplicant(
     100
   );
 
-  const applicantEmail = email(applicantData.email) ?? userEmail;
+  const applicantEmail =
+    email(applicantData.email) ?? userEmail;
 
   if (!applicantEmail) {
     fail("Applicant email address is required.");
   }
-
-  // phone is NOT NULL in the applicants table.
-  const phone = str(
-    applicantData.phone,
-    "Applicant phone number",
-    40
-  );
 
   const record: Obj = {
     user_id: userId,
     first_name: firstName,
     last_name: lastName,
     email: applicantEmail,
-    phone,
+    phone: str(applicantData.phone, "Applicant phone", 40),
     date_of_birth: opt(applicantData.date_of_birth, 30),
     nationality: opt(applicantData.nationality, 100),
     passport_number: opt(applicantData.passport_number, 80),
@@ -455,128 +431,75 @@ async function uploadDocs(
   userId: string,
   files: unknown
 ): Promise<Obj[]> {
-  if (files === undefined || files === null) {
-    return [];
-  }
+  if (files === undefined || files === null) return [];
 
   if (!Array.isArray(files)) {
     fail("Documents must be supplied as a list.");
   }
-
-  if (files.length > MAX_DOCUMENTS) {
-    fail(
-      `A maximum of ${MAX_DOCUMENTS} documents can be uploaded per application.`
-    );
+  if (files.length > 20) {
+    fail("A maximum of 20 documents can be uploaded per application.");
   }
 
   const uploaded: Obj[] = [];
-  const storagePaths: string[] = [];
-  const documentIds: string[] = [];
 
-  try {
-    for (const file of files as Obj[]) {
-      if (
-        !file ||
-        typeof file !== "object" ||
-        Array.isArray(file)
-      ) {
-        fail("Invalid document supplied.");
-      }
+  for (const file of files as Obj[]) {
+    const filename = safeFilename(file.file_name);
+    const contentType =
+      opt(file.content_type, 120) ?? "application/octet-stream";
+    const documentType =
+      opt(file.document_type, 80) ?? "Other";
 
-      const originalFilename = str(
-        file.file_name,
-        "File name",
-        180
+    const base64 = str(file.base64, "Document content", 15_000_000);
+    const bytes = decodeBase64(base64);
+
+    if (bytes.length === 0) fail(`${filename} is empty.`);
+    if (bytes.length > MAX_FILE_SIZE) {
+      fail(`${filename} exceeds the 8 MB file limit.`);
+    }
+
+    const storagePath =
+      `${applicationId}/${crypto.randomUUID()}-${filename}`;
+
+    const { error: uploadError } = await admin.storage
+      .from(BUCKET)
+      .upload(storagePath, bytes, {
+        contentType,
+        upsert: false,
+      });
+
+    if (uploadError) {
+      fail(`Could not upload ${filename}: ${uploadError.message}`);
+    }
+
+    const { data, error: insertError } = await admin
+      .from("application_documents")
+      .insert({
+        application_id: applicationId,
+        applicant_id: applicantId,
+        document_type: documentType,
+        storage_path: storagePath,
+        file_name: filename,
+        file_path: storagePath,
+        original_file_name: filename,
+        mime_type: contentType,
+        content_type: contentType,
+        file_size: bytes.length,
+        uploaded_by: userId,
+      })
+      .select("id,file_name,created_at")
+      .single();
+
+    if (insertError || !data) {
+      await admin.storage.from(BUCKET).remove([storagePath]);
+      fail(
+        `Could not save document record: ${insertError?.message ?? "Unknown error"}`
       );
-
-      const filename = safeFilename(originalFilename);
-
-      const contentType =
-        opt(file.content_type, 120) ??
-        "application/octet-stream";
-
-      // Preserve the frontend document type when supplied.
-      // "Other" is used for older forms that do not send it.
-      const documentType =
-        opt(file.document_type, 80) ?? "Other";
-
-      const base64 = str(
-        file.base64,
-        "Document content",
-        15_000_000
-      );
-
-      const bytes = decodeBase64(base64);
-
-      if (bytes.length === 0) {
-        fail(`${filename} is empty.`);
-      }
-
-      if (bytes.length > MAX_FILE_SIZE) {
-        fail(`${filename} exceeds the 8 MB file limit.`);
-      }
-
-      const storagePath =
-        `${applicationId}/${crypto.randomUUID()}-${filename}`;
-
-      const { error: uploadError } = await admin.storage
-        .from(BUCKET)
-        .upload(storagePath, bytes, {
-          contentType,
-          upsert: false,
-        });
-
-      if (uploadError) {
-        fail(`Could not upload ${filename}: ${uploadError.message}`);
-      }
-
-      storagePaths.push(storagePath);
-
-      const { data, error: insertError } = await admin
-        .from("application_documents")
-        .insert({
-          application_id: applicationId,
-          applicant_id: applicantId,
-          document_type: documentType,
-          storage_path: storagePath,
-          file_name: filename,
-          original_file_name: originalFilename,
-          file_path: storagePath,
-          mime_type: contentType,
-          content_type: contentType,
-          file_size: bytes.length,
-          uploaded_by: userId,
-        })
-        .select("id,file_name,document_type,created_at")
-        .single();
-
-      if (insertError || !data) {
-        fail(
-          `Could not save document record: ${insertError?.message ?? "Unknown error"}`
-        );
-      }
-
-      documentIds.push(data.id);
-      uploaded.push(data);
     }
 
-    return uploaded;
-  } catch (error) {
-    if (documentIds.length) {
-      await admin
-        .from("application_documents")
-        .delete()
-        .in("id", documentIds);
-    }
-
-    if (storagePaths.length) {
-      await admin.storage
-        .from(BUCKET)
-        .remove(storagePaths);
-    }
-
-    throw error;
+    uploaded.push(data);
   }
+
+  return uploaded;
 }
 
 /* EMAIL QUEUE INSERTION */
@@ -590,6 +513,8 @@ async function queueEmail(
 ): Promise<void> {
   if (!recipient) return;
 
+  const now = new Date().toISOString();
+
   const { error } = await admin
     .from("email_queue")
     .insert({
@@ -599,7 +524,9 @@ async function queueEmail(
       payload,
       status: "pending",
       attempts: 0,
-      created_at: new Date().toISOString(),
+      created_at: now,
+      updated_at: now,
+      scheduled_for: now,
     });
 
   if (error) {
@@ -618,10 +545,7 @@ async function notifyAdmins(
     .select('"User_id","Role"');
 
   if (error) {
-    console.error(
-      "Could not load administrator accounts:",
-      error.message
-    );
+    console.error("Could not load administrator accounts:", error.message);
     return;
   }
 
@@ -629,18 +553,13 @@ async function notifyAdmins(
     if (
       !role.User_id ||
       String(role.Role ?? "").trim().toLowerCase() !== "admin"
-    ) {
-      continue;
-    }
+    ) continue;
 
     const { data, error: userError } =
       await admin.auth.admin.getUserById(role.User_id);
 
     if (userError) {
-      console.error(
-        "Could not load administrator email:",
-        userError.message
-      );
+      console.error("Could not load administrator email:", userError.message);
       continue;
     }
 
@@ -717,11 +636,8 @@ async function submit(
   if (visaError) {
     fail(`Could not verify visa type: ${visaError.message}`);
   }
-
   if (!visa) {
-    fail(
-      "The selected visa type does not belong to the selected destination country."
-    );
+    fail("The selected visa type does not belong to the selected destination country.");
   }
 
   const configuredFees = feeRange(visa);
@@ -736,23 +652,10 @@ async function submit(
 
   const preferredCountries = opt(body.preferred_countries, 2000);
   const suggestedCountries = opt(body.suggested_countries, 2000);
-
   const created: Obj[] = [];
 
-  for (
-    let index = 0;
-    index < body.applicants.length;
-    index++
-  ) {
+  for (let index = 0; index < body.applicants.length; index++) {
     const applicantData = body.applicants[index];
-
-    if (
-      !applicantData ||
-      typeof applicantData !== "object" ||
-      Array.isArray(applicantData)
-    ) {
-      fail(`Applicant ${index + 1} has invalid information.`);
-    }
 
     const applicantId = await saveApplicant(
       admin,
@@ -799,24 +702,13 @@ async function submit(
       );
     }
 
-    let documents: Obj[];
-
-    try {
-      documents = await uploadDocs(
-        admin,
-        application.id,
-        applicantId,
-        currentUser.id,
-        applicantData.documents ??
-          (index === 0 ? body.documents : [])
-      );
-    } catch (error) {
-      await admin
-        .from("visa_applications")
-        .delete()
-        .eq("id", application.id);
-      throw error;
-    }
+    const documents = await uploadDocs(
+      admin,
+      application.id,
+      applicantId,
+      currentUser.id,
+      applicantData.documents ?? (index === 0 ? body.documents : [])
+    );
 
     const applicantEmail =
       email(applicantData.email) ?? currentUser.email;
@@ -890,17 +782,11 @@ async function saveDraft(
 ): Promise<Obj> {
   const draft = body.draft;
 
-  if (
-    !draft ||
-    typeof draft !== "object" ||
-    Array.isArray(draft)
-  ) {
+  if (!draft || typeof draft !== "object" || Array.isArray(draft)) {
     fail("A valid draft is required.");
   }
 
   const draftId = opt(body.draft_id, 36);
-
-  // application_drafts.email is NOT NULL.
   const draftEmail = email(body.email) ?? email(userEmail);
 
   if (!draftEmail) {
@@ -911,6 +797,7 @@ async function saveDraft(
     user_id: userId,
     email: draftEmail,
     draft_data: draft,
+    last_activity_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
 
@@ -923,14 +810,9 @@ async function saveDraft(
       .select("id,created_at,updated_at")
       .maybeSingle();
 
-    if (error) {
-      fail(`Could not update draft: ${error.message}`);
-    }
-
+    if (error) fail(`Could not update draft: ${error.message}`);
     if (!data) {
-      fail(
-        "Draft not found or you do not have permission to update it."
-      );
+      fail("Draft not found or you do not have permission to update it.");
     }
 
     return { ...data, message: "Draft updated." };
@@ -946,9 +828,7 @@ async function saveDraft(
     .single();
 
   if (error || !data) {
-    fail(
-      `Could not save draft: ${error?.message ?? "Unknown error"}`
-    );
+    fail(`Could not save draft: ${error?.message ?? "Unknown error"}`);
   }
 
   return { ...data, message: "Draft saved." };
@@ -964,9 +844,7 @@ async function myDrafts(
     .eq("user_id", userId)
     .order("updated_at", { ascending: false });
 
-  if (error) {
-    fail(`Could not load drafts: ${error.message}`);
-  }
+  if (error) fail(`Could not load drafts: ${error.message}`);
 
   return {
     drafts: data ?? [],
@@ -981,79 +859,44 @@ async function createEnquiry(
   currentUser: AuthUser,
   body: Obj
 ): Promise<Obj> {
-  const subject = opt(body.subject, 180);
-  const message = str(body.message, "Enquiry message", 5000);
+  const subject = str(body.subject, "Enquiry subject", 180);
+  const message = str(body.message, "Enquiry message", 2000);
+  const contactEmail = email(body.email) ?? currentUser.email;
 
-  const contactEmail =
-    email(body.email) ?? email(currentUser.email);
-
-  if (!contactEmail) {
-    fail("A valid email address is required.");
+  if (!contactEmail) fail("A valid email address is required.");
+  if (body.consent !== true) {
+    fail("Please provide consent before submitting your enquiry.");
   }
-
-  // These fields are required by the enquiries table.
-  const fullName =
-    opt(body.full_name, 160) ??
-    opt(body.name, 160) ??
-    "Website visitor";
-
-  const destination =
-    opt(body.destination, 160) ??
-    "Not specified";
-
-  const purpose =
-    opt(body.purpose, 160) ??
-    subject ??
-    "General enquiry";
-
-  // Do not claim consent unless the applicant actually supplied true.
-  const consent = body.consent === true;
-
-  const enquiryId = crypto.randomUUID();
 
   const { data, error } = await admin
     .from("enquiries")
     .insert({
-      id: enquiryId,
+      id: crypto.randomUUID(),
       user_id: currentUser.id,
-      full_name: fullName,
-      name: opt(body.name, 160) ?? fullName,
+      full_name: opt(body.full_name ?? body.name, 100) ?? "Website visitor",
+      name: opt(body.name, 160),
       email: contactEmail,
       phone: opt(body.phone, 40),
-      residence: opt(body.residence, 160),
-      destination,
-      purpose,
-      travel_timing: opt(body.travel_timing, 160),
-      subject: subject ?? purpose,
+      destination: opt(body.destination, 160) ?? "Not specified",
+      purpose: opt(body.purpose, 160) ?? subject,
+      subject,
       message,
-      consent,
+      consent: true,
       status: "New",
       created_at: new Date().toISOString(),
     })
-    .select(
-      "id,full_name,email,destination,purpose,subject,status,created_at"
-    )
+    .select("id,subject,status,created_at")
     .single();
 
   if (error || !data) {
-    fail(
-      `Could not submit enquiry: ${error?.message ?? "Unknown error"}`
-    );
+    fail(`Could not submit enquiry: ${error?.message ?? "Unknown error"}`);
   }
 
-  await notifyAdmins(
-    admin,
-    "admin_new_enquiry",
-    null,
-    {
-      enquiry_id: data.id,
-      subject: data.subject,
-      sender_email: contactEmail,
-      full_name: data.full_name,
-      destination: data.destination,
-      purpose: data.purpose,
-    }
-  );
+  await notifyAdmins(admin, "admin_new_enquiry", null, {
+    enquiry_id: data.id,
+    subject,
+    sender_email: contactEmail,
+  });
 
   return {
     message: "Your enquiry has been submitted.",
@@ -1095,15 +938,11 @@ async function enrichApplications(
   if (!applications.length) return [];
 
   const applicantIds = [
-    ...new Set(
-      applications.map((x) => x.applicant_id).filter(Boolean)
-    ),
+    ...new Set(applications.map((x) => x.applicant_id).filter(Boolean)),
   ];
 
   const visaTypeIds = [
-    ...new Set(
-      applications.map((x) => x.visa_type_id).filter(Boolean)
-    ),
+    ...new Set(applications.map((x) => x.visa_type_id).filter(Boolean)),
   ];
 
   const countryIds = applications.flatMap((x) => [
@@ -1125,15 +964,12 @@ async function enrichApplications(
     fail(`Could not load applicants: ${applicantError.message}`);
   }
 
-  const { data: visas, error: visaError } =
-    visaTypeIds.length
-      ? await admin
-          .from("visa_types")
-          .select(
-            "id,visa_name,processing_days,visa_fee_min,visa_fee_max"
-          )
-          .in("id", visaTypeIds)
-      : { data: [], error: null };
+  const { data: visas, error: visaError } = visaTypeIds.length
+    ? await admin
+        .from("visa_types")
+        .select("id,visa_name,processing_days,visa_fee_min,visa_fee_max")
+        .in("id", visaTypeIds)
+    : { data: [], error: null };
 
   if (visaError) {
     fail(`Could not load visa types: ${visaError.message}`);
@@ -1192,9 +1028,7 @@ async function myApplications(
     .eq("user_id", userId);
 
   if (applicantError) {
-    fail(
-      `Could not load applicant profiles: ${applicantError.message}`
-    );
+    fail(`Could not load applicant profiles: ${applicantError.message}`);
   }
 
   const applicantIds = (applicants ?? []).map((item) => item.id);
@@ -1211,23 +1045,15 @@ async function myApplications(
     .in("applicant_id", applicantIds)
     .order("created_at", { ascending: false });
 
-  if (error) {
-    fail(`Could not load applications: ${error.message}`);
-  }
+  if (error) fail(`Could not load applications: ${error.message}`);
 
   const applications = await enrichApplications(admin, data ?? []);
-
-  return {
-    applications,
-    count: applications.length,
-  };
+  return { applications, count: applications.length };
 }
 
 /* ADMIN LISTS */
 
-async function adminApplications(
-  admin: SupabaseClient
-): Promise<Obj> {
+async function adminApplications(admin: SupabaseClient): Promise<Obj> {
   const { data, error } = await admin
     .from("visa_applications")
     .select(
@@ -1240,56 +1066,34 @@ async function adminApplications(
   }
 
   const applications = await enrichApplications(admin, data ?? []);
-
-  return {
-    applications,
-    count: applications.length,
-  };
+  return { applications, count: applications.length };
 }
 
-async function adminPayments(
-  admin: SupabaseClient
-): Promise<Obj> {
+async function adminPayments(admin: SupabaseClient): Promise<Obj> {
   const { data, error } = await admin
     .from("payments")
-    .select(
-      "id,application_id,amount,payment_status,payment_date,payment_type,prc_code,prc_generated_at"
-    )
+    .select("id,application_id,amount,payment_status,payment_date,payment_type,prc_code,prc_generated_at")
     .order("payment_date", { ascending: false });
 
-  if (error) {
-    fail(`Could not load payments: ${error.message}`);
-  }
+  if (error) fail(`Could not load payments: ${error.message}`);
 
-  return {
-    payments: data ?? [],
-    count: data?.length ?? 0,
-  };
+  return { payments: data ?? [], count: data?.length ?? 0 };
 }
 
-async function adminEnquiries(
-  admin: SupabaseClient
-): Promise<Obj> {
+async function adminEnquiries(admin: SupabaseClient): Promise<Obj> {
   const { data, error } = await admin
     .from("enquiries")
     .select(
-      "id,user_id,full_name,name,email,phone,residence,destination,purpose,travel_timing,subject,message,consent,status,created_at"
+      "id,user_id,full_name,destination,purpose,consent,name,email,phone,subject,message,status,created_at"
     )
     .order("created_at", { ascending: false });
 
-  if (error) {
-    fail(`Could not load enquiries: ${error.message}`);
-  }
+  if (error) fail(`Could not load enquiries: ${error.message}`);
 
-  return {
-    enquiries: data ?? [],
-    count: data?.length ?? 0,
-  };
+  return { enquiries: data ?? [], count: data?.length ?? 0 };
 }
 
-async function adminNotifications(
-  admin: SupabaseClient
-): Promise<Obj> {
+async function adminNotifications(admin: SupabaseClient): Promise<Obj> {
   const { data, error } = await admin
     .from("email_queue")
     .select("*")
@@ -1300,10 +1104,7 @@ async function adminNotifications(
     fail(`Could not load email notifications: ${error.message}`);
   }
 
-  return {
-    notifications: data ?? [],
-    count: data?.length ?? 0,
-  };
+  return { notifications: data ?? [], count: data?.length ?? 0 };
 }
 
 /* ADMIN: UPDATE APPLICATION STATUS */
@@ -1312,10 +1113,7 @@ async function updateStatus(
   admin: SupabaseClient,
   body: Obj
 ): Promise<Obj> {
-  const applicationId = id(
-    body.application_id,
-    "Application ID"
-  );
+  const applicationId = id(body.application_id, "Application ID");
 
   const allowedStatuses = [
     "Pending",
@@ -1334,24 +1132,18 @@ async function updateStatus(
 
   const { data: existing, error: findError } = await admin
     .from("visa_applications")
-    .select(
-      "id,status,service_fee_payment_status,reference_number"
-    )
+    .select("id,status,service_fee_payment_status,reference_number")
     .eq("id", applicationId)
     .maybeSingle();
 
   if (findError) {
     fail(`Could not load application: ${findError.message}`);
   }
-
-  if (!existing) {
-    fail("Application not found.");
-  }
+  if (!existing) fail("Application not found.");
 
   if (
     newStatus === "Processing" &&
-    String(existing.service_fee_payment_status).toLowerCase() !==
-      "paid"
+    String(existing.service_fee_payment_status).toLowerCase() !== "paid"
   ) {
     fail(
       "The application cannot enter Processing until the USD $285 consultancy service fee is confirmed as paid."
@@ -1374,7 +1166,6 @@ async function updateStatus(
   if (error) {
     fail(`Could not update application status: ${error.message}`);
   }
-
   if (!data) {
     fail(
       "Application status was not changed. Check the service fee payment status and try again."
@@ -1402,22 +1193,14 @@ async function adminDocuments(
   const applicationId = opt(body.application_id, 36);
 
   if (applicationId) {
-    query = query.eq(
-      "application_id",
-      id(applicationId, "Application ID")
-    );
+    query = query.eq("application_id", id(applicationId, "Application ID"));
   }
 
   const { data, error } = await query;
 
-  if (error) {
-    fail(`Could not load documents: ${error.message}`);
-  }
+  if (error) fail(`Could not load documents: ${error.message}`);
 
-  return {
-    documents: data ?? [],
-    count: data?.length ?? 0,
-  };
+  return { documents: data ?? [], count: data?.length ?? 0 };
 }
 
 async function downloadDocument(
@@ -1435,14 +1218,8 @@ async function downloadDocument(
   if (findError) {
     fail(`Could not find document: ${findError.message}`);
   }
-
-  if (!document) {
-    fail("Document not found.");
-  }
-
-  if (!document.storage_path) {
-    fail("Document storage path is missing.");
-  }
+  if (!document) fail("Document not found.");
+  if (!document.storage_path) fail("Document storage path is missing.");
 
   const { data, error } = await admin.storage
     .from(BUCKET)
@@ -1463,31 +1240,17 @@ async function downloadDocument(
   };
 }
 
-/* ADMIN: CONFIRM PAYMENTS
-   The database RPC validates the administrator, amount,
-   payment type and application before creating the PRC.
-*/
+/* ADMIN: CONFIRM PAYMENTS AND GENERATE PRC */
 
 async function confirmPayment(
   admin: SupabaseClient,
-  adminUserId: string,
-  body: Obj
+  body: Obj,
+  adminUserId: string
 ): Promise<Obj> {
-  const applicationId = id(
-    body.application_id,
-    "Application ID"
-  );
+  const applicationId = id(body.application_id, "Application ID");
+  const paymentType = str(body.payment_type, "Payment type", 30).toLowerCase();
 
-  const paymentType = str(
-    body.payment_type,
-    "Payment type",
-    30
-  ).toLowerCase();
-
-  if (
-    paymentType !== "service_fee" &&
-    paymentType !== "visa_fee"
-  ) {
+  if (paymentType !== "service_fee" && paymentType !== "visa_fee") {
     fail("Payment type must be service_fee or visa_fee.");
   }
 
@@ -1497,23 +1260,20 @@ async function confirmPayment(
     fail("Enter a valid positive payment amount.");
   }
 
-  const currency = str(
-    body.currency ?? CURRENCY,
-    "Currency",
-    10
-  ).toUpperCase();
+  const currency = str(body.currency ?? CURRENCY, "Currency", 10).toUpperCase();
 
   if (currency !== CURRENCY) {
     fail("Payments must be recorded in USD.");
   }
 
-  if (
-    paymentType === "service_fee" &&
-    Math.abs(amount - SERVICE_FEE) > 0.001
-  ) {
-    fail("The consultancy service fee must be exactly USD $285.");
-  }
-
+  /*
+   * The database function verifies the administrator,
+   * validates the payment amount, prevents duplicate approvals,
+   * records the payment and generates the PRC.
+   *
+   * The PRC is therefore NOT generated when an applicant
+   * submits an application or merely reports a payment.
+   */
   const { data, error } = await admin.rpc(
     "admin_approve_payment_with_prc",
     {
@@ -1528,53 +1288,15 @@ async function confirmPayment(
     fail(`Payment approval failed: ${error.message}`);
   }
 
-  const approval = data as Obj;
-
-  if (
-    !approval ||
-    approval.success !== true ||
-    !approval.prc_code
-  ) {
-    fail("Payment was not approved. No PRC was issued.");
-  }
-
-  if (!approval.already_approved) {
-    const application = await loadApplication(
-      admin,
-      applicationId
-    );
-
-    const recipient = email(application.applicant?.email);
-
-    if (recipient) {
-      await queueEmail(
-        admin,
-        recipient,
-        "payment_approved",
-        applicationId,
-        {
-          reference_number: application.reference_number,
-          applicant_name: application.applicant_name,
-          destination_country: application.destination_country,
-          visa_type: application.visa_name,
-          payment_type: paymentType,
-          amount: money(amount),
-          currency: CURRENCY,
-          prc_code: approval.prc_code,
-          service_fee: SERVICE_FEE,
-        }
-      );
-    }
+  if (!data?.success) {
+    fail(data?.message ?? "Payment approval was not completed.");
   }
 
   return {
-    message: approval.already_approved
-      ? "Payment was already approved. Existing PRC returned."
-      : "Payment approved successfully. PRC generated.",
-    payment: approval.payment,
-    payment_type: paymentType,
-    prc_code: approval.prc_code,
-    already_approved: Boolean(approval.already_approved),
+    message: "Payment approved successfully.",
+    payment: data.payment ?? null,
+    prc_code: data.prc_code ?? null,
+    already_approved: data.already_approved ?? false,
   };
 }
 
@@ -1591,11 +1313,7 @@ function escapeHtml(value: unknown): string {
 
 function emailMoney(value: unknown): string {
   const amount = Number(value);
-
-  if (!Number.isFinite(amount)) {
-    return "Not specified";
-  }
-
+  if (!Number.isFinite(amount)) return "Not specified";
   return `USD ${amount.toFixed(2)}`;
 }
 
@@ -1625,11 +1343,7 @@ function encodeText(value: string): string {
 }
 
 async function getGmailAccessToken(): Promise<string> {
-  if (
-    !GMAIL_CLIENT_ID ||
-    !GMAIL_CLIENT_SECRET ||
-    !GMAIL_REFRESH_TOKEN
-  ) {
+  if (!GMAIL_CLIENT_ID || !GMAIL_CLIENT_SECRET || !GMAIL_REFRESH_TOKEN) {
     fail("Gmail API credentials are not configured.");
   }
 
@@ -1672,9 +1386,7 @@ async function sendGmail(
   const token = await getGmailAccessToken();
   const safeRecipient = email(recipient);
 
-  if (!safeRecipient) {
-    fail("Invalid email recipient.");
-  }
+  if (!safeRecipient) fail("Invalid email recipient.");
 
   const message = [
     `From: ${GMAIL_SENDER_EMAIL}`,
@@ -1695,9 +1407,7 @@ async function sendGmail(
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        raw: base64Url(message),
-      }),
+      body: JSON.stringify({ raw: base64Url(message) }),
     }
   );
 
@@ -1707,10 +1417,7 @@ async function sendGmail(
   }
 }
 
-function emailLayout(
-  heading: string,
-  content: string
-): string {
+function emailLayout(heading: string, content: string): string {
   return `
   <!doctype html>
   <html>
@@ -1737,9 +1444,7 @@ function emailLayout(
   </html>`;
 }
 
-function detailsTable(
-  rows: Array<[string, unknown]>
-): string {
+function detailsTable(rows: Array<[string, unknown]>): string {
   return `
     <table style="width:100%;border-collapse:collapse;margin:20px 0">
       ${rows.map(([label, value]) => `
@@ -1783,39 +1488,29 @@ async function loadApplication(
 
   const { data: visa } = await admin
     .from("visa_types")
-    .select(
-      "visa_name,processing_days,visa_fee_min,visa_fee_max"
-    )
+    .select("visa_name,processing_days,visa_fee_min,visa_fee_max")
     .eq("id", application.visa_type_id)
     .maybeSingle();
 
   const destination = application.destination_country_id
-    ? await findCountryById(
-        admin,
-        application.destination_country_id
-      )
+    ? await findCountryById(admin, application.destination_country_id)
     : null;
 
   const applyingFrom = application.applying_from_country_id
-    ? await findCountryById(
-        admin,
-        application.applying_from_country_id
-      )
+    ? await findCountryById(admin, application.applying_from_country_id)
     : null;
 
   return {
     ...application,
     applicant,
     applicant_name: applicant
-      ? [applicant.first_name, applicant.last_name]
-          .filter(Boolean).join(" ")
+      ? [applicant.first_name, applicant.last_name].filter(Boolean).join(" ")
       : "Applicant",
     visa_name: visa?.visa_name ?? "Not specified",
     processing_days: visa?.processing_days ?? null,
     official_visa_fee_min: visa?.visa_fee_min ?? null,
     official_visa_fee_max: visa?.visa_fee_max ?? null,
-    destination_country:
-      destination?.country_name ?? "Not specified",
+    destination_country: destination?.country_name ?? "Not specified",
     applying_from_country:
       applyingFrom?.country_name ??
       application.applying_from ??
@@ -1823,41 +1518,23 @@ async function loadApplication(
   };
 }
 
-function makeEmail(
-  eventType: string,
-  payload: Obj
-): Obj {
-  const reference =
-    payload.reference_number ?? "Not available";
-
-  const applicantName =
-    payload.applicant_name ?? "Applicant";
-
-  const destination =
-    payload.destination_country ?? "Not specified";
-
-  const applyingFrom =
-    payload.applying_from ?? "Not specified";
-
-  const visaType =
-    payload.visa_type ?? "Not specified";
+function makeEmail(eventType: string, payload: Obj): Obj {
+  const reference = payload.reference_number ?? "Not available";
+  const applicantName = payload.applicant_name ?? "Applicant";
+  const destination = payload.destination_country ?? "Not specified";
+  const applyingFrom = payload.applying_from ?? "Not specified";
+  const visaType = payload.visa_type ?? "Not specified";
 
   const processingDays = payload.processing_days == null
     ? "Not specified"
     : `${payload.processing_days} days`;
 
-  const serviceFee = emailMoney(
-    payload.service_fee ?? SERVICE_FEE
-  );
-
+  const serviceFee = emailMoney(payload.service_fee ?? SERVICE_FEE);
   const feeMin = emailMoney(payload.official_visa_fee_min);
   const feeMax = emailMoney(payload.official_visa_fee_max);
 
-  const serviceStatus =
-    payload.service_fee_payment_status ?? "pending";
-
-  const visaStatus =
-    payload.visa_fee_payment_status ?? "pending";
+  const serviceStatus = payload.service_fee_payment_status ?? "pending";
+  const visaStatus = payload.visa_fee_payment_status ?? "pending";
 
   const commonRows: Array<[string, unknown]> = [
     ["Reference number", reference],
@@ -1898,10 +1575,7 @@ function makeEmail(
           <p>A new visa application has been submitted.</p>
           ${detailsTable([
             ...commonRows,
-            [
-              "Applicant email",
-              payload.applicant_email ?? "Not supplied",
-            ],
+            ["Applicant email", payload.applicant_email ?? "Not supplied"],
           ])}
         `
       ),
@@ -1918,14 +1592,8 @@ function makeEmail(
           <p>Your application status has been updated.</p>
           ${detailsTable([
             ["Reference number", reference],
-            [
-              "Previous status",
-              payload.previous_status ?? "Not available",
-            ],
-            [
-              "New status",
-              payload.new_status ?? "Not available",
-            ],
+            ["Previous status", payload.previous_status ?? "Not available"],
+            ["New status", payload.new_status ?? "Not available"],
             ["Destination country", destination],
             ["Visa type", visaType],
           ])}
@@ -1941,35 +1609,9 @@ function makeEmail(
         "New customer enquiry",
         detailsTable([
           ["Enquiry ID", payload.enquiry_id ?? ""],
-          ["Name", payload.full_name ?? ""],
-          ["Destination", payload.destination ?? ""],
-          ["Purpose", payload.purpose ?? ""],
           ["Subject", payload.subject ?? ""],
           ["Sender email", payload.sender_email ?? ""],
         ])
-      ),
-    };
-  }
-
-  if (eventType === "payment_approved") {
-    return {
-      subject: `Payment approved — ${reference}`,
-      html: emailLayout(
-        "Your payment has been approved",
-        `
-          <p>Hello ${escapeHtml(applicantName)},</p>
-          <p>Your payment has been approved by our administrator.</p>
-          ${detailsTable([
-            ["Reference number", reference],
-            ["Payment type", payload.payment_type ?? ""],
-            ["Amount received", emailMoney(payload.amount)],
-            [
-              "Payment Reconciliation Code",
-              payload.prc_code ?? "",
-            ],
-          ])}
-          <p>Please keep your Payment Reconciliation Code for your records.</p>
-        `
       ),
     };
   }
@@ -1991,11 +1633,7 @@ async function queueStatusEmail(
   previousStatus: string,
   newStatus: string
 ): Promise<void> {
-  const application = await loadApplication(
-    admin,
-    applicationId
-  );
-
+  const application = await loadApplication(admin, applicationId);
   const recipient = email(application.applicant?.email);
 
   if (!recipient) return;
@@ -2024,9 +1662,7 @@ async function processEmailQueue(
 ): Promise<Obj> {
   const { data: pending, error } = await admin
     .from("email_queue")
-    .select(
-      "id,recipient_email,event_type,application_id,payload,attempts"
-    )
+    .select("id,recipient_email,event_type,application_id,payload,attempts")
     .eq("status", "pending")
     .order("created_at", { ascending: true })
     .limit(20);
@@ -2041,7 +1677,7 @@ async function processEmailQueue(
   for (const item of pending ?? []) {
     const { data: locked, error: lockError } = await admin
       .from("email_queue")
-      .update({ status: "sending" })
+      .update({ status: "sending", updated_at: new Date().toISOString() })
       .eq("id", item.id)
       .eq("status", "pending")
       .select("id")
@@ -2050,10 +1686,7 @@ async function processEmailQueue(
     if (lockError || !locked) continue;
 
     try {
-      const emailContent = makeEmail(
-        item.event_type,
-        item.payload ?? {}
-      );
+      const emailContent = makeEmail(item.event_type, item.payload ?? {});
 
       await sendGmail(
         item.recipient_email,
@@ -2066,15 +1699,13 @@ async function processEmailQueue(
         .update({
           status: "sent",
           sent_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
           attempts: Number(item.attempts ?? 0) + 1,
           last_error: null,
         })
         .eq("id", item.id);
 
-      if (sentError) {
-        throw new Error(sentError.message);
-      }
-
+      if (sentError) throw new Error(sentError.message);
       sent++;
     } catch (error) {
       const message = error instanceof Error
@@ -2085,6 +1716,7 @@ async function processEmailQueue(
         .from("email_queue")
         .update({
           status: "failed",
+          updated_at: new Date().toISOString(),
           attempts: Number(item.attempts ?? 0) + 1,
           last_error: message.slice(0, 1000),
         })
@@ -2103,10 +1735,7 @@ async function processEmailQueue(
 
 /* MAIN API ROUTER */
 
-function jsonResponse(
-  payload: Obj,
-  status = 200
-): Response {
+function jsonResponse(payload: Obj, status = 200): Response {
   return new Response(JSON.stringify(payload), {
     status,
     headers: cors,
@@ -2132,22 +1761,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const admin = clientSet.admin;
 
     const currentUser = await authenticated(userClient);
-
-    let body: Obj;
-
-    try {
-      body = await req.json() as Obj;
-    } catch {
-      fail("Request body must contain valid JSON.");
-    }
-
-    if (
-      !body ||
-      typeof body !== "object" ||
-      Array.isArray(body)
-    ) {
-      fail("Invalid request body.");
-    }
+    const body = await req.json() as Obj;
 
     const action = str(body.action, "Action", 80);
 
@@ -2186,11 +1800,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       }
 
       case "create_enquiry": {
-        result = await createEnquiry(
-          admin,
-          currentUser,
-          body
-        );
+        result = await createEnquiry(admin, currentUser, body);
         break;
       }
 
@@ -2251,11 +1861,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
         }
 
         if (action === "admin_confirm_payment") {
-          result = await confirmPayment(
-            admin,
-            currentUser.id,
-            body
-          );
+          result = await confirmPayment(admin, body, currentUser.id);
         }
 
         if (
@@ -2296,29 +1902,20 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     const lower = message.toLowerCase();
 
-    const isAdminError =
-      lower.includes("admin access") ||
-      lower.includes("administrator access");
-
     const isAuthError =
       lower.includes("unauthorized") ||
       lower.includes("not authenticated") ||
       lower.includes("invalid jwt") ||
+      lower.includes("admin access") ||
       lower.includes("permission denied") ||
       lower.includes("please sign in") ||
       lower.includes("session is invalid");
-
-    const status = isAdminError
-      ? 403
-      : isAuthError
-        ? 401
-        : 400;
 
     return jsonResponse({
       ok: false,
       version: VERSION,
       error: message,
-    }, status);
+    }, isAuthError ? 401 : 400);
   }
 });
 
