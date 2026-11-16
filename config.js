@@ -1,7 +1,7 @@
 
 /**
  * GLOBAL ONLINE VISA APPLICATIONS
- * Production Configuration - V19
+ * Production Configuration - V20
  * Hosting: Netlify
  * Backend: Supabase
  */
@@ -27,19 +27,19 @@
   window.SUPABASE_URL =
     "https://iqpnlzufcasseycvmvzs.supabase.co";
 
-  // Public publishable key.
+  // Public publishable key only.
   // NEVER place a service_role or secret key here.
 
   window.SUPABASE_ANON_KEY =
     "sb_publishable_W8PD_H5br4lYSFQ1BMMfyA_ywmLOsae";
 
   // ==========================================
-  // V19 BACKEND
+  // V20 BACKEND
   // ==========================================
 
   window.SUPABASE_FUNCTION_URL =
     window.SUPABASE_URL +
-    "/functions/v1/visa-backend-v19";
+    "/functions/v1/visa-backend-v20";
 
   // ==========================================
   // INITIALIZE SUPABASE
@@ -107,7 +107,7 @@
 
     productionMode: true,
 
-    backendVersion: "visa-backend-v19",
+    backendVersion: "visa-backend-v20",
 
     consultancyServiceFee: 285,
 
@@ -134,6 +134,15 @@
 
   window.callVisaAPI = async function (action, data = {}) {
     try {
+      const sessionResult =
+        window.supabaseClient
+          ? await window.supabaseClient.auth.getSession()
+          : null;
+
+      const accessToken =
+        sessionResult?.data?.session?.access_token ||
+        window.SUPABASE_ANON_KEY;
+
       const response = await fetch(
         window.API_CONFIG.baseURL,
         {
@@ -141,15 +150,8 @@
 
           headers: {
             ...window.API_CONFIG.headers,
-            "Authorization":
-              "Bearer " + (
-                window.supabaseClient
-                  ? (
-                      await window.supabaseClient.auth.getSession()
-                    ).data.session?.access_token ||
-                    window.SUPABASE_ANON_KEY
-                  : window.SUPABASE_ANON_KEY
-              )
+
+            "Authorization": "Bearer " + accessToken
           },
 
           body: JSON.stringify({
