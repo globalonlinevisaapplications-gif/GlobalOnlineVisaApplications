@@ -279,6 +279,7 @@ textarea{min-height:100px;resize:vertical}
 "use strict";
 
 const BACKEND_VERSION = "visa-backend-v20";
+const BACKEND_FUNCTION_NAME = "supabase-functions-visa-backend-v20-index-ts";
 const SERVICE_FEE_PER_APPLICANT = 285;
 const OFFICIAL_SITE = "https://globalvisaagencies.netlify.app";
 
@@ -288,6 +289,7 @@ let payments=[];
 let enquiries=[];
 let notifications=[];
 let messageApplicants=[];
+let countries=[];
 let visaTypes=[];
 let currentAdmin=null;
 
@@ -355,13 +357,28 @@ function servicePaid(application){
   return ["paid","approved","confirmed"].includes(serviceStatus(application));
 }
 
+/* Correct V20 deployed function URL.
+   The deployed function slug is different from the internal version string. */
+
+function getBackendUrl(){
+  const url=(window.SUPABASE_FUNCTION_URL ||
+    window.SUPABASE_URL.replace(/\/$/,"")+
+    "/functions/v1/"+BACKEND_FUNCTION_NAME
+  ).replace(/\/+$/,"");
+
+  if(!url.endsWith("/"+BACKEND_FUNCTION_NAME)){
+    throw new Error("Incorrect V20 function URL. Check config.js.");
+  }
+
+  return url;
+}
+
 async function api(payload){
   const {data,error}=await sb.auth.getSession();
   if(error)throw error;
   if(!data.session)throw new Error("Your session has expired. Please sign in again.");
 
-  const backendUrl=window.SUPABASE_URL.replace(/\/$/,"")+
-    "/functions/v1/"+BACKEND_VERSION;
+  const backendUrl=getBackendUrl();
 
   const controller=new AbortController();
   const timeout=setTimeout(()=>controller.abort(),30000);
@@ -398,6 +415,40 @@ async function verifyAdmin(){
   const {data,error}=await sb.rpc("is_admin");
   if(error)throw new Error("Could not verify administrator access: "+error.message);
   if(data!==true)throw new Error("This account is not authorised as an administrator.");
+}
+
+/* Load the country catalogue and all visa types from the V20 backend.
+   Visa types are fetched separately for each country because the V20
+   visa_types action requires country_id. */
+
+async function loadCatalogData(){
+  const countryResult=await api({action:"countries"});
+  countries=countryResult.countries||[];
+
+  const validCountries=countries.filter(country=>country.id);
+
+  const visaResults=await Promise.all(
+    validCountries.map(country=>
+      api({
+        action:"visa_types",
+        country_id:country.id
+      })
+    )
+  );
+
+  visaTypes=[];
+
+  visaResults.forEach((result,index)=>{
+    const country=validCountries[index];
+
+    (result.visa_types||[]).forEach(v=>{
+      visaTypes.push({
+        ...v,
+        country_id:v.country_id||country.id,
+        country_name:v.country_name||country.country_name
+      });
+    });
+  });
 }
 
 function showLogin(){
@@ -513,8 +564,19 @@ function fillSelect(id,values,label){
 
 function populateFilters(){
   fillSelect("statusFilter",apps.map(a=>a.status),"All application statuses");
-  fillSelect("destinationFilter",apps.map(a=>a.destination_country_name||a.destination_country),"All destinations");
-  fillSelect("visaFilter",apps.map(a=>visa(a).visa_name||a.visa_type),"All visa types");
+
+  const destinationNames=[
+    ...countries.map(c=>c.country_name),
+    ...apps.map(a=>a.destination_country_name||a.destination_country)
+  ];
+
+  const visaNames=[
+    ...visaTypes.map(v=>v.visa_name),
+    ...apps.map(a=>visa(a).visa_name||a.visa_type)
+  ];
+
+  fillSelect("destinationFilter",destinationNames,"All destinations");
+  fillSelect("visaFilter",visaNames,"All visa types");
 }
 
 function renderApplications(){
@@ -591,22 +653,15 @@ function renderOther(){
     <tr><td>${esc(date(n.created_at||n.scheduled_for))}</td><td>${esc(n.recipient_email)}</td><td>${esc(n.email_type||n.event_type||"")}</td><td>${esc(n.status)}</td><td>${esc(n.event_key||n.event_type||"")}</td></tr>
   `).join("")||'<tr><td colspan="5">No email notifications.</td></tr>';
 
-  const unique=new Map();
-  apps.forEach(a=>{
-    const v=visa(a);
-    if(v.id)unique.set(v.id,v);
-  });
-  visaTypes=[...unique.values()];
-
   $("processingRows").innerHTML=visaTypes.map(v=>`
     <tr>
-      <td>${esc(v.country_name||v.country||"See application destination")}</td>
-      <td>${esc(v.visa_name)}</td>
+      <td>${esc(v.country_name||"Not specified")}</td>
+      <td>${esc(v.visa_name||"Not specified")}</td>
       <td>${v.processing_days===null||v.processing_days===undefined?"Not configured":esc(v.processing_days)+" days"}</td>
       <td>${v.visa_fee_min===null||v.visa_fee_min===undefined?"Not available":money(v.visa_fee_min)}</td>
       <td>${v.visa_fee_max===null||v.visa_fee_max===undefined?"Not available":money(v.visa_fee_max)}</td>
     </tr>
-  `).join("")||'<tr><td colspan="5">Visa type information will appear when applications are loaded.</td></tr>';
+  `).join("")||'<tr><td colspan="5">No visa types are currently available.</td></tr>';
 }
 
 function render(){
@@ -620,9 +675,12 @@ function render(){
   renderOther();
 }
 
+/* Refresh all dashboard records and the country/visa catalogue. */
+
 async function refresh(){
   $("refresh").disabled=true;
   notice("Loading V20 dashboard data…");
+
   try{
     const [a,p,e,n]=await Promise.all([
       api({action:"admin_applications"}),
@@ -630,15 +688,22 @@ async function refresh(){
       api({action:"admin_enquiries"}),
       api({action:"admin_notifications"})
     ]);
+
     apps=a.applications||[];
     payments=p.payments||[];
     enquiries=e.enquiries||[];
     notifications=n.notifications||[];
+
+    await loadCatalogData();
+
     render();
     $("dashboard").classList.remove("hidden");
     notice("V20 dashboard data loaded successfully.","success");
-  }catch(error){notice(error.message,"error");}
-  finally{$("refresh").disabled=false;}
+  }catch(error){
+    notice(error.message,"error");
+  }finally{
+    $("refresh").disabled=false;
+  }
 }
 
 function field(label,value){
@@ -1028,6 +1093,8 @@ async function init(){
     if(!window.supabase||!window.SUPABASE_URL||!window.SUPABASE_ANON_KEY){
       throw new Error("Supabase configuration is missing. Check config.js.");
     }
+
+    getBackendUrl();
 
     $("publicWebsiteLink").href=window.SITE_URL||OFFICIAL_SITE;
 
