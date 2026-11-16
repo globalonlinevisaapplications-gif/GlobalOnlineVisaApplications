@@ -24,16 +24,15 @@
     "https://iqpnlzufcasseycvmvzs.supabase.co";
 
   // Public publishable key only.
-  // Never put a service_role key here.
 
   window.SUPABASE_ANON_KEY =
     "sb_publishable_W8PD_H5br4lYSFQ1BMMfyA_ywmLOsae";
 
-  // V20 BACKEND - CORRECT DEPLOYED FUNCTION NAME
+  // V20 BACKEND
 
   window.SUPABASE_FUNCTION_URL =
     window.SUPABASE_URL +
-    "/functions/v1/supabase-functions-visa-backend-v20-index-ts";
+    "/functions/v1/visa-backend-v20";
 
   // INITIALIZE SUPABASE
 
@@ -58,7 +57,9 @@
 
   window.API_CONFIG = {
     baseURL: window.SUPABASE_FUNCTION_URL,
+
     method: "POST",
+
     timeout: 30000,
 
     headers: {
@@ -80,7 +81,8 @@
   // APPLICATION SETTINGS
 
   window.APP_CONFIG = {
-    applicationName: "Global Online Visa Applications",
+    applicationName:
+      "Global Online Visa Applications",
 
     currency: "USD",
 
@@ -115,9 +117,10 @@
 
   window.callVisaAPI = async function (action, data = {}) {
     try {
-      const sessionResult = window.supabaseClient
-        ? await window.supabaseClient.auth.getSession()
-        : null;
+      const sessionResult =
+        window.supabaseClient
+          ? await window.supabaseClient.auth.getSession()
+          : null;
 
       const accessToken =
         sessionResult?.data?.session?.access_token ||
@@ -130,6 +133,7 @@
 
           headers: {
             ...window.API_CONFIG.headers,
+
             "Authorization": "Bearer " + accessToken
           },
 
