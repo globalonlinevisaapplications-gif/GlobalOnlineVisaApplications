@@ -6,6 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#092c50">
 <meta name="description" content="Global Online Visa Applications - online visa application support for USA, UK, Canada, Australia and Europe.">
+<link rel="canonical" href="https://globalvisaagencies.netlify.app/">
 <title>Global Online Visa Applications</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -467,7 +468,6 @@ footer a{
   <div class="account">
 
     <div id="normalAccountPanel">
-
       <h3>Create an Account</h3>
 
       <form id="registerForm">
@@ -627,19 +627,12 @@ footer a{
 <script>
 "use strict";
 
-/* WEBSITE CONFIGURATION */
+/* OFFICIAL WEBSITE CONFIGURATION */
 
-const WEBSITE_URL =
-  window.SITE_URL ||
-  window.APP_CONFIG?.siteUrl ||
-  "https://globalonlinevisaapplications.netlify.app";
+const WEBSITE_URL = "https://globalvisaagencies.netlify.app";
 
-const APPLICATION_URL =
-  WEBSITE_URL.replace(/\/+$/, "") + "/apply.html";
-
-const HOME_URL =
-  WEBSITE_URL.replace(/\/+$/, "") + "/index.html";
-
+const APPLICATION_URL = WEBSITE_URL + "/apply.html";
+const HOME_URL = WEBSITE_URL + "/index.html";
 const ACCOUNT_URL = HOME_URL + "#account";
 
 const message = document.getElementById("message");
@@ -1137,18 +1130,7 @@ async function initializeAccount() {
       return;
     }
 
-    /*
-     * Do not redirect every SIGNED_IN event.
-     * Password recovery and normal login are handled
-     * by their own forms.
-     */
   });
-
-  /*
-   * Supabase processes the email confirmation callback
-   * using detectSessionInUrl. Wait for session restoration
-   * before deciding where to send the applicant.
-   */
 
   try {
     const {data,error} = await supabaseClient.auth.getSession();
