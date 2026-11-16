@@ -6,11 +6,11 @@ import {
 
 /**
  * GLOBAL ONLINE VISA APPLICATIONS
- * COMPLETE CORRECTED V18 BACKEND
+ * CORRECTED V18 BACKEND
  *
  * Consultancy service fee: USD 285 per applicant.
  * Government visa fee: separate.
- * PRC is generated only after administrator payment approval.
+ * PRC generated only after administrator payment approval.
  * No combined fee totals are calculated or returned.
  */
 
@@ -71,7 +71,6 @@ function str(value: unknown, name = "Value", max = 300): string {
   ) {
     fail(`${name} is required or invalid.`);
   }
-
   return value.trim();
 }
 
@@ -79,44 +78,35 @@ function opt(value: unknown, max = 300): string | null {
   if (value === undefined || value === null || value === "") {
     return null;
   }
-
   if (typeof value !== "string" || value.length > max) {
     fail("Invalid text value.");
   }
-
   return value.trim() || null;
 }
 
 function id(value: unknown, name = "ID"): string {
   const result = str(value, name, 36);
-
   const pattern =
     /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
   if (!pattern.test(result)) {
     fail(`${name} must be a valid UUID.`);
   }
-
   return result;
 }
 
 function email(value: unknown): string | null {
   const result = opt(value, 254);
 
-  if (
-    result &&
-    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(result)
-  ) {
+  if (result && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(result)) {
     fail("Please provide a valid email address.");
   }
-
   return result;
 }
 
 function feeRange(visa: Obj): FeeRange {
   const rawMin = visa?.visa_fee_min;
   const rawMax = visa?.visa_fee_max;
-
   const min = Number(rawMin);
   const max = Number(rawMax);
 
@@ -274,11 +264,9 @@ async function findCountryById(
   if (error) {
     fail(`Could not verify country: ${error.message}`);
   }
-
   if (!data) {
     fail("Selected country was not found.");
   }
-
   return data;
 }
 
@@ -370,7 +358,6 @@ function safeFilename(value: unknown): string {
   if (!cleaned) {
     fail("Invalid uploaded file name.");
   }
-
   return cleaned;
 }
 
@@ -394,19 +381,25 @@ async function saveApplicant(
     100
   );
 
-  const applicantEmail =
-    email(applicantData.email) ?? userEmail;
+  const applicantEmail = email(applicantData.email) ?? userEmail;
 
   if (!applicantEmail) {
     fail("Applicant email address is required.");
   }
+
+  // phone is NOT NULL in the applicants table.
+  const phone = str(
+    applicantData.phone,
+    "Applicant phone number",
+    40
+  );
 
   const record: Obj = {
     user_id: userId,
     first_name: firstName,
     last_name: lastName,
     email: applicantEmail,
-    phone: opt(applicantData.phone, 40),
+    phone,
     date_of_birth: opt(applicantData.date_of_birth, 30),
     nationality: opt(applicantData.nationality, 100),
     passport_number: opt(applicantData.passport_number, 80),
@@ -436,7 +429,6 @@ async function saveApplicant(
         `Could not update applicant profile: ${error?.message ?? "Unknown error"}`
       );
     }
-
     return data.id;
   }
 
@@ -451,7 +443,6 @@ async function saveApplicant(
       `Could not create applicant profile: ${error?.message ?? "Unknown error"}`
     );
   }
-
   return data.id;
 }
 
@@ -460,6 +451,7 @@ async function saveApplicant(
 async function uploadDocs(
   admin: SupabaseClient,
   applicationId: string,
+  applicantId: string,
   userId: string,
   files: unknown
 ): Promise<Obj[]> {
@@ -472,7 +464,9 @@ async function uploadDocs(
   }
 
   if (files.length > MAX_DOCUMENTS) {
-    fail(`A maximum of ${MAX_DOCUMENTS} documents can be uploaded per application.`);
+    fail(
+      `A maximum of ${MAX_DOCUMENTS} documents can be uploaded per application.`
+    );
   }
 
   const uploaded: Obj[] = [];
@@ -500,6 +494,11 @@ async function uploadDocs(
       const contentType =
         opt(file.content_type, 120) ??
         "application/octet-stream";
+
+      // Preserve the frontend document type when supplied.
+      // "Other" is used for older forms that do not send it.
+      const documentType =
+        opt(file.document_type, 80) ?? "Other";
 
       const base64 = str(
         file.base64,
@@ -537,16 +536,18 @@ async function uploadDocs(
         .from("application_documents")
         .insert({
           application_id: applicationId,
+          applicant_id: applicantId,
+          document_type: documentType,
+          storage_path: storagePath,
           file_name: filename,
           original_file_name: originalFilename,
           file_path: storagePath,
-          storage_path: storagePath,
           mime_type: contentType,
           content_type: contentType,
           file_size: bytes.length,
           uploaded_by: userId,
         })
-        .select("id,file_name,created_at")
+        .select("id,file_name,document_type,created_at")
         .single();
 
       if (insertError || !data) {
@@ -804,6 +805,7 @@ async function submit(
       documents = await uploadDocs(
         admin,
         application.id,
+        applicantId,
         currentUser.id,
         applicantData.documents ??
           (index === 0 ? body.documents : [])
@@ -813,7 +815,6 @@ async function submit(
         .from("visa_applications")
         .delete()
         .eq("id", application.id);
-
       throw error;
     }
 
@@ -899,9 +900,16 @@ async function saveDraft(
 
   const draftId = opt(body.draft_id, 36);
 
+  // application_drafts.email is NOT NULL.
+  const draftEmail = email(body.email) ?? email(userEmail);
+
+  if (!draftEmail) {
+    fail("A valid email address is required to save a draft.");
+  }
+
   const record = {
     user_id: userId,
-    email: userEmail || null,
+    email: draftEmail,
     draft_data: draft,
     updated_at: new Date().toISOString(),
   };
@@ -973,29 +981,58 @@ async function createEnquiry(
   currentUser: AuthUser,
   body: Obj
 ): Promise<Obj> {
-  const subject = str(body.subject, "Enquiry subject", 180);
+  const subject = opt(body.subject, 180);
   const message = str(body.message, "Enquiry message", 5000);
 
   const contactEmail =
-    email(body.email) ?? currentUser.email;
+    email(body.email) ?? email(currentUser.email);
 
   if (!contactEmail) {
     fail("A valid email address is required.");
   }
 
+  // These fields are required by the enquiries table.
+  const fullName =
+    opt(body.full_name, 160) ??
+    opt(body.name, 160) ??
+    "Website visitor";
+
+  const destination =
+    opt(body.destination, 160) ??
+    "Not specified";
+
+  const purpose =
+    opt(body.purpose, 160) ??
+    subject ??
+    "General enquiry";
+
+  // Do not claim consent unless the applicant actually supplied true.
+  const consent = body.consent === true;
+
+  const enquiryId = crypto.randomUUID();
+
   const { data, error } = await admin
     .from("enquiries")
     .insert({
+      id: enquiryId,
       user_id: currentUser.id,
-      name: opt(body.name, 160),
+      full_name: fullName,
+      name: opt(body.name, 160) ?? fullName,
       email: contactEmail,
       phone: opt(body.phone, 40),
-      subject,
+      residence: opt(body.residence, 160),
+      destination,
+      purpose,
+      travel_timing: opt(body.travel_timing, 160),
+      subject: subject ?? purpose,
       message,
+      consent,
       status: "New",
       created_at: new Date().toISOString(),
     })
-    .select("id,subject,status,created_at")
+    .select(
+      "id,full_name,email,destination,purpose,subject,status,created_at"
+    )
     .single();
 
   if (error || !data) {
@@ -1010,8 +1047,11 @@ async function createEnquiry(
     null,
     {
       enquiry_id: data.id,
-      subject,
+      subject: data.subject,
       sender_email: contactEmail,
+      full_name: data.full_name,
+      destination: data.destination,
+      purpose: data.purpose,
     }
   );
 
@@ -1175,10 +1215,7 @@ async function myApplications(
     fail(`Could not load applications: ${error.message}`);
   }
 
-  const applications = await enrichApplications(
-    admin,
-    data ?? []
-  );
+  const applications = await enrichApplications(admin, data ?? []);
 
   return {
     applications,
@@ -1202,10 +1239,7 @@ async function adminApplications(
     fail(`Could not load admin applications: ${error.message}`);
   }
 
-  const applications = await enrichApplications(
-    admin,
-    data ?? []
-  );
+  const applications = await enrichApplications(admin, data ?? []);
 
   return {
     applications,
@@ -1239,7 +1273,7 @@ async function adminEnquiries(
   const { data, error } = await admin
     .from("enquiries")
     .select(
-      "id,user_id,name,email,phone,subject,message,status,created_at"
+      "id,user_id,full_name,name,email,phone,residence,destination,purpose,travel_timing,subject,message,consent,status,created_at"
     )
     .order("created_at", { ascending: false });
 
@@ -1263,9 +1297,7 @@ async function adminNotifications(
     .limit(200);
 
   if (error) {
-    fail(
-      `Could not load email notifications: ${error.message}`
-    );
+    fail(`Could not load email notifications: ${error.message}`);
   }
 
   return {
@@ -1294,11 +1326,7 @@ async function updateStatus(
     "Rejected",
   ];
 
-  const newStatus = str(
-    body.status,
-    "Application status",
-    50
-  );
+  const newStatus = str(body.status, "Application status", 50);
 
   if (!allowedStatuses.includes(newStatus)) {
     fail("Invalid application status.");
@@ -1344,9 +1372,7 @@ async function updateStatus(
     .maybeSingle();
 
   if (error) {
-    fail(
-      `Could not update application status: ${error.message}`
-    );
+    fail(`Could not update application status: ${error.message}`);
   }
 
   if (!data) {
@@ -1398,10 +1424,7 @@ async function downloadDocument(
   admin: SupabaseClient,
   body: Obj
 ): Promise<Obj> {
-  const documentId = id(
-    body.document_id,
-    "Document ID"
-  );
+  const documentId = id(body.document_id, "Document ID");
 
   const { data: document, error: findError } = await admin
     .from("application_documents")
@@ -1827,13 +1850,8 @@ function makeEmail(
     payload.service_fee ?? SERVICE_FEE
   );
 
-  const feeMin = emailMoney(
-    payload.official_visa_fee_min
-  );
-
-  const feeMax = emailMoney(
-    payload.official_visa_fee_max
-  );
+  const feeMin = emailMoney(payload.official_visa_fee_min);
+  const feeMax = emailMoney(payload.official_visa_fee_max);
 
   const serviceStatus =
     payload.service_fee_payment_status ?? "pending";
@@ -1923,6 +1941,9 @@ function makeEmail(
         "New customer enquiry",
         detailsTable([
           ["Enquiry ID", payload.enquiry_id ?? ""],
+          ["Name", payload.full_name ?? ""],
+          ["Destination", payload.destination ?? ""],
+          ["Purpose", payload.purpose ?? ""],
           ["Subject", payload.subject ?? ""],
           ["Sender email", payload.sender_email ?? ""],
         ])
@@ -2174,10 +2195,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       }
 
       case "my_applications": {
-        result = await myApplications(
-          admin,
-          currentUser.id
-        );
+        result = await myApplications(admin, currentUser.id);
         break;
       }
 
@@ -2208,11 +2226,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
         }
 
         if (action === "admin_update_status") {
-          const updateResult = await updateStatus(
-            admin,
-            body
-          );
-
+          const updateResult = await updateStatus(admin, body);
           result = updateResult;
 
           if (
@@ -2309,4 +2323,3 @@ Deno.serve(async (req: Request): Promise<Response> => {
 });
 
 /* END OF V18 BACKEND */
-
