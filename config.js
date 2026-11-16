@@ -16,7 +16,7 @@
   window.SITE_NAME = "Global Online Visa Applications";
 
   window.SITE_URL =
-    "https://globalonlinevisaapplications.netlify.app";
+    "https://globalvisaagencies.netlify.app";
 
   window.SITE_ENVIRONMENT = "production";
 
@@ -131,7 +131,7 @@
       typeof window.SUPABASE_ANON_KEY === "string" &&
 
       window.SITE_URL ===
-        "https://globalonlinevisaapplications.netlify.app" &&
+        "https://globalvisaagencies.netlify.app" &&
 
       window.SUPABASE_URL ===
         "https://iqpnlzufcasseycvmvzs.supabase.co" &&
